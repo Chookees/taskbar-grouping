@@ -4,6 +4,9 @@ on:
   push:
     tags: ['v*']
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: windows-latest
@@ -17,32 +20,58 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
       - name: Restore dependencies
         run: dotnet restore TaskbarFolders.sln
 
       - name: Build
-        run: dotnet build TaskbarFolders.sln --configuration Release --no-restore
+        run: dotnet build TaskbarFolders.sln --configuration Release --no-restore -p:Version=${{ steps.version.outputs.VERSION }}
 
       - name: Test
         run: dotnet test TaskbarFolders.sln --configuration Release --no-build
 
-      - name: Publish Manager (self-contained)
-        run: dotnet publish src/TaskbarFolders.Manager/TaskbarFolders.Manager.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output ./publish/Manager
+      - name: Publish Manager (self-contained single-file)
+        run: >
+          dotnet publish src/TaskbarFolders.Manager/TaskbarFolders.Manager.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ steps.version.outputs.VERSION }}
+          --output ./publish/Manager
 
-      - name: Publish Launcher (self-contained)
-        run: dotnet publish src/TaskbarFolders.Launcher/TaskbarFolders.Launcher.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output ./publish/Launcher
+      - name: Publish Launcher (self-contained single-file)
+        run: >
+          dotnet publish src/TaskbarFolders.Launcher/TaskbarFolders.Launcher.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ steps.version.outputs.VERSION }}
+          --output ./publish/Launcher
 
       - name: Create portable ZIP
-        run: Compress-Archive -Path ./publish/* -DestinationPath ./TaskbarFolders-portable.zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path ./portable -Force
+          Copy-Item ./publish/Manager/TaskbarFolders.Manager.exe ./portable/
+          Copy-Item ./publish/Launcher/TaskbarFolders.Launcher.exe ./portable/
+          Copy-Item LICENSE ./portable/
+          Compress-Archive -Path ./portable/* -DestinationPath ./TaskbarFolders-${{ steps.version.outputs.VERSION }}-portable.zip
 
       - name: Build Inno Setup installer
         uses: jrsoftware/iscc-action@v1
         with:
           script-path: installer/setup.iss
-
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $env:GITHUB_OUTPUT
+          defines: MyAppVersion=${{ steps.version.outputs.VERSION }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -51,5 +80,5 @@ jobs:
           prerelease: ${{ contains(github.ref, '-') }}
           generate_release_notes: true
           files: |
-            ./TaskbarFolders-portable.zip
-            ./installer/Output/TaskbarFolders-Setup.exe
+            ./TaskbarFolders-${{ steps.version.outputs.VERSION }}-portable.zip
+            ./installer/Output/TaskbarFolders-${{ steps.version.outputs.VERSION }}-Setup.exe

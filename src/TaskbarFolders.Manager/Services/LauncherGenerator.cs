@@ -66,17 +66,38 @@ public sealed class LauncherGenerator
     private static string? FindLauncherExe()
     {
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        const string exeName = "TaskbarFolders.Launcher.exe";
 
-        string sameDirPath = Path.Combine(baseDir, "TaskbarFolders.Launcher.exe");
+        // Installed layout: both exes in the same directory
+        string sameDirPath = Path.Combine(baseDir, exeName);
         if (File.Exists(sameDirPath))
             return sameDirPath;
 
         string? parentDir = Path.GetDirectoryName(baseDir.TrimEnd(Path.DirectorySeparatorChar));
-        if (parentDir is not null)
+        if (parentDir is null)
+            return null;
+
+        // Old installer layout: {app}\Launcher\
+        string launcherSubdir = Path.Combine(parentDir, "Launcher", exeName);
+        if (File.Exists(launcherSubdir))
+            return launcherSubdir;
+
+        // Development layout: sibling project output (e.g. bin/Release/net10.0-windows/)
+        string siblingProject = Path.Combine(parentDir, "TaskbarFolders.Launcher", exeName);
+        if (File.Exists(siblingProject))
+            return siblingProject;
+
+        // Development layout: parallel project under same bin/Release/
+        string? grandParent = Path.GetDirectoryName(parentDir);
+        if (grandParent is not null)
         {
-            string siblingPath = Path.Combine(parentDir, "TaskbarFolders.Launcher", "TaskbarFolders.Launcher.exe");
-            if (File.Exists(siblingPath))
-                return siblingPath;
+            string parallelBin = Path.Combine(grandParent, "TaskbarFolders.Launcher", "bin", "Release");
+            if (Directory.Exists(parallelBin))
+            {
+                string[] candidates = Directory.GetFiles(parallelBin, exeName, SearchOption.AllDirectories);
+                if (candidates.Length > 0)
+                    return candidates[0];
+            }
         }
 
         return null;
