@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TaskbarFolders.Manager</RootNamespace>
+    <AssemblyName>TaskbarFolders.Manager</AssemblyName>
+    <ApplicationIcon>..\..\assets\icons\manager.ico</ApplicationIcon>
+    <Description>TaskbarFolders Manager - Main WPF application for creating and managing taskbar groups</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TaskbarFolders.Core\TaskbarFolders.Core.csproj" />
+    <ProjectReference Include="..\TaskbarFolders.Shared\TaskbarFolders.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+</Project>

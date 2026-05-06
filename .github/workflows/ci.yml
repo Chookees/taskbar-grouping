@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, 'feature/*', 'fix/*']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore TaskbarFolders.sln
+
+      - name: Build
+        run: dotnet build TaskbarFolders.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test TaskbarFolders.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults
+
+      - name: Check formatting
+        run: dotnet format TaskbarFolders.sln --verify-no-changes --verbosity diagnostic
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./TestResults/**/coverage.cobertura.xml
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            src/TaskbarFolders.Manager/bin/Release/
+            src/TaskbarFolders.Launcher/bin/Release/

@@ -1,0 +1,62 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## Visual Studio
+.vs/
+*.rsuser
+[Tt]est[Rr]esult*/
+[Dd]ebug*/
+[Rr]elease*/
+x64/
+x86/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+[Dd]ebugPublic/
+
+## NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/[Ll]ib/[Nn]et*/
+
+## Build results
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+## Rider
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+## Coverage
+coverage/
+*.coverage
+*.coveragexml
+TestResults/
+
+## Installer output
+installer/Output/
+
+## Publish output
+publish/

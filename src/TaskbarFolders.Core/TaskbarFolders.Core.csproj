@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TaskbarFolders.Core</RootNamespace>
+    <AssemblyName>TaskbarFolders.Core</AssemblyName>
+    <Description>Core library for TaskbarFolders - Icon extraction, composite generation, and caching</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TaskbarFolders.Shared\TaskbarFolders.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
