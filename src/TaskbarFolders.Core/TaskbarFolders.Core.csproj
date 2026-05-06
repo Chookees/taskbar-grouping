@@ -8,6 +8,7 @@
     <RootNamespace>TaskbarFolders.Core</RootNamespace>
     <AssemblyName>TaskbarFolders.Core</AssemblyName>
     <Description>Core library for TaskbarFolders - Icon extraction, composite generation, and caching</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
