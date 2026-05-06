@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Background -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#1E1E1E" />
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#252526" />
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#2D2D30" />
+    <SolidColorBrush x:Key="DropZoneBackgroundBrush" Color="#333337" />
+
+    <!-- Foreground -->
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#E0E0E0" />
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A0A0A0" />
+    <SolidColorBrush x:Key="MutedTextBrush" Color="#707070" />
+
+    <!-- Accent -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#0078D4" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#1A8CD8" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#005A9E" />
+
+    <!-- Borders -->
+    <SolidColorBrush x:Key="BorderBrush" Color="#3F3F46" />
+    <SolidColorBrush x:Key="DropZoneBorderBrush" Color="#555555" />
+
+    <!-- Danger -->
+    <SolidColorBrush x:Key="DangerBrush" Color="#F44336" />
+    <SolidColorBrush x:Key="DangerHoverBrush" Color="#D32F2F" />
+
+    <!-- Selection -->
+    <SolidColorBrush x:Key="SelectedItemBrush" Color="#094771" />
+    <SolidColorBrush x:Key="HoverItemBrush" Color="#2A2D2E" />
+
+</ResourceDictionary>

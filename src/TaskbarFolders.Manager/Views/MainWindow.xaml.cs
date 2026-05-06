@@ -1,4 +1,5 @@
 using System.Windows;
+using TaskbarFolders.Manager.ViewModels;
 
 namespace TaskbarFolders.Manager.Views;
 
@@ -7,8 +8,13 @@ namespace TaskbarFolders.Manager.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindow"/> class.
+    /// </summary>
+    public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
+        DataContext = viewModel;
+        Loaded += async (_, _) => await viewModel.LoadGroupsAsync().ConfigureAwait(true);
     }
 }

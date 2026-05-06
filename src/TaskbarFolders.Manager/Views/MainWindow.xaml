@@ -1,13 +1,128 @@
 <Window x:Class="TaskbarFolders.Manager.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TaskbarFolders.Manager.ViewModels"
+        xmlns:views="clr-namespace:TaskbarFolders.Manager.Views"
+        xmlns:converters="clr-namespace:TaskbarFolders.Manager.Converters"
         Title="TaskbarFolders Manager"
-        Width="800" Height="600"
-        WindowStartupLocation="CenterScreen">
+        Width="900" Height="620"
+        MinWidth="700" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBackgroundBrush}">
+
+    <Window.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVis" />
+
+        <DataTemplate DataType="{x:Type vm:GroupEditorViewModel}">
+            <views:GroupEditorView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView />
+        </DataTemplate>
+    </Window.Resources>
+
     <Grid>
-        <TextBlock Text="TaskbarFolders Manager"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="24" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260" MinWidth="200" MaxWidth="360" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Background="{DynamicResource SidebarBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,1,0">
+            <DockPanel>
+
+                <!-- Sidebar Header -->
+                <Border DockPanel.Dock="Top" Padding="16,14"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="0,0,0,1">
+                    <TextBlock Text="TaskbarFolders"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                </Border>
+
+                <!-- Sidebar Actions -->
+                <StackPanel DockPanel.Dock="Top" Margin="8,8,8,4">
+                    <Button Content="+ Neue Gruppe"
+                            Command="{Binding NewGroupCommand}"
+                            Style="{DynamicResource PrimaryButtonStyle}"
+                            HorizontalContentAlignment="Center"
+                            Margin="0,0,0,4" />
+                </StackPanel>
+
+                <!-- Bottom: Settings + Delete -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="8,4,8,8">
+                    <Button Content="Gruppe löschen"
+                            Command="{Binding DeleteGroupCommand}"
+                            Style="{DynamicResource DangerButtonStyle}"
+                            HorizontalContentAlignment="Center"
+                            Margin="0,0,0,4" />
+                    <Button Content="⚙ Einstellungen"
+                            Command="{Binding OpenSettingsCommand}"
+                            Style="{DynamicResource SidebarButtonStyle}"
+                            HorizontalContentAlignment="Center" />
+                </StackPanel>
+
+                <!-- Group List -->
+                <ListBox ItemsSource="{Binding Groups}"
+                         SelectedItem="{Binding SelectedGroup}"
+                         ItemContainerStyle="{DynamicResource GroupListItemStyle}"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding CompositeIcon}"
+                                       Width="28" Height="28"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       Margin="0,0,10,0"
+                                       VerticalAlignment="Center" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding GroupName}"
+                                               FontSize="13"
+                                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                                    <TextBlock FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} App(s)">
+                                                <Binding Path="Apps.Count" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </DockPanel>
+        </Border>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="1" Width="3"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      Background="{DynamicResource BorderBrush}" />
+
+        <!-- Content Area -->
+        <Grid Grid.Column="2">
+            <!-- Placeholder when nothing is selected -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Visibility="{Binding CurrentView, Converter={StaticResource NullToVis}, ConverterParameter=invert}">
+                <TextBlock Text="📁" FontSize="48" HorizontalAlignment="Center"
+                           Margin="0,0,0,12" />
+                <TextBlock Text="Wähle eine Gruppe oder erstelle eine neue"
+                           FontSize="14"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Detail View -->
+            <ContentControl Content="{Binding CurrentView}"
+                            Visibility="{Binding CurrentView, Converter={StaticResource NullToVis}}" />
+        </Grid>
     </Grid>
 </Window>
