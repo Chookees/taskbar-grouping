@@ -7,10 +7,7 @@
     <RootNamespace>TaskbarFolders.Shared</RootNamespace>
     <AssemblyName>TaskbarFolders.Shared</AssemblyName>
     <Description>Shared models, DTOs, configuration, and utilities for TaskbarFolders</Description>
+    <NoWarn>$(NoWarn);CA1716</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-  </ItemGroup>
 
 </Project>
