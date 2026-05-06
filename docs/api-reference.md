@@ -15,17 +15,13 @@ public interface IIconExtractor
 }
 ```
 
-**Parameters:**
-- `filePath`: Path to an `.exe`, `.lnk`, or `.ico` file
-- `size`: Desired icon size in pixels (default: 256)
-
-**Returns:** The extracted icon as a `BitmapSource`, or `null` if extraction fails.
+**Implementation:** `ShellIconExtractor` -- uses ExtractIconEx, SHGetFileInfo, and IconBitmapDecoder as fallback chain. Resolves `.lnk` shortcuts via WScript.Shell COM.
 
 ---
 
 #### `ICompositeIconGenerator`
 
-Generates composite icons from multiple source icons in a grid layout.
+Generates composite icons from multiple source icons in a 2x2 grid layout.
 
 ```csharp
 public interface ICompositeIconGenerator
@@ -34,11 +30,40 @@ public interface ICompositeIconGenerator
 }
 ```
 
-**Parameters:**
-- `icons`: Source icons to compose (up to 4)
-- `outputSize`: Output icon size in pixels (default: 256)
+**Implementation:** `CompositeIconGenerator` -- uses `DrawingVisual` with a rounded-rectangle background. Takes up to 4 icons and arranges them in a grid with padding.
 
-**Returns:** The composite icon as a `BitmapSource`.
+---
+
+#### `IcoWriter`
+
+Writes `BitmapSource` images as multi-resolution `.ico` files.
+
+```csharp
+public static class IcoWriter
+{
+    static void Write(BitmapSource source, string outputPath);
+    static void Write(BitmapSource source, Stream outputStream);
+}
+```
+
+Generates ICO files with PNG-encoded entries at 16x16, 32x32, 48x48, and 256x256 pixels. Creates parent directories if they don't exist.
+
+---
+
+#### `IconCache`
+
+Thread-safe in-memory icon cache with optional disk persistence.
+
+```csharp
+public sealed class IconCache
+{
+    BitmapSource? GetOrCreate(string key, Func<BitmapSource?> factory);
+    void Invalidate(string key);
+    void Clear();
+}
+```
+
+Uses `ConcurrentDictionary` for thread safety. Keys are SHA256-normalized. Disk cache stores PNG files.
 
 ---
 
@@ -50,39 +75,35 @@ public interface ICompositeIconGenerator
 
 Represents a single application entry within a taskbar group.
 
-| Property | Type | Description |
-|---|---|---|
-| `Name` | `string` | Display name of the application |
-| `Path` | `string` | Full path to the executable or shortcut |
-| `IconPath` | `string?` | Optional custom icon path |
-| `Arguments` | `string` | Command-line arguments (default: empty) |
-
----
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Name` | `string` | required | Display name of the application |
+| `Path` | `string` | required | Full path to the executable or shortcut |
+| `IconPath` | `string?` | `null` | Optional custom icon path (falls back to Path) |
+| `Arguments` | `string` | `""` | Command-line arguments |
 
 #### `GroupConfig`
 
 Configuration for a single taskbar group.
 
-| Property | Type | Description |
-|---|---|---|
-| `Id` | `string` | Unique identifier (auto-generated) |
-| `GroupName` | `string` | Display name of the group |
-| `Columns` | `int` | Popup grid columns (default: 3) |
-| `Theme` | `string` | Theme override: light, dark, system (default: system) |
-| `Apps` | `List<AppEntry>` | Applications in this group |
-
----
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Id` | `string` | auto-generated GUID | Unique identifier |
+| `GroupName` | `string` | required | Display name of the group |
+| `Columns` | `int` | `3` | Popup grid columns |
+| `Theme` | `string` | `"system"` | Theme: system, light, dark |
+| `Apps` | `List<AppEntry>` | `[]` | Applications in this group |
 
 #### `AppSettings`
 
 Global application settings.
 
-| Property | Type | Description |
-|---|---|---|
-| `AutoStart` | `bool` | Start on Windows startup (default: false) |
-| `Theme` | `string` | Global theme (default: system) |
-| `EnableAnimations` | `bool` | Popup animations (default: true) |
-| `PopupPosition` | `string` | Popup position: auto, above, below (default: auto) |
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `AutoStart` | `bool` | `false` | Start on Windows startup |
+| `Theme` | `string` | `"system"` | Global theme |
+| `EnableAnimations` | `bool` | `true` | Popup animations |
+| `PopupPosition` | `string` | `"auto"` | Popup position: auto, above, below |
 
 ---
 
@@ -90,7 +111,7 @@ Global application settings.
 
 #### `IGroupConfigStore`
 
-Interface for persisting group configurations.
+Interface for persisting group configurations as JSON files.
 
 ```csharp
 public interface IGroupConfigStore
@@ -101,6 +122,8 @@ public interface IGroupConfigStore
     Task DeleteAsync(string groupId);
 }
 ```
+
+**Implementation:** `JsonGroupConfigStore` -- stores one JSON file per group in `%APPDATA%/TaskbarFolders/groups/`. Uses camelCase JSON naming policy.
 
 #### `IAppSettingsStore`
 
@@ -113,3 +136,79 @@ public interface IAppSettingsStore
     Task SaveAsync(AppSettings settings);
 }
 ```
+
+**Implementation:** `JsonAppSettingsStore` -- single `settings.json` file in `%APPDATA%/TaskbarFolders/`.
+
+---
+
+### Namespace: `TaskbarFolders.Shared.Utilities`
+
+#### `PathHelper`
+
+Centralized path constants for all application directories and files.
+
+| Member | Returns | Description |
+|---|---|---|
+| `GroupsDirectory` | `string` | `%APPDATA%/TaskbarFolders/groups/` |
+| `IconsDirectory` | `string` | `%APPDATA%/TaskbarFolders/icons/` |
+| `LaunchersDirectory` | `string` | `%APPDATA%/TaskbarFolders/launchers/` |
+| `SettingsFilePath` | `string` | `%APPDATA%/TaskbarFolders/settings.json` |
+| `GetGroupFilePath(id)` | `string` | Path to group JSON file |
+| `GetGroupIconPath(id)` | `string` | Path to group .ico file |
+| `GetGroupShortcutPath(id, name)` | `string` | Path to group .lnk shortcut |
+| `EnsureDirectoriesExist()` | `void` | Creates all required directories |
+
+---
+
+## TaskbarFolders.Manager
+
+### Namespace: `TaskbarFolders.Manager.Services`
+
+#### `LauncherGenerator`
+
+Generates composite icons, `.lnk` shortcuts, and manages launcher files per group.
+
+```csharp
+public sealed class LauncherGenerator
+{
+    void GenerateGroupIcon(string groupId, BitmapSource compositeIcon);
+    string? GenerateShortcut(string groupId, string groupName);
+    void DeleteGroupFiles(string groupId);
+}
+```
+
+- `GenerateGroupIcon` writes the composite as a multi-resolution .ico via `IcoWriter`
+- `GenerateShortcut` creates a .lnk shortcut pointing to Launcher.exe with `--group-id` argument and the composite icon; returns the shortcut path or null if Launcher.exe was not found
+- `DeleteGroupFiles` removes the .ico and all matching .lnk files for a group
+
+---
+
+## TaskbarFolders.Launcher
+
+### Namespace: `TaskbarFolders.Launcher.Services`
+
+#### `TaskbarPositionHelper`
+
+Determines popup window placement relative to the Windows taskbar.
+
+```csharp
+public static partial class TaskbarPositionHelper
+{
+    static void PositionWindow(Window window, double width, double height);
+}
+```
+
+Uses `SHAppBarMessage` to detect taskbar edge (top/bottom/left/right) and `GetCursorPos` for cursor-relative positioning.
+
+#### `ProcessLauncher`
+
+Launches applications from popup clicks.
+
+```csharp
+public sealed class ProcessLauncher
+{
+    void Launch(string path, string arguments = "");
+}
+```
+
+Uses `Process.Start` with `UseShellExecute = true` for proper shell verb handling.

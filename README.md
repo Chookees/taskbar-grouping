@@ -6,40 +6,39 @@
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 
-![TaskbarFolders Screenshot](assets/screenshots/preview.png)
-
 ## Features
 
-- **Group apps into folders** – Drag & drop `.exe` and `.lnk` files into customizable groups
-- **Automatic composite icons** – Each group gets a 2×2 preview icon generated from the contained app icons
-- **Pin to taskbar** – Every group is a standalone `.exe` that can be pinned to the Windows taskbar
-- **Animated popup** – Click a group to reveal apps in a rounded-corner popup with blur background
-- **Light/Dark/System themes** – Follows your Windows theme or set per group
-- **Multi-monitor support** – Popup positions correctly on any monitor setup
-- **High-DPI aware** – Crisp rendering at all scaling levels (100%–200%)
+- **Group apps into folders** -- Drag & drop `.exe` and `.lnk` files into customizable groups
+- **Automatic composite icons** -- Each group gets a 2x2 preview icon generated from the contained app icons
+- **Pin to taskbar** -- Save a group to generate a `.lnk` shortcut you can drag onto the taskbar
+- **Animated popup** -- Click a pinned group to reveal apps in a rounded-corner popup with drop shadow
+- **Light & Dark themes** -- Switch between light and dark UI themes
+- **Smart popup positioning** -- Popup appears near the taskbar on any edge (top, bottom, left, right)
+- **High-DPI aware** -- Multi-resolution `.ico` files (16/32/48/256) for crisp rendering at all scaling levels
 
 ## Installation
 
 ### Installer (recommended)
 
-1. Download the latest `TaskbarFolders-Setup.exe` from [Releases](https://github.com/YOUR_USER/TaskbarFolders/releases)
+1. Download the latest `TaskbarFolders-*-Setup.exe` from [Releases](https://github.com/YOUR_USER/TaskbarFolders/releases)
 2. Run the installer and follow the instructions
-3. Launch **TaskbarFolders Manager** from the Start Menu
+3. Launch **TaskbarFolders** from the Start Menu
 
 ### Portable
 
-1. Download the latest `TaskbarFolders-portable.zip` from [Releases](https://github.com/YOUR_USER/TaskbarFolders/releases)
+1. Download the latest `TaskbarFolders-*-portable.zip` from [Releases](https://github.com/YOUR_USER/TaskbarFolders/releases)
 2. Extract to any folder
 3. Run `TaskbarFolders.Manager.exe`
 
 ## Quick Start
 
 1. Open **TaskbarFolders Manager**
-2. Click **New Group** and give it a name (e.g., "Dev Tools")
-3. Drag & drop your favorite apps into the group
-4. The composite icon is generated automatically
-5. Right-click the generated `.exe` in the group list and select **Pin to Taskbar**
-6. Click the pinned icon to open the popup and launch any app
+2. Click **+ Neue Gruppe** and give it a name
+3. Drag & drop `.exe` or `.lnk` files onto the drop zone
+4. The composite icon preview updates automatically
+5. Click **Speichern** -- a shortcut is generated
+6. Click **Ordner offnen** and drag the `.lnk` shortcut onto your taskbar
+7. Click the pinned icon to open the popup and launch any app
 
 ## Building from Source
 
@@ -48,18 +47,12 @@
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - Windows 10/11
 
-### Build
+### Build & Test
 
 ```bash
 git clone https://github.com/YOUR_USER/TaskbarFolders.git
 cd TaskbarFolders
-dotnet restore
 dotnet build --configuration Release
-```
-
-### Run Tests
-
-```bash
 dotnet test --configuration Release
 ```
 
@@ -77,7 +70,8 @@ dotnet run --project src/TaskbarFolders.Manager
 | UI Framework | WPF (Windows Presentation Foundation) |
 | Architecture | MVVM |
 | DI Container | Microsoft.Extensions.DependencyInjection |
-| Tests | xUnit + Moq + FluentAssertions |
+| Icon Extraction | Windows Shell API (P/Invoke) |
+| Tests | xUnit |
 | Installer | Inno Setup |
 | CI/CD | GitHub Actions |
 
@@ -86,12 +80,12 @@ dotnet run --project src/TaskbarFolders.Manager
 ```
 TaskbarFolders/
 ├── src/
-│   ├── TaskbarFolders.Core/        # Icon engine, extraction, composite generation
-│   ├── TaskbarFolders.Shared/      # Models, DTOs, configuration, utilities
-│   ├── TaskbarFolders.Manager/     # WPF main app (group management)
-│   └── TaskbarFolders.Launcher/    # Lightweight popup app (per group)
-├── tests/                          # xUnit test projects
-├── docs/                           # Documentation
+│   ├── TaskbarFolders.Core/        # Icon extraction, composite generation, .ico writing
+│   ├── TaskbarFolders.Shared/      # Models, configuration persistence, path utilities
+│   ├── TaskbarFolders.Manager/     # WPF main app (group management UI)
+│   └── TaskbarFolders.Launcher/    # Lightweight popup app (per-group launcher)
+├── tests/                          # xUnit test projects (30 tests)
+├── docs/                           # Architecture, user guide, developer guide, API reference
 ├── installer/                      # Inno Setup script
 └── assets/                         # Icons and screenshots
 ```
@@ -109,4 +103,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to th
 
 ## License
 
-This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License -- see the [LICENSE](LICENSE) file for details.

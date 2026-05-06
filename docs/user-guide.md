@@ -4,92 +4,102 @@
 
 ### Using the Installer
 
-1. Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/YOUR_USER/TaskbarFolders/releases)
+1. Download `TaskbarFolders-*-Setup.exe` from the [Releases page](https://github.com/YOUR_USER/TaskbarFolders/releases)
 2. Run the installer
-3. Follow the setup wizard
-4. Launch **TaskbarFolders Manager** from the Start Menu
+3. Choose language (German or English)
+4. Follow the setup wizard
+5. Launch **TaskbarFolders** from the Start Menu
 
 ### Portable Version
 
-1. Download `TaskbarFolders-portable.zip`
+1. Download `TaskbarFolders-*-portable.zip`
 2. Extract to any folder
 3. Run `TaskbarFolders.Manager.exe`
 
 ## Creating a Group
 
 1. Open **TaskbarFolders Manager**
-2. Click the **"+ New Group"** button
-3. Enter a name for your group (e.g., "Dev Tools", "Games", "Office")
-4. The group editor opens
+2. Click **+ Neue Gruppe** in the sidebar
+3. A new group called "New Group" appears and the editor opens
+4. Enter a name for your group (e.g., "Dev Tools", "Games", "Office")
+5. Choose the number of columns for the popup grid (2--5)
 
 ## Adding Apps to a Group
 
-1. In the group editor, drag and drop `.exe` or `.lnk` files from Windows Explorer into the app list
-2. Alternatively, click **"Add App"** and browse for an executable
-3. The app's icon and name are detected automatically
-4. You can rename apps or change their icons manually
+1. In the group editor, drag `.exe` or `.lnk` files from Windows Explorer onto the drop zone
+2. The app's icon and name are detected automatically
+3. You can edit the display name inline
+4. The file path is shown below each app entry
+5. Click the **x** button to remove an app
 
 ## Composite Icon Preview
 
-As you add apps, the 2x2 composite icon updates in real-time:
-- 1 app: Single icon centered
-- 2 apps: Two icons side by side
-- 3 apps: Three icons in an L-shape
+As you add apps, the 2x2 composite icon updates in real-time in the editor:
+- 1 app: Single icon
+- 2 apps: Two icons
+- 3 apps: Three icons
 - 4+ apps: First four icons in a 2x2 grid
 
-## Pinning to Taskbar
+The composite icon has a rounded background and is used as the shortcut icon on the taskbar.
 
-1. After saving a group, find the generated launcher in the group list
-2. Right-click the group and select **"Open file location"**
-3. Right-click the `.exe` file and select **"Pin to Taskbar"**
-4. The group icon now appears in your taskbar
+## Saving and Pinning to Taskbar
+
+1. Click **Speichern** to save the group
+2. A confirmation panel appears showing the shortcut path
+3. Click **Ordner offnen** to open the folder containing the shortcut in Explorer
+4. Drag the `.lnk` shortcut file onto your Windows taskbar
+5. The group icon now appears in your taskbar
 
 ## Using a Group
 
 1. Click the group icon in the taskbar
-2. A popup appears with all your grouped apps
-3. Click any app to launch it
-4. The popup closes automatically
-5. Click outside the popup to dismiss it
+2. A popup appears with all your grouped apps as a grid
+3. Click any app icon to launch it
+4. The popup closes automatically after launching
+5. Click anywhere outside the popup to dismiss it
+
+## Managing Groups
+
+### Editing a Group
+
+1. Click on a group in the sidebar
+2. The group editor opens on the right
+3. Add or remove apps, change the name or column count
+4. Click **Speichern** to save changes and regenerate the shortcut
+
+### Deleting a Group
+
+1. Select a group in the sidebar
+2. Click **Gruppe loschen** at the bottom of the sidebar
+3. The group and all generated files (icon, shortcut) are removed
+4. If the group was pinned to the taskbar, right-click the pin and choose "Unpin from taskbar"
 
 ## Settings
 
+Click **Einstellungen** at the bottom of the sidebar to open the settings view.
+
 ### Theme
-- **System**: Follows Windows dark/light mode
-- **Light**: Always light theme
-- **Dark**: Always dark theme
+- **system**: Follows Windows dark/light mode
+- **light**: Always light theme
+- **dark**: Always dark theme
 
 ### Autostart
-Enable to start TaskbarFolders Manager with Windows.
+Enable to start TaskbarFolders Manager with Windows (adds to registry Run key).
 
 ### Animations
-Toggle popup open/close animations.
+Toggle popup open/close animations on the Launcher.
 
 ### Popup Position
-- **Auto**: Popup appears near the clicked taskbar icon
-- **Above**: Always above the taskbar
-- **Below**: Always below the taskbar
+- **auto**: Popup appears near the cursor/taskbar
+- **above**: Always above the taskbar
+- **below**: Always below the taskbar
 
-## Editing a Group
-
-1. Open **TaskbarFolders Manager**
-2. Click on an existing group
-3. Add, remove, or reorder apps
-4. Changes are saved automatically
-5. The composite icon updates when you modify the group
-
-## Deleting a Group
-
-1. Open **TaskbarFolders Manager**
-2. Right-click a group
-3. Select **"Delete Group"**
-4. Confirm the deletion
-5. Unpin the group from the taskbar manually if needed
+Click **Speichern** to save settings.
 
 ## Uninstallation
 
 ### Installer Version
-Use **"Add or Remove Programs"** in Windows Settings.
+Use **Settings > Apps > Installed Apps** in Windows 11 to uninstall. The uninstaller removes generated icons and shortcuts from AppData.
 
 ### Portable Version
-Simply delete the extracted folder.
+Delete the extracted folder. Optionally delete `%APPDATA%\TaskbarFolders` to remove configuration data.
