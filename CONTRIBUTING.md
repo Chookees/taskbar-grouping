@@ -6,7 +6,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 ### Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - Windows 10/11
 - An IDE: Visual Studio 2022, JetBrains Rider, or VS Code with C# extension
 

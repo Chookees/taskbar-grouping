@@ -45,7 +45,7 @@ We chose **WPF** (Windows Presentation Foundation) over WinUI 3.
 
 ## Consequences
 
-- We commit to .NET 8+ with WPF for all UI components
+- We commit to .NET 10+ with WPF for all UI components
 - We accept that WPF is Windows-only (acceptable for a Windows taskbar tool)
 - We gain reliable Win32 interop for all taskbar-related functionality
 - We can distribute as standalone .exe files without packaging constraints

@@ -45,7 +45,7 @@
 
 ### Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - Windows 10/11
 
 ### Build
@@ -73,7 +73,7 @@ dotnet run --project src/TaskbarFolders.Manager
 
 | Component | Technology |
 |---|---|
-| Language | C# (.NET 8) |
+| Language | C# (.NET 10) |
 | UI Framework | WPF (Windows Presentation Foundation) |
 | Architecture | MVVM |
 | DI Container | Microsoft.Extensions.DependencyInjection |

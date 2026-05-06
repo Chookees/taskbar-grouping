@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - Windows 10 version 1903 or later / Windows 11
 - IDE: Visual Studio 2022, JetBrains Rider, or VS Code with C# Dev Kit
 
