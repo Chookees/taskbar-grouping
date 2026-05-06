@@ -46,6 +46,17 @@ public static class PathHelper
         => Path.Combine(IconsDirectory, $"{groupId}.ico");
 
     /// <summary>
+    /// Gets the shortcut (.lnk) file path for a specific group.
+    /// </summary>
+    /// <param name="groupId">The unique group identifier.</param>
+    /// <param name="groupName">The display name used as the shortcut filename.</param>
+    public static string GetGroupShortcutPath(string groupId, string groupName)
+    {
+        string safeName = SanitizeFileName(groupName);
+        return Path.Combine(LaunchersDirectory, $"{safeName}_{groupId[..8]}.lnk");
+    }
+
+    /// <summary>
     /// Ensures all required application directories exist.
     /// </summary>
     public static void EnsureDirectoriesExist()
@@ -53,5 +64,11 @@ public static class PathHelper
         Directory.CreateDirectory(GroupsDirectory);
         Directory.CreateDirectory(LaunchersDirectory);
         Directory.CreateDirectory(IconsDirectory);
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        char[] invalid = Path.GetInvalidFileNameChars();
+        return string.Concat(name.Select(c => Array.IndexOf(invalid, c) >= 0 ? '_' : c));
     }
 }

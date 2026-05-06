@@ -124,7 +124,9 @@ public sealed class MainViewModel : ViewModelBase
         if (SelectedGroup is null)
             return;
 
-        await _configStore.DeleteAsync(SelectedGroup.GroupId).ConfigureAwait(true);
+        string groupId = SelectedGroup.GroupId;
+        await _configStore.DeleteAsync(groupId).ConfigureAwait(true);
+        _launcherGenerator.DeleteGroupFiles(groupId);
         Groups.Remove(SelectedGroup);
         SelectedGroup = null;
         CurrentView = null;

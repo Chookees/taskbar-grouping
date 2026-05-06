@@ -1,7 +1,11 @@
 <UserControl x:Class="TaskbarFolders.Manager.Views.GroupEditorView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:behaviors="clr-namespace:TaskbarFolders.Manager.Behaviors">
+             xmlns:behaviors="clr-namespace:TaskbarFolders.Manager.Behaviors"
+             xmlns:converters="clr-namespace:TaskbarFolders.Manager.Converters">
+    <UserControl.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVis" />
+    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
         <StackPanel MaxWidth="600">
 
@@ -116,6 +120,33 @@
                     Style="{DynamicResource PrimaryButtonStyle}"
                     HorizontalAlignment="Left"
                     Margin="0,20,0,0" />
+
+            <!-- Shortcut Info -->
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource AccentBrush}"
+                    BorderThickness="1" CornerRadius="6"
+                    Padding="12" Margin="0,16,0,0"
+                    Visibility="{Binding ShortcutPath, Converter={StaticResource NullToVis}}">
+                <StackPanel>
+                    <TextBlock Text="Verknüpfung erstellt" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Margin="0,0,0,4" />
+                    <TextBlock Text="Ziehe die Verknüpfung auf die Taskleiste zum Anheften:"
+                               FontSize="12"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Margin="0,0,0,4" />
+                    <TextBox Text="{Binding ShortcutPath, Mode=OneWay}"
+                             IsReadOnly="True" FontSize="11"
+                             Foreground="{DynamicResource MutedTextBrush}"
+                             Background="Transparent" BorderThickness="0"
+                             Padding="0" />
+                    <Button Content="Ordner öffnen"
+                            Click="OnOpenShortcutFolder"
+                            Style="{DynamicResource SidebarButtonStyle}"
+                            HorizontalAlignment="Left"
+                            Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
 
         </StackPanel>
     </ScrollViewer>

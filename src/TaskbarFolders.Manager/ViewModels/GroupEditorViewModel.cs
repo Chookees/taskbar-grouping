@@ -22,6 +22,7 @@ public sealed class GroupEditorViewModel : ViewModelBase
     private string _groupName;
     private int _columns;
     private BitmapSource? _compositeIcon;
+    private string? _shortcutPath;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GroupEditorViewModel"/> class.
@@ -119,6 +120,15 @@ public sealed class GroupEditorViewModel : ViewModelBase
     /// Available column count options.
     /// </summary>
     public static int[] ColumnOptions => [2, 3, 4, 5];
+
+    /// <summary>
+    /// Path to the generated shortcut, shown after save.
+    /// </summary>
+    public string? ShortcutPath
+    {
+        get => _shortcutPath;
+        private set => SetProperty(ref _shortcutPath, value);
+    }
 
     /// <summary>
     /// Adds files (exe/lnk) dropped onto the group editor.
@@ -227,5 +237,7 @@ public sealed class GroupEditorViewModel : ViewModelBase
         {
             _launcherGenerator.GenerateGroupIcon(_config.Id, CompositeIcon);
         }
+
+        ShortcutPath = _launcherGenerator.GenerateShortcut(_config.Id, _config.GroupName);
     }
 }
