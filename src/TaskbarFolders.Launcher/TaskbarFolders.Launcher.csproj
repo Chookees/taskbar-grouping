@@ -9,6 +9,7 @@
     <RootNamespace>TaskbarFolders.Launcher</RootNamespace>
     <AssemblyName>TaskbarFolders.Launcher</AssemblyName>
     <Description>TaskbarFolders Launcher - Lightweight popup application for taskbar groups</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
