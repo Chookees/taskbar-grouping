@@ -17,6 +17,19 @@ public interface IGroupSyncService
     /// </summary>
     Task SyncAsync(GroupConfig config, CancellationToken cancellationToken = default);
 
-    /// <summary>Removes the per-group icon and shortcut files. Silent on missing files.</summary>
-    void RemoveArtifacts(string groupId);
+    /// <summary>
+    /// Removes the per-group icon, the per-group .lnk under <c>%APPDATA%/TaskbarFolders/shortcuts</c>,
+    /// and the Start Menu anchor .lnk under <c>%APPDATA%/Microsoft/Windows/Start Menu/Programs/TaskbarFolders</c>.
+    /// Silent on missing files. <paramref name="displayName"/> is needed to locate the Start
+    /// Menu file (filename = sanitised display name).
+    /// </summary>
+    void RemoveArtifacts(string groupId, string displayName);
+
+    /// <summary>
+    /// Ensures the Start Menu anchor .lnk for the supplied group exists, writing it from the
+    /// already-present per-group .ico if missing. Used by the Manager startup reconciler to
+    /// heal v0.4.0 installs that pre-date the Start Menu anchor convention. Returns
+    /// <see langword="true"/> when a new file was written.
+    /// </summary>
+    bool EnsureStartMenuShortcut(GroupConfig config);
 }

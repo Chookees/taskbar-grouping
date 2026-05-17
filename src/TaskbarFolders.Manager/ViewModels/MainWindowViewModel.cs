@@ -126,7 +126,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         await _store.DeleteAsync(group.Id).ConfigureAwait(true);
-        _syncService.RemoveArtifacts(group.Id);
+        _syncService.RemoveArtifacts(group.Id, group.Name);
 
         var index = Groups.IndexOf(group);
         Groups.Remove(group);

@@ -68,6 +68,17 @@ public partial class App : Application
         var viewModel = _host.Services.GetRequiredService<MainWindowViewModel>();
         await viewModel.LoadGroupsAsync().ConfigureAwait(true);
 
+        // v0.4.1 heal-up: ensure every existing group has a Start Menu anchor .lnk so the
+        // one-click pin via TaskbarManager.RequestPinCurrentAppAsync can persist the pin.
+        // No-op on subsequent launches (file already present). Cheap on small group counts.
+        var store = _host.Services.GetRequiredService<IGroupConfigStore>();
+        var sync = _host.Services.GetRequiredService<IGroupSyncService>();
+        var existingGroups = await store.LoadAllAsync().ConfigureAwait(true);
+        foreach (var g in existingGroups)
+        {
+            sync.EnsureStartMenuShortcut(g);
+        }
+
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();

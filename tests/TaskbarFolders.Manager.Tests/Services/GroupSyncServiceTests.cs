@@ -159,6 +159,76 @@ public sealed class GroupSyncServiceTests : IDisposable
             r.TargetExePath == "C:/install/Launcher.exe" &&
             r.IconPath == _paths.GetGroupIconFile("g") &&
             r.ShortcutPath == _paths.GetGroupShortcutFile("g"))), Times.Once);
+
+        // v0.4.1: also writes Start Menu anchor required by TaskbarManager.RequestPinCurrentAppAsync.
+        _shortcutGenerator.Verify(g => g.Generate(It.Is<GroupShortcutRequest>(r =>
+            r.GroupId == "g" &&
+            r.DisplayName == "Tools" &&
+            r.ShortcutPath == _paths.GetStartMenuShortcutFile("Tools"))), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("Tools", "Tools")]
+    [InlineData("My/Group:Name", "My-Group-Name")]
+    [InlineData("  spaced  ", "spaced")]
+    [InlineData("trailing-dots...", "trailing-dots")]
+    [InlineData("", "fallback-id")]
+    [InlineData("   ", "fallback-id")]
+    public void SanitizeForFilename_ProducesSafeFilename(string input, string expected)
+    {
+        GroupSyncService.SanitizeForFilename(input, "fallback-id").Should().Be(expected);
+    }
+
+    [Fact]
+    public void SanitizeForFilename_ClampsToSixtyChars()
+    {
+        var input = new string('a', 120);
+        var result = GroupSyncService.SanitizeForFilename(input, "fallback");
+
+        result.Length.Should().BeLessOrEqualTo(60);
+    }
+
+    [Fact]
+    public void EnsureStartMenuShortcut_NoOp_WhenFileAlreadyExists()
+    {
+        Directory.CreateDirectory(_paths.StartMenuDirectory);
+        var startMenuPath = _paths.GetStartMenuShortcutFile("Tools");
+        File.WriteAllBytes(startMenuPath, [0]);
+
+        var sut = CreateSut();
+        var wrote = sut.EnsureStartMenuShortcut(new GroupConfig { Id = "g", GroupName = "Tools" });
+
+        wrote.Should().BeFalse("file already present");
+        _shortcutGenerator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void EnsureStartMenuShortcut_NoOp_WhenIconMissing()
+    {
+        // Heal-up case: Start Menu .lnk missing AND .ico missing (group never synced).
+        // Reconciler defers to full Sync rather than writing a broken Start Menu entry.
+        var sut = CreateSut();
+        var wrote = sut.EnsureStartMenuShortcut(new GroupConfig { Id = "g", GroupName = "Tools" });
+
+        wrote.Should().BeFalse("per-group icon absent — cannot anchor Start Menu .lnk");
+        _shortcutGenerator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void EnsureStartMenuShortcut_WritesNewEntry_WhenIconPresentAndFileMissing()
+    {
+        // Heal-up case: v0.4.0 user upgraded to v0.4.1; the group's .ico already exists
+        // from an earlier sync but the Start Menu anchor has never been written.
+        Directory.CreateDirectory(_paths.IconsDirectory);
+        File.WriteAllBytes(_paths.GetGroupIconFile("g"), [0]);
+
+        var sut = CreateSut();
+        var wrote = sut.EnsureStartMenuShortcut(new GroupConfig { Id = "g", GroupName = "Tools" });
+
+        wrote.Should().BeTrue();
+        _shortcutGenerator.Verify(g => g.Generate(It.Is<GroupShortcutRequest>(r =>
+            r.GroupId == "g" &&
+            r.ShortcutPath == _paths.GetStartMenuShortcutFile("Tools"))), Times.Once);
     }
 
     [Fact]
@@ -192,16 +262,20 @@ public sealed class GroupSyncServiceTests : IDisposable
     {
         Directory.CreateDirectory(_paths.IconsDirectory);
         Directory.CreateDirectory(_paths.ShortcutsDirectory);
+        Directory.CreateDirectory(_paths.StartMenuDirectory);
         var iconPath = _paths.GetGroupIconFile("g");
         var lnkPath = _paths.GetGroupShortcutFile("g");
+        var startMenuPath = _paths.GetStartMenuShortcutFile("My Group");
         File.WriteAllBytes(iconPath, [0]);
         File.WriteAllBytes(lnkPath, [0]);
+        File.WriteAllBytes(startMenuPath, [0]);
 
         var sut = CreateSut();
-        sut.RemoveArtifacts("g");
+        sut.RemoveArtifacts("g", "My Group");
 
         File.Exists(iconPath).Should().BeFalse();
         File.Exists(lnkPath).Should().BeFalse();
+        File.Exists(startMenuPath).Should().BeFalse("Start Menu anchor must be cleaned up too");
     }
 
     [Fact]
@@ -209,7 +283,7 @@ public sealed class GroupSyncServiceTests : IDisposable
     {
         var sut = CreateSut();
 
-        var act = () => sut.RemoveArtifacts("never-existed");
+        var act = () => sut.RemoveArtifacts("never-existed", "Never Existed");
 
         act.Should().NotThrow();
     }

@@ -21,6 +21,14 @@ public interface IAppDataPathProvider
     /// <summary>Gets the directory containing per-group pinnable shortcut (.lnk) files.</summary>
     string ShortcutsDirectory { get; }
 
+    /// <summary>
+    /// Gets the per-user Start Menu sub-folder where TaskbarFolders publishes .lnk
+    /// shortcuts that act as the AUMID anchor required by
+    /// <c>Windows.UI.Shell.TaskbarManager.RequestPinCurrentAppAsync</c>.
+    /// Defaults to <c>%APPDATA%/Microsoft/Windows/Start Menu/Programs/TaskbarFolders/</c>.
+    /// </summary>
+    string StartMenuDirectory { get; }
+
     /// <summary>Gets the path to the global application settings file.</summary>
     string SettingsFile { get; }
 
@@ -35,4 +43,11 @@ public interface IAppDataPathProvider
     /// <summary>Builds the full path for a single group's pinnable shortcut (.lnk) file.</summary>
     /// <param name="groupId">Group identifier — used as the file name stem so distinct groups never collide regardless of display name.</param>
     string GetGroupShortcutFile(string groupId);
+
+    /// <summary>
+    /// Builds the full path for a Start Menu shortcut. <paramref name="sanitizedFileName"/>
+    /// is the .lnk filename stem (without extension) — caller is responsible for sanitising
+    /// the display name first.
+    /// </summary>
+    string GetStartMenuShortcutFile(string sanitizedFileName);
 }

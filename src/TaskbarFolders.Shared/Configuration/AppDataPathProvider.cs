@@ -26,6 +26,14 @@ public sealed partial class AppDataPathProvider : IAppDataPathProvider
     /// <summary>Sub-folder containing per-group pinnable .lnk shortcuts.</summary>
     public const string ShortcutsFolderName = "shortcuts";
 
+    /// <summary>
+    /// Sub-folder under the per-user Start Menu where TaskbarFolders publishes anchor .lnk
+    /// shortcuts (one per group). Required by Windows.UI.Shell.TaskbarManager:
+    /// RequestPinCurrentAppAsync silently fails to persist a pin when no Start Menu entry
+    /// with the matching AUMID exists.
+    /// </summary>
+    public const string StartMenuSubFolderName = "TaskbarFolders";
+
     /// <summary>File name of the global settings document.</summary>
     public const string SettingsFileName = "settings.json";
 
@@ -42,22 +50,41 @@ public sealed partial class AppDataPathProvider : IAppDataPathProvider
 
     /// <summary>
     /// Initializes a new instance using <see cref="Environment.SpecialFolder.ApplicationData"/>
-    /// as the base directory (typical production setup).
+    /// for app data and <see cref="Environment.SpecialFolder.Programs"/> for the per-user
+    /// Start Menu (typical production setup).
     /// </summary>
     public AppDataPathProvider()
-        : this(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData))
+        : this(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.Programs))
     {
     }
 
     /// <summary>
-    /// Initializes a new instance using the supplied base directory.
+    /// Initializes a new instance using a single base directory for BOTH the AppData root
+    /// and the Start Menu Programs root. Test-friendly: everything stays under one temp dir.
+    /// Production should use the no-arg form (real %APPDATA% + real Start Menu) or the
+    /// explicit two-arg form for unusual deployments.
     /// </summary>
-    /// <param name="baseDirectory">Directory under which the <c>TaskbarFolders</c> folder is created.</param>
+    /// <param name="baseDirectory">Directory used for AppData root AND Start Menu Programs base.</param>
     public AppDataPathProvider(string baseDirectory)
+        : this(baseDirectory, baseDirectory)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance using the supplied base directories. Two-arg form lets
+    /// tests redirect both the AppData root and the Start Menu Programs root to a temp dir.
+    /// </summary>
+    /// <param name="baseDirectory">Directory under which the <c>TaskbarFolders</c> AppData folder is created.</param>
+    /// <param name="startMenuProgramsDirectory">Directory under which the <c>TaskbarFolders</c> Start Menu sub-folder is created.</param>
+    public AppDataPathProvider(string baseDirectory, string startMenuProgramsDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(baseDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(startMenuProgramsDirectory);
 
         AppDataRoot = Path.Combine(baseDirectory, AppFolderName);
+        StartMenuDirectory = Path.Combine(startMenuProgramsDirectory, StartMenuSubFolderName);
     }
 
     /// <inheritdoc/>
@@ -74,6 +101,9 @@ public sealed partial class AppDataPathProvider : IAppDataPathProvider
 
     /// <inheritdoc/>
     public string ShortcutsDirectory => Path.Combine(AppDataRoot, ShortcutsFolderName);
+
+    /// <inheritdoc/>
+    public string StartMenuDirectory { get; }
 
     /// <inheritdoc/>
     public string SettingsFile => Path.Combine(AppDataRoot, SettingsFileName);
@@ -97,6 +127,13 @@ public sealed partial class AppDataPathProvider : IAppDataPathProvider
     {
         ValidateGroupId(groupId);
         return Path.Combine(ShortcutsDirectory, $"{groupId}.lnk");
+    }
+
+    /// <inheritdoc/>
+    public string GetStartMenuShortcutFile(string sanitizedFileName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sanitizedFileName);
+        return Path.Combine(StartMenuDirectory, $"{sanitizedFileName}.lnk");
     }
 
     private static void ValidateGroupId(string groupId)
