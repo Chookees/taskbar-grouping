@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
+using TaskbarFolders.Shared.Configuration;
 
 namespace TaskbarFolders.Manager;
 
@@ -58,12 +59,18 @@ public partial class App : Application
 
     private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
+        // Persistence — singletons because the stores carry no per-call state and the
+        // path provider is rooted at %APPDATA% for the lifetime of the process.
+        services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
+        services.AddSingleton<IGroupConfigStore, JsonGroupConfigStore>();
+        services.AddSingleton<IAppSettingsStore, JsonAppSettingsStore>();
+
         // View models — transient so each view gets a fresh instance.
         services.AddTransient<MainWindowViewModel>();
 
         // Views — transient so each Show creates a fresh window instance.
         services.AddTransient<MainWindow>();
 
-        // Persistence and icon engine are wired in M1.4 and M2.
+        // Icon engine implementations are wired in M2.
     }
 }

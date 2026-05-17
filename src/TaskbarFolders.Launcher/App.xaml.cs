@@ -4,6 +4,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using TaskbarFolders.Launcher.Configuration;
 using TaskbarFolders.Launcher.Views;
+using TaskbarFolders.Shared.Configuration;
 
 namespace TaskbarFolders.Launcher;
 
@@ -36,6 +37,12 @@ public partial class App : Application
 
         var services = new ServiceCollection();
         services.AddSingleton(new LauncherOptions(groupId));
+
+        // Persistence — the launcher is read-only against group configs and settings.
+        services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
+        services.AddSingleton<IGroupConfigStore, JsonGroupConfigStore>();
+        services.AddSingleton<IAppSettingsStore, JsonAppSettingsStore>();
+
         services.AddTransient<PopupWindow>();
         _services = services.BuildServiceProvider();
 
