@@ -9,6 +9,11 @@
     <RootNamespace>TaskbarFolders.Launcher</RootNamespace>
     <AssemblyName>TaskbarFolders.Launcher</AssemblyName>
     <Description>TaskbarFolders Launcher - Lightweight popup application for taskbar groups</Description>
+    <!-- ReadyToRun: ahead-of-time compile to native code so cold-start skips the tiered-JIT
+         warm-up (~100-300 ms). Especially valuable for the per-click short-lived launcher
+         process where every ms before the popup paints is visible to the user. ZIP grows
+         ~5-10 MB; acceptable for the launch-perf gain. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>
