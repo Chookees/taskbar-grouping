@@ -22,6 +22,9 @@ public sealed class AppDataPathProvider : IAppDataPathProvider
     /// <summary>Sub-folder containing rotated log files.</summary>
     public const string LogsFolderName = "logs";
 
+    /// <summary>Sub-folder containing per-group pinnable .lnk shortcuts.</summary>
+    public const string ShortcutsFolderName = "shortcuts";
+
     /// <summary>File name of the global settings document.</summary>
     public const string SettingsFileName = "settings.json";
 
@@ -58,6 +61,9 @@ public sealed class AppDataPathProvider : IAppDataPathProvider
     public string LogsDirectory => Path.Combine(AppDataRoot, LogsFolderName);
 
     /// <inheritdoc/>
+    public string ShortcutsDirectory => Path.Combine(AppDataRoot, ShortcutsFolderName);
+
+    /// <inheritdoc/>
     public string SettingsFile => Path.Combine(AppDataRoot, SettingsFileName);
 
     /// <inheritdoc/>
@@ -66,5 +72,21 @@ public sealed class AppDataPathProvider : IAppDataPathProvider
         ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
 
         return Path.Combine(GroupsDirectory, $"{groupId}.json");
+    }
+
+    /// <inheritdoc/>
+    public string GetGroupIconFile(string groupId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
+
+        return Path.Combine(IconsDirectory, $"{groupId}.ico");
+    }
+
+    /// <inheritdoc/>
+    public string GetGroupShortcutFile(string groupId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
+
+        return Path.Combine(ShortcutsDirectory, $"{groupId}.lnk");
     }
 }

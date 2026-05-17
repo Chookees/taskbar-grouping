@@ -18,10 +18,21 @@ public interface IAppDataPathProvider
     /// <summary>Gets the directory containing rotated diagnostic log files.</summary>
     string LogsDirectory { get; }
 
+    /// <summary>Gets the directory containing per-group pinnable shortcut (.lnk) files.</summary>
+    string ShortcutsDirectory { get; }
+
     /// <summary>Gets the path to the global application settings file.</summary>
     string SettingsFile { get; }
 
     /// <summary>Builds the full path for a single group's JSON configuration file.</summary>
     /// <param name="groupId">Group identifier.</param>
     string GetGroupFile(string groupId);
+
+    /// <summary>Builds the full path for a single group's composite icon (.ico) file.</summary>
+    /// <param name="groupId">Group identifier.</param>
+    string GetGroupIconFile(string groupId);
+
+    /// <summary>Builds the full path for a single group's pinnable shortcut (.lnk) file.</summary>
+    /// <param name="groupId">Group identifier — used as the file name stem so distinct groups never collide regardless of display name.</param>
+    string GetGroupShortcutFile(string groupId);
 }

@@ -40,6 +40,14 @@ public class AppDataPathProviderTests
     }
 
     [Fact]
+    public void ShortcutsDirectory_IsRootSlashShortcuts()
+    {
+        var sut = new AppDataPathProvider("C:/base");
+
+        sut.ShortcutsDirectory.Should().Be(Path.Combine("C:/base", "TaskbarFolders", "shortcuts"));
+    }
+
+    [Fact]
     public void SettingsFile_IsSettingsJsonAtRoot()
     {
         var sut = new AppDataPathProvider("C:/base");
@@ -54,5 +62,23 @@ public class AppDataPathProviderTests
 
         sut.GetGroupFile("abc")
             .Should().Be(Path.Combine("C:/base", "TaskbarFolders", "groups", "abc.json"));
+    }
+
+    [Fact]
+    public void GetGroupIconFile_AppendsIdIcoToIconsDirectory()
+    {
+        var sut = new AppDataPathProvider("C:/base");
+
+        sut.GetGroupIconFile("abc")
+            .Should().Be(Path.Combine("C:/base", "TaskbarFolders", "icons", "abc.ico"));
+    }
+
+    [Fact]
+    public void GetGroupShortcutFile_AppendsIdLnkToShortcutsDirectory()
+    {
+        var sut = new AppDataPathProvider("C:/base");
+
+        sut.GetGroupShortcutFile("abc")
+            .Should().Be(Path.Combine("C:/base", "TaskbarFolders", "shortcuts", "abc.lnk"));
     }
 }

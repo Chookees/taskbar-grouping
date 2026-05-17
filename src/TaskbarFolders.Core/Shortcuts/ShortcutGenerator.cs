@@ -1,0 +1,104 @@
+﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using Microsoft.Extensions.Logging;
+using TaskbarFolders.Core.Interop;
+
+namespace TaskbarFolders.Core.Shortcuts;
+
+/// <summary>
+/// Default <see cref="IShortcutGenerator"/>. Uses <see cref="IShellLinkW"/> +
+/// <see cref="IPersistFile"/> + <see cref="IPropertyStore"/> to author a .lnk that
+/// targets <c>Launcher.exe --group-id &lt;id&gt;</c>, carries the group's composite icon,
+/// and stamps a distinct AUMID so Windows can pin and group it independently from other
+/// shortcuts that share the same target binary.
+/// </summary>
+[SupportedOSPlatform("windows")]
+public sealed class ShortcutGenerator : IShortcutGenerator
+{
+    private const string AumidPrefix = "TaskbarFolders.Group.";
+
+    private readonly ILogger<ShortcutGenerator>? _logger;
+
+    /// <summary>Initializes a new instance.</summary>
+    /// <param name="logger">Optional logger.</param>
+    public ShortcutGenerator(ILogger<ShortcutGenerator>? logger = null)
+    {
+        _logger = logger;
+    }
+
+    /// <inheritdoc/>
+    public string BuildAumid(string groupId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
+        return AumidPrefix + groupId;
+    }
+
+    /// <inheritdoc/>
+    public void Generate(GroupShortcutRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.GroupId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.TargetExePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.IconPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.ShortcutPath);
+
+        var directory = Path.GetDirectoryName(request.ShortcutPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        // Instantiate ShellLink outside the try so a failed CoCreateInstance cannot reach
+        // the finally with a half-constructed RCW.
+        var link = new ShellLink();
+        try
+        {
+            var shellLink = (IShellLinkW)link;
+
+            shellLink.SetPath(request.TargetExePath);
+            shellLink.SetArguments($"--group-id \"{request.GroupId}\"");
+            shellLink.SetWorkingDirectory(Path.GetDirectoryName(request.TargetExePath) ?? string.Empty);
+            shellLink.SetDescription(string.IsNullOrWhiteSpace(request.DisplayName) ? request.GroupId : request.DisplayName);
+            shellLink.SetIconLocation(request.IconPath, 0);
+
+            StampAumid(link, BuildAumid(request.GroupId));
+
+            // Save atomically: write to .tmp first, then replace, so a crashed write never
+            // leaves a half-written .lnk that Explorer would render as a broken pin.
+            var temp = request.ShortcutPath + ".tmp";
+            ((IPersistFile)link).Save(temp, fRemember: true);
+            File.Move(temp, request.ShortcutPath, overwrite: true);
+
+            _logger?.LogInformation(
+                "Wrote shortcut {Path} for group {GroupId} with AUMID {Aumid}.",
+                request.ShortcutPath, request.GroupId, BuildAumid(request.GroupId));
+        }
+        finally
+        {
+            Marshal.FinalReleaseComObject(link);
+        }
+    }
+
+    private static void StampAumid(object link, string aumid)
+    {
+        var store = (IPropertyStore)link;
+
+        var key = PropertyKeys.AppUserModelId;
+        var ptr = Marshal.StringToCoTaskMemUni(aumid);
+        var variant = new PROPVARIANT { vt = PropVariantType.VT_LPWSTR, pwszVal = ptr };
+
+        try
+        {
+            store.SetValue(ref key, ref variant);
+            store.Commit();
+        }
+        finally
+        {
+            // SetValue copied the string into the COM object; we own the temp allocation
+            // and must free it ourselves.
+            Marshal.FreeCoTaskMem(ptr);
+        }
+    }
+}
