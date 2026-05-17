@@ -1,9 +1,11 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- Slight transparency so Mica/Acrylic can show through on Win11 22H2+. -->
-    <SolidColorBrush x:Key="PopupBackground" Color="#F2FFFFFF" />
-    <SolidColorBrush x:Key="PopupBorder" Color="#22000000" />
+    <!-- v0.3+: PopupBackground / PopupBorder were removed — the popup chrome is fully
+         transparent now and only the icons + per-tile hover highlight are visible. -->
     <SolidColorBrush x:Key="ForegroundDefault" Color="#1A1A1A" />
     <SolidColorBrush x:Key="ForegroundSubtle" Color="#5A5A5A" />
     <SolidColorBrush x:Key="TileHoverBackground" Color="#1F0078D4" />
+    <!-- Pill behind error / "no apps" text so it stays readable on any wallpaper.
+         Tuned dark so the light theme's dark foreground reads against it. -->
+    <SolidColorBrush x:Key="ErrorBackdropBrush" Color="#CCFFFFFF" />
 </ResourceDictionary>

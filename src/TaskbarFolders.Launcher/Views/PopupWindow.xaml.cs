@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Media.Animation;
-using TaskbarFolders.Core.Interop;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
 using TaskbarFolders.Shared.Configuration;
@@ -12,10 +10,13 @@ namespace TaskbarFolders.Launcher.Views;
 
 /// <summary>
 /// Popup window displayed when a taskbar group is clicked. Reads the user's popup-position
-/// preference from <see cref="IAppSettingsStore"/>, places itself adjacent to the taskbar on
-/// the monitor under the cursor, attempts to enable Acrylic on Win11 22H2+, plays a fade+scale
-/// open animation, and dismisses on focus loss.
+/// preference from <see cref="IAppSettingsStore"/>, places itself anchored on the cursor
+/// position at click time, plays a fade+scale open animation, and dismisses on focus loss.
 /// </summary>
+/// <remarks>
+/// v0.3+: chrome is fully transparent — no acrylic backdrop, no border, no shadow. The
+/// previous TryEnableAcrylic path was removed; only the per-tile hover highlight is visible.
+/// </remarks>
 public partial class PopupWindow : Window
 {
     private readonly PopupViewModel _viewModel;
@@ -48,16 +49,7 @@ public partial class PopupWindow : Window
 
     private async void OnSourceInitialized(object? sender, EventArgs e)
     {
-        TryEnableAcrylic();
         await PositionAndConfigureAsync().ConfigureAwait(true);
-    }
-
-    private void TryEnableAcrylic()
-    {
-        var hwnd = new WindowInteropHelper(this).Handle;
-        // Returns false on pre-22H2 Windows — silently fall back to the semi-transparent
-        // themed brush configured in XAML.
-        _ = WindowBackdrop.TryApply(hwnd, WindowBackdropKind.Acrylic);
     }
 
     private async Task PositionAndConfigureAsync()

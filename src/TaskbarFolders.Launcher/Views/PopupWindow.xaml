@@ -64,25 +64,25 @@
         <ScaleTransform ScaleX="1" ScaleY="1" CenterX="0" CenterY="0" />
     </Window.RenderTransform>
 
-    <Border CornerRadius="12"
-            Background="{DynamicResource PopupBackground}"
-            BorderBrush="{DynamicResource PopupBorder}"
-            BorderThickness="1"
+    <!-- Layout-only Border: keeps Padding + TextElement.Foreground inheritance but paints nothing.
+         AllowsTransparency on the Window plus Brushes.Transparent here means only the icons (and
+         the per-tile hover highlight) are visible — the popup chrome disappears entirely. -->
+    <Border Background="Transparent"
             Padding="12"
             TextElement.Foreground="{DynamicResource ForegroundDefault}">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.25" />
-        </Border.Effect>
-
         <Grid>
-            <!-- Inline error state for missing/empty group -->
-            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Margin="24"
-                       Foreground="{DynamicResource ForegroundSubtle}"
-                       Visibility="{Binding IsUnavailable, Converter={x:Static vm:LauncherBoolToVisibilityConverter.Instance}}">
-                <Run Text="{Binding GroupName}" FontWeight="SemiBold" /><LineBreak />
-                <Run Text="No apps to launch." />
-            </TextBlock>
+            <!-- Inline error state for missing/empty group — gets its own backdrop so the text
+                 stays readable against any wallpaper now that the popup chrome is gone. -->
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Padding="16,12"
+                    CornerRadius="6"
+                    Background="{DynamicResource ErrorBackdropBrush}"
+                    Visibility="{Binding IsUnavailable, Converter={x:Static vm:LauncherBoolToVisibilityConverter.Instance}}">
+                <TextBlock Foreground="{DynamicResource ForegroundSubtle}">
+                    <Run Text="{Binding GroupName}" FontWeight="SemiBold" /><LineBreak />
+                    <Run Text="No apps to launch." />
+                </TextBlock>
+            </Border>
 
             <!-- App grid + transient launch-failure banner -->
             <DockPanel Visibility="{Binding IsUnavailable, Converter={x:Static vm:LauncherInverseBoolToVisibilityConverter.Instance}}">
@@ -90,7 +90,7 @@
                         Margin="0,8,0,0"
                         Padding="10,6"
                         CornerRadius="6"
-                        Background="#33C42B1C"
+                        Background="#CCC42B1C"
                         BorderBrush="#88C42B1C"
                         BorderThickness="1"
                         Visibility="{Binding LastError, Converter={x:Static vm:LauncherNullToCollapsedConverter.Instance}}">
