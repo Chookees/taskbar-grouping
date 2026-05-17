@@ -8,7 +8,10 @@
         Title="{Binding Title}"
         Width="980" Height="640"
         WindowStartupLocation="CenterScreen"
-        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}">
+        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
+        Background="{DynamicResource WindowBackground}"
+        Foreground="{DynamicResource ForegroundDefault}"
+        TextElement.Foreground="{DynamicResource ForegroundDefault}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="280" />
@@ -16,8 +19,8 @@
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar: group list + add controls -->
-        <DockPanel Grid.Column="0" Background="#F5F5F5">
-            <Border DockPanel.Dock="Top" Padding="12,12,12,8" BorderThickness="0,0,0,1" BorderBrush="#E0E0E0">
+        <DockPanel Grid.Column="0" Background="{DynamicResource SidebarBackground}">
+            <Border DockPanel.Dock="Top" Padding="12,12,12,8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource BorderSubtle}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Content="⚙"
                             Width="28" Height="28" Padding="0"
@@ -84,7 +87,7 @@
                     </StackPanel>
                     <Border Grid.Column="1"
                             Width="96" Height="96"
-                            Background="#F0F0F0"
+                            Background="{DynamicResource SurfaceMuted}"
                             CornerRadius="12">
                         <Image Source="{Binding CompositeIconPreview}"
                                Stretch="Uniform" Margin="4" />
@@ -94,8 +97,8 @@
                 <!-- Drop zone hint + Add button -->
                 <Border DockPanel.Dock="Top"
                         Padding="16" Margin="0,0,0,12"
-                        Background="#F5F5F5"
-                        BorderBrush="#D0D0D0" BorderThickness="1"
+                        Background="{DynamicResource DropZoneBackground}"
+                        BorderBrush="{DynamicResource BorderEmphasis}" BorderThickness="1"
                         CornerRadius="8"
                         AllowDrop="True"
                         PreviewDragOver="Editor_PreviewDragOver"

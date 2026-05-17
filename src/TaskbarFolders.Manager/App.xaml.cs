@@ -47,6 +47,12 @@ public partial class App : Application
 
         await _host.StartAsync().ConfigureAwait(true);
 
+        // Apply the persisted theme before any window is built so DynamicResource
+        // bindings paint with the correct brushes on first render.
+        var settingsStore = _host.Services.GetRequiredService<IAppSettingsStore>();
+        var settings = await settingsStore.LoadAsync().ConfigureAwait(true);
+        _host.Services.GetRequiredService<IThemeService>().SetPreference(settings.Theme);
+
         // Load groups before constructing the window so the sidebar binding shows data
         // immediately rather than flashing empty for one frame.
         var viewModel = _host.Services.GetRequiredService<MainWindowViewModel>();
@@ -87,6 +93,8 @@ public partial class App : Application
 
         // Manager-side services.
         services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
+        services.AddSingleton<ISystemThemeProbe, RegistrySystemThemeProbe>();
+        services.AddSingleton<IThemeService, ThemeService>();
 
         // View models — MainWindow is itself a singleton conceptually (one main window per process),
         // so the backing VM is singleton too. App.OnStartup loads groups into it before showing the window.

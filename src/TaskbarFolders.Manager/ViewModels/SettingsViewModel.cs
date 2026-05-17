@@ -19,6 +19,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly IAppSettingsStore _store;
     private readonly IAutoStartService _autoStartService;
+    private readonly IThemeService _themeService;
     private readonly ILogger<SettingsViewModel>? _logger;
 
     private bool _suppressDirtyTracking;
@@ -27,13 +28,16 @@ public sealed partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(
         IAppSettingsStore store,
         IAutoStartService autoStart,
+        IThemeService themeService,
         ILogger<SettingsViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(autoStart);
+        ArgumentNullException.ThrowIfNull(themeService);
 
         _store = store;
         _autoStartService = autoStart;
+        _themeService = themeService;
         _logger = logger;
     }
 
@@ -96,6 +100,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             _autoStartService.Disable();
         }
+
+        _themeService.SetPreference(Theme);
 
         HasUnsavedChanges = false;
         _logger?.LogInformation("Settings saved. Theme={Theme} AutoStart={AutoStart} Animations={Animations} Position={Position}.",

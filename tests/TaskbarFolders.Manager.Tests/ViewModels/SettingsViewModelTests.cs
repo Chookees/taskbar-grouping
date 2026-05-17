@@ -16,7 +16,8 @@ public class SettingsViewModelTests
         AppSettings stored,
         bool autoStartEnabled,
         out Mock<IAppSettingsStore> storeMock,
-        out Mock<IAutoStartService> autoMock)
+        out Mock<IAutoStartService> autoMock,
+        out Mock<IThemeService> themeMock)
     {
         storeMock = new Mock<IAppSettingsStore>();
         storeMock.Setup(s => s.LoadAsync(It.IsAny<CancellationToken>()))
@@ -27,7 +28,9 @@ public class SettingsViewModelTests
         autoMock = new Mock<IAutoStartService>();
         autoMock.SetupGet(a => a.IsEnabled).Returns(autoStartEnabled);
 
-        return new SettingsViewModel(storeMock.Object, autoMock.Object);
+        themeMock = new Mock<IThemeService>();
+
+        return new SettingsViewModel(storeMock.Object, autoMock.Object, themeMock.Object);
     }
 
     [Fact]
@@ -40,7 +43,7 @@ public class SettingsViewModelTests
             EnableAnimations = false,
             PopupPosition = PopupPositionPreference.Above,
         };
-        var sut = CreateSut(stored, autoStartEnabled: true, out _, out _);
+        var sut = CreateSut(stored, autoStartEnabled: true, out _, out _, out _);
 
         await sut.LoadAsync();
 
@@ -54,7 +57,7 @@ public class SettingsViewModelTests
     [Fact]
     public async Task LoadAsync_DoesNotMarkDirty()
     {
-        var sut = CreateSut(new AppSettings { Theme = ThemePreference.Dark }, autoStartEnabled: true, out _, out _);
+        var sut = CreateSut(new AppSettings { Theme = ThemePreference.Dark }, autoStartEnabled: true, out _, out _, out _);
 
         await sut.LoadAsync();
 
@@ -64,7 +67,7 @@ public class SettingsViewModelTests
     [Fact]
     public async Task MutatingAnyProperty_AfterLoad_SetsHasUnsavedChanges()
     {
-        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out _, out _);
+        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out _, out _, out _);
         await sut.LoadAsync();
 
         sut.Theme = ThemePreference.Dark;
@@ -73,9 +76,9 @@ public class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task SaveAsync_PersistsSettings_AndReconcilesAutoStart()
+    public async Task SaveAsync_PersistsSettings_AndReconcilesAutoStart_AndAppliesTheme()
     {
-        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out var store, out var autoStart);
+        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out var store, out var autoStart, out var theme);
         await sut.LoadAsync();
         sut.AutoStart = true;
         sut.Theme = ThemePreference.Light;
@@ -87,6 +90,7 @@ public class SettingsViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
         autoStart.Verify(a => a.Enable(), Times.Once);
         autoStart.Verify(a => a.Disable(), Times.Never);
+        theme.Verify(t => t.SetPreference(ThemePreference.Light), Times.Once);
         sut.HasUnsavedChanges.Should().BeFalse();
     }
 
@@ -97,7 +101,8 @@ public class SettingsViewModelTests
             new AppSettings { AutoStart = true },
             autoStartEnabled: true,
             out var store,
-            out var autoStart);
+            out var autoStart,
+            out _);
         await sut.LoadAsync();
         sut.AutoStart = false;
 
@@ -111,7 +116,7 @@ public class SettingsViewModelTests
     [Fact]
     public async Task SaveAsync_ClearsHasUnsavedChanges()
     {
-        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out _, out _);
+        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out _, out _, out _);
         await sut.LoadAsync();
         sut.EnableAnimations = false;
         sut.HasUnsavedChanges.Should().BeTrue();
