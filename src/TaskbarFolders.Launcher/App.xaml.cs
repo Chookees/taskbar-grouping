@@ -29,6 +29,15 @@ public partial class App : Application
     {
         ArgumentNullException.ThrowIfNull(e);
 
+        // Capture the cursor position FIRST, before anything else can take 100+ ms. This is
+        // the click location — by the time WPF has bootstrapped (~300–500 ms) the cursor has
+        // typically drifted, which is why the v0.2 helper's late GetCursorPos call produced
+        // visually-random popup placement. GetCursorPos is a single user32 syscall, no
+        // dependencies on DPI, COM, or WPF state. Seeded into ICursorAnchor below once DI
+        // has been built.
+        Interop.NativeMethods.GetCursorPos(out var clickPoint);
+        var anchor = new System.Windows.Point(clickPoint.X, clickPoint.Y);
+
         // Per-monitor DPI awareness must be set before any HWND is created so all popups
         // render at the right scaling on mixed-DPI multi-monitor setups. Falling back
         // silently is fine — Windows then treats us as system-DPI-aware (still correct
@@ -73,6 +82,10 @@ public partial class App : Application
             ValidateOnBuild = true,
             ValidateScopes = true,
         });
+
+        // Seed the cursor anchor BEFORE PopupViewModel/PopupWindow are resolved so any
+        // placement lookup during the first paint sees a populated value.
+        _services.GetRequiredService<ICursorAnchor>().Seed(anchor);
 
         _services.GetRequiredService<ILogger<App>>()
             .LogInformation("Launcher starting for group {GroupId}.", groupId);

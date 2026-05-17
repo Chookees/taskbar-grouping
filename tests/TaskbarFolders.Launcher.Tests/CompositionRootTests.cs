@@ -59,6 +59,7 @@ public sealed class CompositionRootTests : IDisposable
     [InlineData(typeof(IIconExtractor))]
     [InlineData(typeof(IIconCache))]
     [InlineData(typeof(IProcessLauncher))]
+    [InlineData(typeof(ICursorAnchor))]
     [InlineData(typeof(ITaskbarPositionHelper))]
     [InlineData(typeof(PopupViewModel))]
     [InlineData(typeof(LauncherOptions))]

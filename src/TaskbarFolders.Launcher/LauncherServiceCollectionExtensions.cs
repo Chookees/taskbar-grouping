@@ -41,6 +41,7 @@ public static class LauncherServiceCollectionExtensions
 
         // Launcher-only services.
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();
+        services.AddSingleton<ICursorAnchor, LauncherCursorAnchor>();
         services.AddSingleton<ITaskbarPositionHelper, TaskbarPositionHelper>();
 
         services.AddSingleton<PopupViewModel>();
