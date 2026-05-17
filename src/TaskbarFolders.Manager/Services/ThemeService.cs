@@ -73,16 +73,21 @@ public sealed class ThemeService : IThemeService, IDisposable
             ? new Uri(DarkDictionaryUri, UriKind.Relative)
             : new Uri(LightDictionaryUri, UriKind.Relative);
 
+        var merged = app.Resources.MergedDictionaries;
+
         // SystemEvents.UserPreferenceChanged fires for many categories beyond app theme
         // (accent colour, regional, mouse settings). Skip the dictionary swap when the
-        // resolved URI hasn't actually changed so we don't churn the visual tree.
-        if (_currentDictionary is { Source: { } currentSource } && currentSource == uri)
+        // resolved URI hasn't actually changed AND our cached instance is still merged —
+        // a third-party theme swap that removed our dictionary would otherwise leave the
+        // window unstyled if we short-circuited on URI alone.
+        if (_currentDictionary is { Source: { } currentSource }
+            && currentSource == uri
+            && merged.Contains(_currentDictionary))
         {
             return;
         }
 
         var newDict = new ResourceDictionary { Source = uri };
-        var merged = app.Resources.MergedDictionaries;
 
         if (_currentDictionary is not null)
         {

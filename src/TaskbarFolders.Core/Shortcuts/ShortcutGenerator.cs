@@ -74,10 +74,13 @@ public sealed class ShortcutGenerator : IShortcutGenerator
                 if (!moved && File.Exists(temp))
                 {
                     // Save or Move threw — clean up the half-written .tmp so it never lingers
-                    // alongside the real shortcuts. Best-effort: a failed delete here would
-                    // be overwritten on the next successful save anyway.
+                    // alongside the real shortcuts. Best-effort: catch the realistic IO-shaped
+                    // exceptions (UnauthorizedAccessException for ACL'd files, IOException for
+                    // locked files) so this cleanup cannot mask the original Save/Move failure
+                    // the caller actually needs to see.
                     try { File.Delete(temp); }
                     catch (IOException) { /* best-effort */ }
+                    catch (UnauthorizedAccessException) { /* best-effort */ }
                 }
             }
 

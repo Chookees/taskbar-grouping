@@ -33,8 +33,9 @@ public sealed partial class AppDataPathProvider : IAppDataPathProvider
     /// Whitelist for group ids. Permits the characters Windows AUMIDs accept
     /// (<c>A-Z a-z 0-9 . _ -</c>) — also rejects any path-separator or <c>..</c>
     /// sequence so a hand-edited JSON cannot escape the per-app data root.
-    /// Length-capped at 128 to stay inside the AUMID maximum (so the same id
-    /// can be reused as <c>TaskbarFolders.Group.&lt;id&gt;</c> without overflow).
+    /// Length cap is 96 — the AUMID hard limit is 128 chars, the <c>"TaskbarFolders.Group."</c>
+    /// prefix is 21, so 96 leaves 11 chars of headroom (room for the future to lengthen the
+    /// prefix or add a discriminator without re-validating every persisted id).
     /// </summary>
     [GeneratedRegex(@"^[A-Za-z0-9._-]{1,96}$", RegexOptions.CultureInvariant)]
     private static partial Regex GroupIdPattern();
