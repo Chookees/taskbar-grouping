@@ -1,0 +1,41 @@
+﻿using System;
+using System.Windows.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
+using TaskbarFolders.Shared.Models;
+
+namespace TaskbarFolders.Launcher.ViewModels;
+
+/// <summary>
+/// Read-only view model for a single app shown in the launcher popup. The launcher does not
+/// edit entries — clicks invoke the launch command on the parent <see cref="PopupViewModel"/>.
+/// </summary>
+public sealed partial class PopupAppViewModel : ObservableObject
+{
+    /// <summary>Initializes a new instance from an existing entry.</summary>
+    /// <param name="entry">Source entry from the group config.</param>
+    public PopupAppViewModel(AppEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        Entry = entry;
+        Name = entry.Name;
+        Path = entry.Path;
+        Arguments = entry.Arguments;
+    }
+
+    /// <summary>Underlying entry. Public so launch logic can dispatch on it.</summary>
+    public AppEntry Entry { get; }
+
+    /// <summary>Display name.</summary>
+    public string Name { get; }
+
+    /// <summary>Absolute path to the executable or shortcut.</summary>
+    public string Path { get; }
+
+    /// <summary>Optional command-line arguments.</summary>
+    public string? Arguments { get; }
+
+    /// <summary>Extracted icon shown in the grid tile.</summary>
+    [ObservableProperty]
+    private BitmapSource? _icon;
+}

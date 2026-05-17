@@ -3,7 +3,10 @@ using System.Diagnostics;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TaskbarFolders.Core.Icons;
 using TaskbarFolders.Launcher.Configuration;
+using TaskbarFolders.Launcher.Services;
+using TaskbarFolders.Launcher.ViewModels;
 using TaskbarFolders.Launcher.Views;
 using TaskbarFolders.Shared.Configuration;
 using TaskbarFolders.Shared.Logging;
@@ -23,7 +26,7 @@ public partial class App : Application
     public IServiceProvider? Services => _services;
 
     /// <inheritdoc/>
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
 
@@ -48,11 +51,22 @@ public partial class App : Application
         services.AddSingleton<IGroupConfigStore, JsonGroupConfigStore>();
         services.AddSingleton<IAppSettingsStore, JsonAppSettingsStore>();
 
+        // Icon engine — needed for the popup tiles.
+        services.AddSingleton<IIconExtractor, ShellIconExtractor>();
+        services.AddSingleton<IIconCache, FileSystemIconCache>();
+
+        // Launcher-only services.
+        services.AddSingleton<IProcessLauncher, ProcessLauncher>();
+
+        services.AddSingleton<PopupViewModel>();
         services.AddTransient<PopupWindow>();
         _services = services.BuildServiceProvider();
 
         _services.GetRequiredService<ILogger<App>>()
             .LogInformation("Launcher starting for group {GroupId}.", groupId);
+
+        // Hydrate the view model before the window builds so the icon grid paints in one frame.
+        await _services.GetRequiredService<PopupViewModel>().LoadAsync().ConfigureAwait(true);
 
         var popup = _services.GetRequiredService<PopupWindow>();
         MainWindow = popup;
