@@ -11,7 +11,7 @@
 ## Getting Started
 
 ```bash
-git clone https://github.com/TODO-GH-OWNER/TaskbarFolders.git
+git clone https://github.com/eXORR6077/taskbar-grouping.git
 cd TaskbarFolders
 dotnet restore
 dotnet build

@@ -3,7 +3,7 @@
 #define MyAppName "TaskbarFolders"
 #define MyAppVersion "0.2.0"
 #define MyAppPublisher "TaskbarFolders Contributors"
-#define MyAppURL "https://github.com/TODO-GH-OWNER/TaskbarFolders"
+#define MyAppURL "https://github.com/eXORR6077/taskbar-grouping"
 #define MyAppExeName "TaskbarFolders.Manager.exe"
 
 [Setup]

@@ -6,7 +6,7 @@
 
 ### Using the Installer
 
-1. Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
+1. Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/eXORR6077/taskbar-grouping/releases)
 2. Run the installer
 3. Follow the setup wizard
 4. Launch **TaskbarFolders Manager** from the Start Menu

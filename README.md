@@ -1,7 +1,7 @@
 # TaskbarFolders
 
-[![CI](https://github.com/TODO-GH-OWNER/TaskbarFolders/actions/workflows/ci.yml/badge.svg)](https://github.com/TODO-GH-OWNER/TaskbarFolders/actions/workflows/ci.yml)
-[![Release](https://github.com/TODO-GH-OWNER/TaskbarFolders/actions/workflows/release.yml/badge.svg)](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
+[![CI](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/ci.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/ci.yml)
+[![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > ℹ️ **Status: v0.2.0.** First functional release — all features below are implemented. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
@@ -24,13 +24,13 @@
 
 ### Installer (recommended)
 
-1. Download the latest `TaskbarFolders-Setup.exe` from [Releases](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
+1. Download the latest `TaskbarFolders-Setup.exe` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases)
 2. Run the installer and follow the instructions
 3. Launch **TaskbarFolders Manager** from the Start Menu
 
 ### Portable
 
-1. Download the latest `TaskbarFolders-portable.zip` from [Releases](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
+1. Download the latest `TaskbarFolders-portable.zip` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases)
 2. Extract to any folder
 3. Run `TaskbarFolders.Manager.exe`
 
@@ -53,7 +53,7 @@
 ### Build
 
 ```bash
-git clone https://github.com/TODO-GH-OWNER/TaskbarFolders.git
+git clone https://github.com/eXORR6077/taskbar-grouping.git
 cd TaskbarFolders
 dotnet restore
 dotnet build --configuration Release
