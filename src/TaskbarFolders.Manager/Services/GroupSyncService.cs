@@ -76,7 +76,10 @@ public sealed class GroupSyncService : IGroupSyncService
         var launcher = _launcherResolver.TryResolve();
         if (launcher is null)
         {
-            _logger?.LogWarning(
+            // User-blocking — without the launcher path, no .lnk gets written and the
+            // "Show shortcut..." flow is silently broken. Surface as Error so support logs
+            // light it up; LauncherPathResolver itself already logs the probed paths.
+            _logger?.LogError(
                 "Launcher binary could not be resolved; per-group shortcut for {GroupId} not regenerated.",
                 config.Id);
             return;
