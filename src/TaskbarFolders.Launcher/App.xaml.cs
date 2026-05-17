@@ -80,6 +80,11 @@ public partial class App : Application
         _services.GetRequiredService<ILogger<App>>()
             .LogInformation("Launcher starting for group {GroupId}.", groupId);
 
+        // Apply the persisted theme before the window is built so DynamicResource bindings
+        // paint correctly on the first frame.
+        var settings = await _services.GetRequiredService<IAppSettingsStore>().LoadAsync().ConfigureAwait(true);
+        LauncherThemeApplier.Apply(this, settings.Theme);
+
         // Hydrate the view model before the window builds so the icon grid paints in one frame.
         await _services.GetRequiredService<PopupViewModel>().LoadAsync().ConfigureAwait(true);
 

@@ -1,0 +1,8 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="PopupBackground" Color="#F21F1F1F" />
+    <SolidColorBrush x:Key="PopupBorder" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="ForegroundDefault" Color="#F0F0F0" />
+    <SolidColorBrush x:Key="ForegroundSubtle" Color="#A0A0A0" />
+    <SolidColorBrush x:Key="TileHoverBackground" Color="#1F4CC2FF" />
+</ResourceDictionary>
