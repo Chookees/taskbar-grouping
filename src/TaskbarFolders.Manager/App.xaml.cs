@@ -75,6 +75,7 @@ public partial class App : Application
         // Icon engine — singletons; ShellIconExtractor is stateless and the cache (M2.4)
         // will replace IIconExtractor with a caching decorator.
         services.AddSingleton<IIconExtractor, ShellIconExtractor>();
+        services.AddSingleton<ICompositeIconGenerator, CompositeIconGenerator>();
 
         // View models — transient so each view gets a fresh instance.
         services.AddTransient<MainWindowViewModel>();
