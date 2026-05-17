@@ -46,6 +46,11 @@ public partial class App : Application
 
         await _host.StartAsync().ConfigureAwait(true);
 
+        // Load groups before constructing the window so the sidebar binding shows data
+        // immediately rather than flashing empty for one frame.
+        var viewModel = _host.Services.GetRequiredService<MainWindowViewModel>();
+        await viewModel.LoadGroupsAsync().ConfigureAwait(true);
+
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();
@@ -79,8 +84,9 @@ public partial class App : Application
         services.AddSingleton<IIcoFileWriter, IcoFileWriter>();
         services.AddSingleton<IIconCache, FileSystemIconCache>();
 
-        // View models — transient so each view gets a fresh instance.
-        services.AddTransient<MainWindowViewModel>();
+        // View models — MainWindow is itself a singleton conceptually (one main window per process),
+        // so the backing VM is singleton too. App.OnStartup loads groups into it before showing the window.
+        services.AddSingleton<MainWindowViewModel>();
 
         // Views — transient so each Show creates a fresh window instance.
         services.AddTransient<MainWindow>();
