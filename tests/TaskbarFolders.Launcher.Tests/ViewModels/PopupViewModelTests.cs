@@ -148,4 +148,33 @@ public class PopupViewModelTests
 
         succeeded.Should().BeFalse("the popup must stay open so the user can pick a different app or close manually");
     }
+
+    [Fact]
+    public async Task LaunchAppCommand_SetsLastError_OnFailure_WithAppName()
+    {
+        var config = new GroupConfig { Id = "g", GroupName = "g", Apps = { new AppEntry { Name = "Notepad", Path = "notepad.exe" } } };
+        var (sut, _, _, _, launcher) = CreateSut("g", config);
+        launcher.Setup(l => l.Launch(It.IsAny<string>(), It.IsAny<string?>())).Returns(false);
+        await sut.LoadAsync();
+
+        sut.LaunchAppCommand.Execute(sut.Apps[0]);
+
+        sut.LastError.Should().NotBeNull();
+        sut.LastError.Should().Contain("Notepad");
+    }
+
+    [Fact]
+    public async Task LaunchAppCommand_ClearsLastError_OnSuccess()
+    {
+        var config = new GroupConfig { Id = "g", GroupName = "g", Apps = { new AppEntry { Name = "a", Path = "a.exe" } } };
+        var (sut, _, _, _, launcher) = CreateSut("g", config);
+        await sut.LoadAsync();
+        // Pre-set a sticky error from a previous failed click.
+        sut.LastError = "Old error";
+        launcher.Setup(l => l.Launch(It.IsAny<string>(), It.IsAny<string?>())).Returns(true);
+
+        sut.LaunchAppCommand.Execute(sut.Apps[0]);
+
+        sut.LastError.Should().BeNull();
+    }
 }

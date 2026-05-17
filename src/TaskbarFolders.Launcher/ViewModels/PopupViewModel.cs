@@ -65,6 +65,10 @@ public sealed partial class PopupViewModel : ObservableObject
     [ObservableProperty]
     private bool _isUnavailable;
 
+    /// <summary>Transient error message after a failed launch; <see langword="null"/> when no error is current.</summary>
+    [ObservableProperty]
+    private string? _lastError;
+
     /// <summary>App entries to render. Empty until <see cref="LoadAsync"/> populates it.</summary>
     public ObservableCollection<PopupAppViewModel> Apps { get; } = [];
 
@@ -109,6 +113,10 @@ public sealed partial class PopupViewModel : ObservableObject
     [RelayCommand]
     private void LaunchApp(PopupAppViewModel? app)
     {
+        // Always clear the previous error so a successful click hides the banner;
+        // a failed click re-sets it below.
+        LastError = null;
+
         if (app is null)
         {
             return;
@@ -123,6 +131,7 @@ public sealed partial class PopupViewModel : ObservableObject
         else
         {
             _logger?.LogWarning("Failed to launch {Path}; popup stays open.", app.Path);
+            LastError = $"Could not launch \"{app.Name}\".";
         }
     }
 

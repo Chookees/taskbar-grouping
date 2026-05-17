@@ -84,34 +84,49 @@
                 <Run Text="No apps to launch." />
             </TextBlock>
 
-            <!-- App grid -->
-            <ItemsControl ItemsSource="{Binding Apps}"
-                          Visibility="{Binding IsUnavailable, Converter={x:Static vm:LauncherInverseBoolToVisibilityConverter.Instance}}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <UniformGrid Columns="{Binding Columns}" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type vm:PopupAppViewModel}">
-                        <Button Style="{StaticResource AppTileButton}"
-                                Width="96" Height="96"
-                                ToolTip="{Binding Name}"
-                                Command="{Binding DataContext.LaunchAppCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                CommandParameter="{Binding}">
-                            <StackPanel>
-                                <Image Source="{Binding Icon}" Width="48" Height="48" Stretch="Uniform" />
-                                <TextBlock Text="{Binding Name}"
-                                           HorizontalAlignment="Center"
-                                           Margin="0,6,0,0"
-                                           FontSize="11"
-                                           TextTrimming="CharacterEllipsis"
-                                           MaxWidth="80" />
-                            </StackPanel>
-                        </Button>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <!-- App grid + transient launch-failure banner -->
+            <DockPanel Visibility="{Binding IsUnavailable, Converter={x:Static vm:LauncherInverseBoolToVisibilityConverter.Instance}}">
+                <Border DockPanel.Dock="Bottom"
+                        Margin="0,8,0,0"
+                        Padding="10,6"
+                        CornerRadius="6"
+                        Background="#33C42B1C"
+                        BorderBrush="#88C42B1C"
+                        BorderThickness="1"
+                        Visibility="{Binding LastError, Converter={x:Static vm:LauncherNullToCollapsedConverter.Instance}}">
+                    <TextBlock Text="{Binding LastError}"
+                               Foreground="{DynamicResource ForegroundDefault}"
+                               FontSize="11"
+                               TextWrapping="Wrap" />
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding Apps}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="{Binding Columns}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:PopupAppViewModel}">
+                            <Button Style="{StaticResource AppTileButton}"
+                                    Width="96" Height="96"
+                                    ToolTip="{Binding Name}"
+                                    Command="{Binding DataContext.LaunchAppCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}">
+                                <StackPanel>
+                                    <Image Source="{Binding Icon}" Width="48" Height="48" Stretch="Uniform" />
+                                    <TextBlock Text="{Binding Name}"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,6,0,0"
+                                               FontSize="11"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxWidth="80" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
         </Grid>
     </Border>
 </Window>
