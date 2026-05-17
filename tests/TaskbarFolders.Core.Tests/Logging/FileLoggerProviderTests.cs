@@ -132,11 +132,12 @@ public sealed class FileLoggerProviderTests : IDisposable
         using var provider = new FileLoggerProvider(Options(_tempDir, "test", retainDays: 14));
         provider.StartBackgroundPrune();
 
-        // Background task — poll up to 2 s for the deletion to land.
-        var deadline = DateTime.UtcNow.AddSeconds(2);
+        // Background task — poll up to 10 s for the deletion to land. CI runners with cold
+        // ThreadPool can take >2 s to schedule the Task.Run lambda.
+        var deadline = DateTime.UtcNow.AddSeconds(10);
         while (File.Exists(stale) && DateTime.UtcNow < deadline)
         {
-            System.Threading.Thread.Sleep(20);
+            System.Threading.Thread.Sleep(50);
         }
 
         File.Exists(stale).Should().BeFalse("background prune must remove stale files");

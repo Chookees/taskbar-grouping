@@ -160,11 +160,13 @@ public sealed class FileSystemIconCacheTests : IDisposable
         var sut = new FileSystemIconCache(_paths);
         sut.StartBackgroundPrune();
 
-        // Background task — poll up to 2 s for the deletion to land.
-        var deadline = DateTime.UtcNow.AddSeconds(2);
+        // Background task — poll up to 10 s for the deletion to land. CI runners with cold
+        // ThreadPool can take >2 s to schedule the Task.Run lambda; 10 s is comfortable
+        // headroom while still failing fast on a real regression.
+        var deadline = DateTime.UtcNow.AddSeconds(10);
         while (File.Exists(ancient) && DateTime.UtcNow < deadline)
         {
-            Thread.Sleep(20);
+            Thread.Sleep(50);
         }
 
         File.Exists(ancient).Should().BeFalse("background prune must remove stale entries");
