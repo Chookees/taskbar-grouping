@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
 
 namespace TaskbarFolders.Manager;
@@ -57,9 +58,12 @@ public partial class App : Application
 
     private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
-        // Views (transient so each Show creates a fresh window instance).
+        // View models — transient so each view gets a fresh instance.
+        services.AddTransient<MainWindowViewModel>();
+
+        // Views — transient so each Show creates a fresh window instance.
         services.AddTransient<MainWindow>();
 
-        // Persistence, icon engine, and view models are wired in M1.3 / M1.4 and beyond.
+        // Persistence and icon engine are wired in M1.4 and M2.
     }
 }

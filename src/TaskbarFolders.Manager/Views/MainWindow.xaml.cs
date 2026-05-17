@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
+using TaskbarFolders.Manager.ViewModels;
 
 namespace TaskbarFolders.Manager.Views;
 
@@ -7,8 +9,16 @@ namespace TaskbarFolders.Manager.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindow"/> class
+    /// and assigns the supplied view model as its data context.
+    /// </summary>
+    /// <param name="viewModel">View model resolved from the DI container.</param>
+    public MainWindow(MainWindowViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         InitializeComponent();
+        DataContext = viewModel;
     }
 }
