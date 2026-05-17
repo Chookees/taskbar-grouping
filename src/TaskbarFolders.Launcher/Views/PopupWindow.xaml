@@ -19,19 +19,23 @@
         Deactivated="OnDeactivated"
         d:DataContext="{d:DesignInstance Type=vm:PopupViewModel}">
     <Window.Resources>
+        <!-- v0.4: scale 0.5→1.0 with QuinticEase over 200 ms makes the popup grow up out of
+             the clicked tile. ScaleTransform origin is set in code-behind to (Width/2, Height)
+             so the growth pivot is the bottom-centre of the popup, which sits directly above
+             the clicked tile per TaskbarPositionHelper. -->
         <Storyboard x:Key="OpenAnimation">
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.15" />
+                             From="0" To="1" Duration="0:0:0.2" />
             <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                             From="0.95" To="1" Duration="0:0:0.15">
+                             From="0.5" To="1" Duration="0:0:0.2">
                 <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
+                    <QuinticEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                             From="0.95" To="1" Duration="0:0:0.15">
+                             From="0.5" To="1" Duration="0:0:0.2">
                 <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
+                    <QuinticEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>

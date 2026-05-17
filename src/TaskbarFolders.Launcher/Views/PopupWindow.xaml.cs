@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
@@ -52,7 +53,6 @@ public partial class PopupWindow : Window
         _viewModel.LaunchSucceeded += OnLaunchSucceeded;
         Closed += OnClosed;
         SourceInitialized += OnSourceInitialized;
-        Loaded += OnLoaded;
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -71,16 +71,18 @@ public partial class PopupWindow : Window
         var placement = _positionHelper.ComputePlacement(new Size(Width, Height), _settings.PopupPosition);
         Left = placement.Left;
         Top = placement.Top;
-    }
 
-    private void OnLoaded(object? sender, RoutedEventArgs e)
-    {
-        if (!_settings.EnableAnimations)
+        // Set the ScaleTransform pivot to bottom-centre so the open animation grows the popup
+        // up out of the clicked tile (which sits directly below the popup centre per
+        // TaskbarPositionHelper). XAML keeps CenterX/Y=0 as placeholders; they MUST be set
+        // before the storyboard fires.
+        if (RenderTransform is ScaleTransform scale)
         {
-            return;
+            scale.CenterX = Width / 2.0;
+            scale.CenterY = Height;
         }
 
-        if (TryFindResource("OpenAnimation") is Storyboard storyboard)
+        if (_settings.EnableAnimations && TryFindResource("OpenAnimation") is Storyboard storyboard)
         {
             storyboard.Begin(this);
         }
@@ -98,6 +100,5 @@ public partial class PopupWindow : Window
         _viewModel.LaunchSucceeded -= OnLaunchSucceeded;
         Closed -= OnClosed;
         SourceInitialized -= OnSourceInitialized;
-        Loaded -= OnLoaded;
     }
 }
