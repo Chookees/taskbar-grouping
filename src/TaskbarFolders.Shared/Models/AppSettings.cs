@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using TaskbarFolders.Shared.Configuration;
 
 namespace TaskbarFolders.Shared.Models;
 
@@ -14,10 +15,11 @@ public sealed class AppSettings
     public bool AutoStart { get; set; }
 
     /// <summary>
-    /// Global theme setting (light, dark, or system).
+    /// Global theme setting.
     /// </summary>
     [JsonPropertyName("theme")]
-    public string Theme { get; set; } = "system";
+    [JsonConverter(typeof(CamelCaseEnumConverter<ThemePreference>))]
+    public ThemePreference Theme { get; set; } = ThemePreference.System;
 
     /// <summary>
     /// Whether to enable popup animations.
@@ -26,8 +28,9 @@ public sealed class AppSettings
     public bool EnableAnimations { get; set; } = true;
 
     /// <summary>
-    /// Popup position preference (auto, above, below).
+    /// Popup position preference.
     /// </summary>
     [JsonPropertyName("popupPosition")]
-    public string PopupPosition { get; set; } = "auto";
+    [JsonConverter(typeof(CamelCaseEnumConverter<PopupPositionPreference>))]
+    public PopupPositionPreference PopupPosition { get; set; } = PopupPositionPreference.Auto;
 }

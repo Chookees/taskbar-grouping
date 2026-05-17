@@ -1,4 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using TaskbarFolders.Shared.Configuration;
 
 namespace TaskbarFolders.Shared.Models;
 
@@ -7,6 +10,14 @@ namespace TaskbarFolders.Shared.Models;
 /// </summary>
 public sealed class GroupConfig
 {
+    /// <summary>Minimum allowed value for <see cref="Columns"/>.</summary>
+    public const int MinColumns = 1;
+
+    /// <summary>Maximum allowed value for <see cref="Columns"/>.</summary>
+    public const int MaxColumns = 6;
+
+    private int _columns = 3;
+
     /// <summary>
     /// Unique identifier for the group.
     /// </summary>
@@ -20,16 +31,22 @@ public sealed class GroupConfig
     public required string GroupName { get; set; }
 
     /// <summary>
-    /// Number of columns in the popup grid layout.
+    /// Number of columns in the popup grid layout. Must be in [<see cref="MinColumns"/>..<see cref="MaxColumns"/>].
+    /// Clamped on assignment so deserialised configs with out-of-range values cannot crash the popup layout.
     /// </summary>
     [JsonPropertyName("columns")]
-    public int Columns { get; set; } = 3;
+    public int Columns
+    {
+        get => _columns;
+        set => _columns = Math.Clamp(value, MinColumns, MaxColumns);
+    }
 
     /// <summary>
-    /// Theme override for this group (light, dark, or system).
+    /// Theme override for this group.
     /// </summary>
     [JsonPropertyName("theme")]
-    public string Theme { get; set; } = "system";
+    [JsonConverter(typeof(CamelCaseEnumConverter<ThemePreference>))]
+    public ThemePreference Theme { get; set; } = ThemePreference.System;
 
     /// <summary>
     /// Applications contained in this group.

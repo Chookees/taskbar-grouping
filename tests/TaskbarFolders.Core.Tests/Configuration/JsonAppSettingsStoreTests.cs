@@ -39,8 +39,8 @@ public sealed class JsonAppSettingsStoreTests : IDisposable
         var result = await _sut.LoadAsync();
 
         result.Should().NotBeNull();
-        result.Theme.Should().Be("system");
-        result.PopupPosition.Should().Be("auto");
+        result.Theme.Should().Be(ThemePreference.System);
+        result.PopupPosition.Should().Be(PopupPositionPreference.Auto);
         result.AutoStart.Should().BeFalse();
         result.EnableAnimations.Should().BeTrue();
     }
@@ -51,35 +51,35 @@ public sealed class JsonAppSettingsStoreTests : IDisposable
         var input = new AppSettings
         {
             AutoStart = true,
-            Theme = "dark",
+            Theme = ThemePreference.Dark,
             EnableAnimations = false,
-            PopupPosition = "above",
+            PopupPosition = PopupPositionPreference.Above,
         };
 
         await _sut.SaveAsync(input);
         var loaded = await _sut.LoadAsync();
 
         loaded.AutoStart.Should().BeTrue();
-        loaded.Theme.Should().Be("dark");
+        loaded.Theme.Should().Be(ThemePreference.Dark);
         loaded.EnableAnimations.Should().BeFalse();
-        loaded.PopupPosition.Should().Be("above");
+        loaded.PopupPosition.Should().Be(PopupPositionPreference.Above);
     }
 
     [Fact]
     public async Task SaveAsync_OverwritesExistingFile()
     {
-        await _sut.SaveAsync(new AppSettings { Theme = "light" });
-        await _sut.SaveAsync(new AppSettings { Theme = "dark" });
+        await _sut.SaveAsync(new AppSettings { Theme = ThemePreference.Light });
+        await _sut.SaveAsync(new AppSettings { Theme = ThemePreference.Dark });
 
         var loaded = await _sut.LoadAsync();
 
-        loaded.Theme.Should().Be("dark");
+        loaded.Theme.Should().Be(ThemePreference.Dark);
     }
 
     [Fact]
     public async Task SaveAsync_LeavesNoTempFileBehindOnSuccess()
     {
-        await _sut.SaveAsync(new AppSettings { Theme = "system" });
+        await _sut.SaveAsync(new AppSettings { Theme = ThemePreference.System });
 
         var leftover = Path.Combine(_paths.AppDataRoot, "settings.json.tmp");
         File.Exists(leftover).Should().BeFalse();

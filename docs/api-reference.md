@@ -57,7 +57,7 @@ Represents a single application entry within a taskbar group.
 | `Name` | `string` | Display name of the application |
 | `Path` | `string` | Full path to the executable or shortcut |
 | `IconPath` | `string?` | Optional custom icon path |
-| `Arguments` | `string` | Command-line arguments (default: empty) |
+| `Arguments` | `string?` | Command-line arguments (default: null; omitted from JSON when null) |
 
 ---
 
@@ -69,8 +69,8 @@ Configuration for a single taskbar group.
 |---|---|---|
 | `Id` | `string` | Unique identifier (auto-generated) |
 | `GroupName` | `string` | Display name of the group |
-| `Columns` | `int` | Popup grid columns (default: 3) |
-| `Theme` | `string` | Theme override: light, dark, system (default: system) |
+| `Columns` | `int` | Popup grid columns. Clamped to [1..6] on assignment (default: 3) |
+| `Theme` | `ThemePreference` | Theme override; JSON values: `system`, `light`, `dark` (default: `system`) |
 | `Apps` | `List<AppEntry>` | Applications in this group |
 
 ---
@@ -82,17 +82,15 @@ Global application settings.
 | Property | Type | Description |
 |---|---|---|
 | `AutoStart` | `bool` | Start on Windows startup (default: false) |
-| `Theme` | `string` | Global theme (default: system) |
+| `Theme` | `ThemePreference` | Global theme; JSON values: `system`, `light`, `dark` (default: `system`) |
 | `EnableAnimations` | `bool` | Popup animations (default: true) |
-| `PopupPosition` | `string` | Popup position: auto, above, below (default: auto) |
+| `PopupPosition` | `PopupPositionPreference` | Popup position; JSON values: `auto`, `above`, `below` (default: `auto`) |
 
 ---
 
-### Namespace: `TaskbarFolders.Shared.Configuration` 🚧
+### Namespace: `TaskbarFolders.Shared.Configuration` ✅
 
-> 🚧 **Planned namespace.** Neither the namespace nor the interfaces below exist in the code yet. They are listed here as the target contract for milestone M1 (Foundational Plumbing).
-
-#### `IGroupConfigStore` 🚧
+#### `IGroupConfigStore` ✅
 
 Interface for persisting group configurations.
 
@@ -106,7 +104,7 @@ public interface IGroupConfigStore
 }
 ```
 
-#### `IAppSettingsStore` 🚧
+#### `IAppSettingsStore` ✅
 
 Interface for persisting application settings.
 

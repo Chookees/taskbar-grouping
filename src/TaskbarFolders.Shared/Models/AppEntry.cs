@@ -27,7 +27,8 @@ public sealed class AppEntry
 
     /// <summary>
     /// Optional command-line arguments to pass when launching the application.
+    /// Null means "no arguments" and is omitted on write to keep config files compact.
     /// </summary>
     [JsonPropertyName("arguments")]
-    public string Arguments { get; set; } = string.Empty;
+    public string? Arguments { get; set; }
 }
