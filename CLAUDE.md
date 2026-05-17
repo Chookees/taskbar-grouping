@@ -97,11 +97,21 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 
 **3. Bug-fixing waves.** Group changes into reviewable commits: one commit per behavioural concern (e.g. resolver fix, UX fix, UX defence-in-depth), each with its own tests. Run `dotnet build -c Release` after every wave (tests need WindowsDesktop 8.0 x64 which is CI-only). Address code-review findings as a polish commit on top — never amend a pushed commit, never amend across reviewable boundaries.
 
-**4. Commits.** Conventional Commits (`fix(manager): …`, `feat(core): …`). Body explains the *why* and the *blast radius*, not the *what* — assume the reader has the diff. No AI/agent mentions, no `Co-Authored-By` trailers. Run `dotnet format` before staging — the CI `--verify-no-changes` step is unforgiving about charset (UTF-8 BOM) and line endings (CRLF for `.cs`/`.xaml`).
+**4. Complete testing — including the runtime layout that ships.** Build + unit tests in CI is necessary but not sufficient. The v0.2.0 "Show shortcut" bug existed *only* in the installed and portable layouts; the dev `dotnet run` and the CI test runner both used a layout where the launcher happened to be findable. Every release-eligible change must be verified in all three runtimes it touches:
 
-**5. Pushing & releasing.** Bug fixes land on `develop` directly (no PR — solo-maintained). Patch releases tag `v0.x.y` from `develop`; `release.yml` publishes the assets. Bump `Directory.Build.props:Version`, `installer/setup.iss:MyAppVersion`, the README status banner, and add a `CHANGELOG.md` section in the same commit as the tag-eligible state. If a fix is user-blocking on a shipped version, cut a patch release the same day.
+  - **Unit tests** — `dotnet test -c Release` (CI) — must be green before push, no exceptions. Pushing red and "fixing forward" is forbidden because it muddies bisects.
+  - **Format gate** — `dotnet format --verify-no-changes` (CI) — fix locally before push.
+  - **Dev run** — `dotnet run --project src/TaskbarFolders.Manager` — for any change that touches MVVM, DI, XAML, or services. Click the affected button.
+  - **Installer/portable smoke** — after tagging, before announcing: actually install `TaskbarFolders-Setup.exe` (or unzip the portable) and walk the user-visible happy path end-to-end (create group → drop apps → click the affected feature). Two minutes of clicking catches what 200 unit tests do not. **This step would have caught the v0.2.0 bug before users did.**
+  - **Log inspection** — open `%APPDATA%/TaskbarFolders/logs/manager-*.log` after the smoke test. A warning or error line with no user-visible counterpart is a UX bug.
 
-**6. CLAUDE.md upkeep.** When a fix introduces a new convention or invariant, surface it here — the next session reads this file before doing anything else.
+  If you cannot run the installer smoke (e.g. no Windows machine to hand), say so explicitly in the PR/commit message rather than imply the feature is verified. Future-you reading the log will know what was actually tested.
+
+**5. Commits.** Conventional Commits (`fix(manager): …`, `feat(core): …`). Body explains the *why* and the *blast radius*, not the *what* — assume the reader has the diff. No AI/agent mentions, no `Co-Authored-By` trailers. Run `dotnet format` before staging — the CI `--verify-no-changes` step is unforgiving about charset (UTF-8 BOM) and line endings (CRLF for `.cs`/`.xaml`).
+
+**6. Pushing & releasing.** Bug fixes land on `develop` directly (no PR — solo-maintained). Patch releases tag `v0.x.y` from `develop`; `release.yml` publishes the assets. Bump `Directory.Build.props:Version`, `installer/setup.iss:MyAppVersion`, the README status banner, and add a `CHANGELOG.md` section in the same commit as the tag-eligible state. If a fix is user-blocking on a shipped version, cut a patch release the same day. **Wait for the installer-smoke pass before announcing the release as available** — the tag and the assets exist before they're verified.
+
+**7. CLAUDE.md upkeep.** When a fix introduces a new convention or invariant, surface it here — the next session reads this file before doing anything else.
 
 ## Release
 
