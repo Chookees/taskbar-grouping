@@ -67,15 +67,19 @@ public sealed class ShellIconExtractor : IIconExtractor
             return filePath;
         }
 
-        ShellLink? link = null;
+        // Instantiate outside the try so an unlikely CLSID-not-registered failure cannot
+        // race with the finally block (link would still be null at that point).
+        var link = new ShellLink();
         try
         {
-            link = new ShellLink();
+            // Cast once; both interfaces share the same underlying RCW so a single
+            // FinalReleaseComObject in the finally block balances all references.
+            var shellLink = (IShellLinkW)link;
             ((IPersistFile)link).Load(filePath, 0);
-            ((IShellLinkW)link).Resolve(IntPtr.Zero, NativeMethods.SLR_NO_UI);
+            shellLink.Resolve(IntPtr.Zero, NativeMethods.SLR_NO_UI);
 
             var buffer = new StringBuilder(NativeMethods.MAX_PATH);
-            ((IShellLinkW)link).GetPath(buffer, NativeMethods.MAX_PATH, IntPtr.Zero, 0);
+            shellLink.GetPath(buffer, NativeMethods.MAX_PATH, IntPtr.Zero, 0);
             var target = buffer.ToString();
 
             return string.IsNullOrWhiteSpace(target) ? filePath : target;
@@ -87,10 +91,7 @@ public sealed class ShellIconExtractor : IIconExtractor
         }
         finally
         {
-            if (link is not null)
-            {
-                Marshal.FinalReleaseComObject(link);
-            }
+            Marshal.FinalReleaseComObject(link);
         }
     }
 

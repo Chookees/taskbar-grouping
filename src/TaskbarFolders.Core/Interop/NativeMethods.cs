@@ -21,7 +21,7 @@ internal static class NativeMethods
         uint uFlags);
 
     /// <summary>Retrieves the requested system image list. Returns S_OK on success.</summary>
-    [DllImport("shell32.dll")]
+    [DllImport("shell32.dll", ExactSpelling = true)]
     public static extern int SHGetImageList(
         int iImageList,
         ref Guid riid,
@@ -30,7 +30,7 @@ internal static class NativeMethods
     // --- user32 -----------------------------------------------------------
 
     /// <summary>Destroys an icon and frees any memory the icon occupied.</summary>
-    [DllImport("user32.dll")]
+    [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool DestroyIcon(IntPtr hIcon);
 
