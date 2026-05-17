@@ -40,3 +40,20 @@ public sealed class NotNullToVisibilityConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>
+/// Returns <see cref="Visibility.Visible"/> when the bound boolean is <see langword="true"/>.
+/// </summary>
+public sealed class BoolToVisibilityConverter : IValueConverter
+{
+    /// <summary>Shared singleton instance.</summary>
+    public static readonly BoolToVisibilityConverter Instance = new();
+
+    /// <inheritdoc/>
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <inheritdoc/>
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

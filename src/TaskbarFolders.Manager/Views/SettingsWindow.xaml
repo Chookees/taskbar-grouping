@@ -1,0 +1,62 @@
+<Window x:Class="TaskbarFolders.Manager.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TaskbarFolders.Manager.ViewModels"
+        xmlns:models="clr-namespace:TaskbarFolders.Shared.Models;assembly=TaskbarFolders.Shared"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Settings"
+        Width="480" Height="420"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
+    <Window.Resources>
+        <ObjectDataProvider x:Key="ThemeValues" MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="models:ThemePreference" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <ObjectDataProvider x:Key="PopupPositionValues" MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="models:PopupPositionPreference" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
+
+    <DockPanel Margin="24">
+        <!-- Footer with Save / Close -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <TextBlock VerticalAlignment="Center" Margin="0,0,12,0"
+                       Opacity="0.6"
+                       Text="Unsaved changes"
+                       Visibility="{Binding HasUnsavedChanges, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}" />
+            <Button Content="Close" MinWidth="80" Margin="0,0,8,0" IsCancel="True" />
+            <Button Content="Save" MinWidth="80" Command="{Binding SaveCommand}" IsDefault="True" />
+        </StackPanel>
+
+        <!-- Settings form -->
+        <StackPanel VerticalAlignment="Top">
+            <TextBlock Text="Theme" FontWeight="SemiBold" Margin="0,0,0,4" />
+            <ComboBox SelectedItem="{Binding Theme}"
+                      ItemsSource="{Binding Source={StaticResource ThemeValues}}"
+                      Margin="0,0,0,16" />
+
+            <TextBlock Text="Popup position" FontWeight="SemiBold" Margin="0,0,0,4" />
+            <ComboBox SelectedItem="{Binding PopupPosition}"
+                      ItemsSource="{Binding Source={StaticResource PopupPositionValues}}"
+                      Margin="0,0,0,16" />
+
+            <CheckBox IsChecked="{Binding EnableAnimations}" Content="Enable popup animations" Margin="0,0,0,12" />
+            <CheckBox IsChecked="{Binding AutoStart}" Content="Start TaskbarFolders Manager when Windows starts" />
+
+            <TextBlock Margin="0,16,0,0" Opacity="0.6" FontSize="11" TextWrapping="Wrap">
+                Auto-start writes a per-user entry to
+                HKCU\Software\Microsoft\Windows\CurrentVersion\Run — no administrator rights required.
+            </TextBlock>
+        </StackPanel>
+    </DockPanel>
+</Window>

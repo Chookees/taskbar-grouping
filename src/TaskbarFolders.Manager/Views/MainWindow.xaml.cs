@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using TaskbarFolders.Manager.ViewModels;
 
@@ -79,5 +80,20 @@ public partial class MainWindow : Window
         {
             vm.Editor.AddAppsCommand.Execute(dialog.FileNames);
         }
+    }
+
+    private async void OpenSettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (Application.Current is not App app || app.Services is null)
+        {
+            return;
+        }
+
+        var settingsVm = app.Services.GetRequiredService<SettingsViewModel>();
+        await settingsVm.LoadAsync().ConfigureAwait(true);
+
+        var window = app.Services.GetRequiredService<SettingsWindow>();
+        window.Owner = this;
+        window.ShowDialog();
     }
 }

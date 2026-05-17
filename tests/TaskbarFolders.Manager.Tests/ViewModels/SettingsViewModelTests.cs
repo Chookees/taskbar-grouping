@@ -1,0 +1,123 @@
+﻿using System.Threading;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Moq;
+using TaskbarFolders.Manager.Services;
+using TaskbarFolders.Manager.ViewModels;
+using TaskbarFolders.Shared.Configuration;
+using TaskbarFolders.Shared.Models;
+using Xunit;
+
+namespace TaskbarFolders.Manager.Tests.ViewModels;
+
+public class SettingsViewModelTests
+{
+    private static SettingsViewModel CreateSut(
+        AppSettings stored,
+        bool autoStartEnabled,
+        out Mock<IAppSettingsStore> storeMock,
+        out Mock<IAutoStartService> autoMock)
+    {
+        storeMock = new Mock<IAppSettingsStore>();
+        storeMock.Setup(s => s.LoadAsync(It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(stored);
+        storeMock.Setup(s => s.SaveAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()))
+                 .Returns(Task.CompletedTask);
+
+        autoMock = new Mock<IAutoStartService>();
+        autoMock.SetupGet(a => a.IsEnabled).Returns(autoStartEnabled);
+
+        return new SettingsViewModel(storeMock.Object, autoMock.Object);
+    }
+
+    [Fact]
+    public async Task LoadAsync_ProjectsStoreFields_AndReadsAutoStartFromRegistry()
+    {
+        var stored = new AppSettings
+        {
+            Theme = ThemePreference.Dark,
+            AutoStart = false, // store says off
+            EnableAnimations = false,
+            PopupPosition = PopupPositionPreference.Above,
+        };
+        var sut = CreateSut(stored, autoStartEnabled: true, out _, out _);
+
+        await sut.LoadAsync();
+
+        sut.Theme.Should().Be(ThemePreference.Dark);
+        sut.EnableAnimations.Should().BeFalse();
+        sut.PopupPosition.Should().Be(PopupPositionPreference.Above);
+        sut.AutoStart.Should().BeTrue("the registry is the source of truth — wins over the stored AppSettings.AutoStart");
+        sut.HasUnsavedChanges.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotMarkDirty()
+    {
+        var sut = CreateSut(new AppSettings { Theme = ThemePreference.Dark }, autoStartEnabled: true, out _, out _);
+
+        await sut.LoadAsync();
+
+        sut.HasUnsavedChanges.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task MutatingAnyProperty_AfterLoad_SetsHasUnsavedChanges()
+    {
+        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out _, out _);
+        await sut.LoadAsync();
+
+        sut.Theme = ThemePreference.Dark;
+
+        sut.HasUnsavedChanges.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveAsync_PersistsSettings_AndReconcilesAutoStart()
+    {
+        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out var store, out var autoStart);
+        await sut.LoadAsync();
+        sut.AutoStart = true;
+        sut.Theme = ThemePreference.Light;
+
+        await sut.SaveCommand.ExecuteAsync(null);
+
+        store.Verify(s => s.SaveAsync(
+            It.Is<AppSettings>(x => x.Theme == ThemePreference.Light && x.AutoStart),
+            It.IsAny<CancellationToken>()), Times.Once);
+        autoStart.Verify(a => a.Enable(), Times.Once);
+        autoStart.Verify(a => a.Disable(), Times.Never);
+        sut.HasUnsavedChanges.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SaveAsync_DisablesAutoStart_WhenToggledOff()
+    {
+        var sut = CreateSut(
+            new AppSettings { AutoStart = true },
+            autoStartEnabled: true,
+            out var store,
+            out var autoStart);
+        await sut.LoadAsync();
+        sut.AutoStart = false;
+
+        await sut.SaveCommand.ExecuteAsync(null);
+
+        store.Verify(s => s.SaveAsync(It.Is<AppSettings>(x => !x.AutoStart), It.IsAny<CancellationToken>()), Times.Once);
+        autoStart.Verify(a => a.Disable(), Times.Once);
+        autoStart.Verify(a => a.Enable(), Times.Never);
+    }
+
+    [Fact]
+    public async Task SaveAsync_ClearsHasUnsavedChanges()
+    {
+        var sut = CreateSut(new AppSettings(), autoStartEnabled: false, out _, out _);
+        await sut.LoadAsync();
+        sut.EnableAnimations = false;
+        sut.HasUnsavedChanges.Should().BeTrue();
+
+        await sut.SaveCommand.ExecuteAsync(null);
+
+        sut.HasUnsavedChanges.Should().BeFalse();
+    }
+}

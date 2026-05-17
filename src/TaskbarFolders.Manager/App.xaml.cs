@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
 using TaskbarFolders.Shared.Configuration;
@@ -84,12 +85,17 @@ public partial class App : Application
         services.AddSingleton<IIcoFileWriter, IcoFileWriter>();
         services.AddSingleton<IIconCache, FileSystemIconCache>();
 
+        // Manager-side services.
+        services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
+
         // View models — MainWindow is itself a singleton conceptually (one main window per process),
         // so the backing VM is singleton too. App.OnStartup loads groups into it before showing the window.
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<GroupEditorViewModel>();
+        services.AddTransient<SettingsViewModel>();
 
         // Views — transient so each Show creates a fresh window instance.
         services.AddTransient<MainWindow>();
+        services.AddTransient<SettingsWindow>();
     }
 }

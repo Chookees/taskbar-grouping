@@ -18,18 +18,24 @@
         <!-- Sidebar: group list + add controls -->
         <DockPanel Grid.Column="0" Background="#F5F5F5">
             <Border DockPanel.Dock="Top" Padding="12,12,12,8" BorderThickness="0,0,0,1" BorderBrush="#E0E0E0">
-                <StackPanel Orientation="Horizontal">
-                    <TextBox Width="180"
-                             VerticalContentAlignment="Center"
-                             Padding="6,4"
-                             Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="New group name"
-                             KeyDown="NewGroupName_KeyDown" />
-                    <Button Content="+ Add"
-                            Margin="6,0,0,0"
-                            Padding="10,4"
-                            Command="{Binding AddGroupCommand}" />
-                </StackPanel>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="⚙"
+                            Width="28" Height="28" Padding="0"
+                            ToolTip="Settings"
+                            Click="OpenSettings_Click" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Width="160"
+                                 VerticalContentAlignment="Center"
+                                 Padding="6,4"
+                                 Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="New group name"
+                                 KeyDown="NewGroupName_KeyDown" />
+                        <Button Content="+ Add"
+                                Margin="6,0,0,0"
+                                Padding="10,4"
+                                Command="{Binding AddGroupCommand}" />
+                    </StackPanel>
+                </DockPanel>
             </Border>
 
             <ListBox ItemsSource="{Binding Groups}"
