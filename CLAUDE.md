@@ -50,6 +50,12 @@ New persistence code must follow this.
 
 **JSON config** — `Id` in `GroupConfig` is always reconstructed from the file name on load (disk layout is the source of truth; JSON `id` field is ignored). See `JsonGroupConfigStore.LoadFromFileAsync`.
 
+**Cross-thread BitmapSource** — `Freeze()` inside the producer lambda *before* `await` crosses back to the UI thread (see `PopupViewModel.LoadIconForAsync`). An unfrozen bitmap that crosses threads carries the wrong dispatcher affinity and the WPF Image binding throws.
+
+**CancellationTokenSource fields → IDisposable** — Adding a CTS field triggers CA1001. Make the owner `sealed … IDisposable` and have `Dispose` call the cancel-and-dispose helper (`PopupViewModel`, `GroupEditorViewModel` follow this).
+
+**DPI baseline (known v0.3 limit)** — `TaskbarPositionHelper` treats Win32 device-pixel rects (taskbar, monitor) and `GetCursorPos` POINTs as WPF DIPs. Correct at 100% scale, ~33% horizontal drift at 150%. v0.3.1 follow-up will convert via `PresentationSource.CompositionTarget.TransformFromDevice`. Until then: do not add new code that compounds the debt.
+
 ## Analyzer Suppressions (rationale)
 
 Project-wide `EnforceCodeStyleInBuild=true` + `TreatWarningsAsErrors=true`. Suppressions in `.editorconfig`:
@@ -107,7 +113,7 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 
   If you cannot run the installer smoke (e.g. no Windows machine to hand), say so explicitly in the PR/commit message rather than imply the feature is verified. Future-you reading the log will know what was actually tested.
 
-**5. Commits.** Conventional Commits (`fix(manager): …`, `feat(core): …`). Body explains the *why* and the *blast radius*, not the *what* — assume the reader has the diff. No AI/agent mentions, no `Co-Authored-By` trailers. Run `dotnet format` before staging — the CI `--verify-no-changes` step is unforgiving about charset (UTF-8 BOM) and line endings (CRLF for `.cs`/`.xaml`).
+**5. Commits.** Conventional Commits (`fix(manager): …`, `feat(core): …`). Body explains the *why* and the *blast radius*, not the *what* — assume the reader has the diff. No AI/agent mentions, no `Co-Authored-By` trailers. Run `dotnet format` **before staging each commit** — *not* between commits. v0.2.1 CI failed because format auto-fixed BOMs on files that were committed in Wave 1, but the fix landed in the working tree only and was never staged. Format → `git status` → stage everything modified → commit.
 
 **6. Pushing & releasing.** Bug fixes land on `develop` directly (no PR — solo-maintained). Patch releases tag `v0.x.y` from `develop`; `release.yml` publishes the assets. Bump `Directory.Build.props:Version`, `installer/setup.iss:MyAppVersion`, the README status banner, and add a `CHANGELOG.md` section in the same commit as the tag-eligible state. If a fix is user-blocking on a shipped version, cut a patch release the same day. **Wait for the installer-smoke pass before announcing the release as available** — the tag and the assets exist before they're verified.
 
@@ -116,3 +122,5 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 ## Release
 
 Pushing a `v*` tag triggers `release.yml`: builds, publishes self-contained, builds the Inno Setup installer (ISCC is pre-installed on `windows-latest`), uploads `TaskbarFolders-portable.zip` + `TaskbarFolders-Setup.exe`. The release job needs `permissions: contents: write` (already set).
+
+**Asset size baseline (v0.3.0):** portable ZIP ≈ 142 MB, Setup.exe ≈ 96 MB. `PublishReadyToRun=true` (Launcher + Manager) roughly doubled the size vs v0.2.1 because the entire .NET runtime is AOT-compiled into the publish. Plan estimates that assume "~10 MB R2R cost" are wildly low — count on +50-70 MB per binary.
