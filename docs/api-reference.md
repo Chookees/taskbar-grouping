@@ -1,6 +1,6 @@
 # API Reference
 
-> ⚠️ **Status: Pre-Alpha (v0.1.x).** Items marked ✅ exist in code; items marked 🚧 are target contracts that are not yet implemented. For implemented types, the file links lead to the actual source.
+> ℹ️ **Status: v0.2.0.** Every type below exists in code; the file links lead to the actual source.
 
 ## TaskbarFolders.Core
 

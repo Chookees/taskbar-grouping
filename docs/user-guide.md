@@ -1,8 +1,8 @@
 # User Guide
 
-> ⚠️ **Status: Pre-Alpha (v0.1.x).** This guide describes the target product. **None of the user-facing functionality below is implemented yet.** First functional release is planned for v0.2.0. See the [README](../README.md) for the current state.
+> ℹ️ **Status: v0.2.0.** All features described below are available in the current release. See the [README](../README.md) for download links.
 
-## Installation 🚧
+## Installation
 
 ### Using the Installer
 

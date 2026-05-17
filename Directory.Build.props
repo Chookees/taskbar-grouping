@@ -6,7 +6,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>TaskbarFolders Contributors</Authors>
     <Product>TaskbarFolders</Product>
     <Copyright>Copyright (c) 2026 TaskbarFolders Contributors</Copyright>

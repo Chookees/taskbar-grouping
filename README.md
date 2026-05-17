@@ -4,48 +4,44 @@
 [![Release](https://github.com/TODO-GH-OWNER/TaskbarFolders/actions/workflows/release.yml/badge.svg)](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ⚠️ **Status: Pre-Alpha (v0.1.x).** This document describes the target product. Features are marked ✅ when implemented and 🚧 when planned. Today, only the project scaffold (solution structure, CI pipeline, models, interface stubs) is in place — no user-facing functionality exists yet. See [CHANGELOG.md](CHANGELOG.md) for shipped changes.
+> ℹ️ **Status: v0.2.0.** First functional release — all features below are implemented. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 
-<!-- TODO: Add screenshot at assets/screenshots/preview.png once the Manager UI is implemented (M3). -->
+<!-- TODO: Add screenshot at assets/screenshots/preview.png once a polished build is ready. -->
 
-## Planned Features
+## Features
 
-- 🚧 **Group apps into folders** – Drag & drop `.exe` and `.lnk` files into customizable groups
-- 🚧 **Automatic composite icons** – Each group gets a 2×2 preview icon generated from the contained app icons
-- 🚧 **Pin to taskbar** – Every group is a standalone `.exe` that can be pinned to the Windows taskbar
-- 🚧 **Animated popup** – Click a group to reveal apps in a rounded-corner popup with blur background
-- 🚧 **Light/Dark/System themes** – Follows your Windows theme or set per group
-- 🚧 **Multi-monitor support** – Popup positions correctly on any monitor setup
-- 🚧 **High-DPI aware** – Crisp rendering at all scaling levels (100%–200%)
+- ✅ **Group apps into folders** – Drag & drop `.exe` and `.lnk` files into customizable groups
+- ✅ **Automatic composite icons** – Each group gets a 2×2 preview icon generated from the contained app icons
+- ✅ **Pin to taskbar** – Each group gets its own `.lnk` shortcut (with a distinct AppUserModelID) that you can pin to the Windows taskbar
+- ✅ **Animated popup** – Click a pinned group to reveal apps in a rounded-corner popup with Acrylic backdrop on Windows 11 22H2+
+- ✅ **Light/Dark/System themes** – Follows your Windows theme or set per group; live-switches when Windows theme changes
+- ✅ **Multi-monitor support** – Popup positions itself adjacent to the taskbar on the monitor under the cursor; handles secondary monitors with negative X
+- ✅ **High-DPI aware** – Per-monitor V2 DPI awareness so the UI stays crisp on mixed-DPI setups (100 %–200 %)
 
-## Installation 🚧
+## Installation
 
-> 🚧 **Not yet available.** First functional release is planned for v0.2.0 (see [project plan](docs/architecture.md)).
-
-### Installer (recommended) 🚧
+### Installer (recommended)
 
 1. Download the latest `TaskbarFolders-Setup.exe` from [Releases](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
 2. Run the installer and follow the instructions
 3. Launch **TaskbarFolders Manager** from the Start Menu
 
-### Portable 🚧
+### Portable
 
 1. Download the latest `TaskbarFolders-portable.zip` from [Releases](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
 2. Extract to any folder
 3. Run `TaskbarFolders.Manager.exe`
 
-## Quick Start 🚧
-
-> 🚧 **Workflow described below is the target. Manager UI is not yet implemented.**
+## Quick Start
 
 1. Open **TaskbarFolders Manager**
-2. Click **New Group** and give it a name (e.g., "Dev Tools")
-3. Drag & drop your favorite apps into the group
-4. The composite icon is generated automatically
-5. Right-click the generated `.exe` in the group list and select **Pin to Taskbar**
-6. Click the pinned icon to open the popup and launch any app
+2. Click **+ Add** in the sidebar and give the group a name (e.g., "Dev Tools")
+3. Drag & drop `.exe` or `.lnk` files into the group editor — the composite icon updates live
+4. Click **Show shortcut...** to open the generated `.lnk` in Explorer
+5. Right-click the `.lnk` → **Show more options** → **Pin to taskbar** (Win11 22H2+) or **Pin to taskbar** directly (older Win10/11)
+6. Click the pinned tile to open the popup and launch any app
 
 ## Building from Source
 
