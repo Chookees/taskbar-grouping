@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,15 @@ namespace TaskbarFolders.Launcher;
 /// <summary>
 /// Application entry point for the TaskbarFolders Launcher.
 /// </summary>
+/// <remarks>
+/// Two modes:
+/// <list type="bullet">
+///   <item><b>Popup mode</b> (default) — user clicked a pinned tile; show the apps grid.</item>
+///   <item><b>Pin mode</b> (<c>--pin-mode</c>) — Manager asked us to pin the group to the
+///   taskbar via <see cref="Windows.UI.Shell.TaskbarManager"/>. Shows the system permission
+///   dialog and exits with a status code the Manager interprets.</item>
+/// </list>
+/// </remarks>
 public partial class App : Application
 {
     private ServiceProvider? _services;
@@ -32,12 +42,96 @@ public partial class App : Application
     {
         ArgumentNullException.ThrowIfNull(e);
 
+        var groupId = ResolveGroupId(e.Args);
+        if (groupId is null)
+        {
+            Trace.TraceError(
+                "Launcher started without {0} argument and no AUMID fallback available.",
+                CommandLineParser.GroupIdArg);
+            Shutdown(1);
+            return;
+        }
+
+        if (CommandLineParser.HasPinMode(e.Args))
+        {
+            await RunPinModeAsync(groupId).ConfigureAwait(true);
+            return;
+        }
+
+        await RunPopupModeAsync(e, groupId).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Resolves the target group id from either the explicit <c>--group-id</c> argument
+    /// (Manager-spawned + .lnk-pinned paths) or the AUMID Windows already assigned to the
+    /// process (TaskbarManager-pinned tile paths where the original command line is not
+    /// preserved). Returns <see langword="null"/> if neither source yields an id.
+    /// </summary>
+    private static string? ResolveGroupId(string[] args)
+    {
+        var fromArgs = CommandLineParser.TryParseGroupId(args);
+        if (fromArgs is not null)
+        {
+            return fromArgs;
+        }
+
+        var assignedAumid = Interop.NativeMethods.TryGetCurrentProcessAumid();
+        if (assignedAumid is not null && GroupAumid.TryExtractGroupId(assignedAumid, out var fromAumid))
+        {
+            return fromAumid;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Pin-mode entry point. Stamps AUMID, builds a minimal DI scope, shows the off-screen
+    /// host window so the WinRT pin dialog has a foreground parent, awaits the pin runner,
+    /// shuts down with the runner's exit code so the Manager can react to the outcome.
+    /// </summary>
+    private async Task RunPinModeAsync(string groupId)
+    {
+        // AUMID must be stamped before the WinRT call so RequestPinCurrentAppAsync pins
+        // the right identity. The HRESULT is discarded (non-fatal on very old Windows).
+        _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
+
+        var paths = new AppDataPathProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(logging => logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "launcher"));
+        services.AddTaskbarFoldersLauncher(new LauncherOptions(groupId), paths);
+        // PopupWindow is registered in the same graph but never resolved in pin-mode;
+        // AppSettings is required by the DI graph regardless, so register a default.
+        services.AddSingleton(new AppSettings());
+
+        _services = services.BuildServiceProvider();
+
+        var logger = _services.GetRequiredService<ILogger<App>>();
+        logger.LogInformation("Launcher pin-mode starting for group {GroupId}.", groupId);
+
+        var host = _services.GetRequiredService<Views.PinHostWindow>();
+        MainWindow = host;
+        host.Show();
+        host.Activate();
+
+        var runner = _services.GetRequiredService<TaskbarPinRunner>();
+        var exitCode = await runner.RunAsync(host).ConfigureAwait(true);
+
+        logger.LogInformation("Pin runner exit code {ExitCode} for group {GroupId}.", exitCode, groupId);
+
+        host.Close();
+        Shutdown(exitCode);
+    }
+
+    /// <summary>
+    /// Popup-mode entry point. Existing v0.3 startup path, factored out to keep
+    /// <see cref="OnStartup"/> a thin dispatcher.
+    /// </summary>
+    private async Task RunPopupModeAsync(StartupEventArgs e, string groupId)
+    {
         // Capture the cursor position FIRST, before anything else can take 100+ ms. This is
         // the click location — by the time WPF has bootstrapped (~300–500 ms) the cursor has
         // typically drifted, which is why the v0.2 helper's late GetCursorPos call produced
-        // visually-random popup placement. GetCursorPos is a single user32 syscall, no
-        // dependencies on DPI, COM, or WPF state. Seeded into ICursorAnchor below once DI
-        // has been built.
+        // visually-random popup placement.
         //
         // GetCursorPos can fail on restricted desktops / session 0. Out param is default-
         // initialised to (0, 0) on failure, which would silently anchor the popup at the
@@ -56,9 +150,7 @@ public partial class App : Application
         }
 
         // Per-monitor DPI awareness must be set before any HWND is created so all popups
-        // render at the right scaling on mixed-DPI multi-monitor setups. Falling back
-        // silently is fine — Windows then treats us as system-DPI-aware (still correct
-        // on single-monitor or uniform-DPI rigs).
+        // render at the right scaling on mixed-DPI multi-monitor setups.
         try
         {
             Interop.NativeMethods.SetProcessDpiAwarenessContext(
@@ -69,40 +161,20 @@ public partial class App : Application
             // Pre-1703 Windows — leave DPI awareness at the manifest default.
         }
 
-        var groupId = CommandLineParser.TryParseGroupId(e.Args);
-        if (groupId is null)
-        {
-            // No DI/logger yet — emit a trace so dev/QA can see this in a debugger; M4 will
-            // additionally surface this as a user-visible toast.
-            Trace.TraceError("Launcher started without required {0} argument.", CommandLineParser.GroupIdArg);
-            Shutdown(1);
-            return;
-        }
-
         // Stamp the process AUMID BEFORE any window is created so Windows matches the
-        // popup to the pinned .lnk tile (which carries the same AUMID via PKEY_AppUserModel_ID).
-        // Without this the taskbar would show a second "ghost" entry for the running process.
-        // The HRESULT is discarded: a non-zero result here means very old Windows or a
-        // restricted token, neither of which is fatal — the popup still works, just without
-        // grouping under the pinned tile.
+        // popup to the pinned tile (which carries the same AUMID via PKEY_AppUserModel_ID).
         _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
 
         var paths = new AppDataPathProvider();
 
         // Load settings BEFORE the DI container is built so the resolved AppSettings instance
-        // can be registered as a singleton. Replaces the v0.2 pattern that loaded settings
-        // twice — once here, once again inside PopupWindow.PositionAndConfigureAsync.
+        // can be registered as a singleton (v0.3 single-load pattern).
         var settings = await new JsonAppSettingsStore(paths).LoadAsync().ConfigureAwait(true);
 
         var services = new ServiceCollection();
         services.AddLogging(logging => logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "launcher"));
         services.AddTaskbarFoldersLauncher(new LauncherOptions(groupId), paths);
         services.AddSingleton(settings);
-        // ValidateOnBuild eagerly walks the DI graph at BuildServiceProvider time —
-        // catches misregistrations early, but adds ~20-30 ms to per-click launcher startup.
-        // Debug builds keep it (developer-facing fail-fast); Release skips it. CI runs
-        // CompositionRootTests which exercises ValidateOnBuild explicitly so the safety
-        // net is still in place for shipped code.
 #if DEBUG
         _services = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -126,9 +198,6 @@ public partial class App : Application
 
         // Two-phase load: metadata first (group name, columns, app names — ~5 ms) so the
         // window can paint immediately, then per-app icon extraction in the background.
-        // Pre-v0.3 this awaited the full icon-extraction pipeline before Show(), which froze
-        // the UI for 200 ms–3 s on cold cache. The window now appears within ~50 ms; icons
-        // stream in as they resolve.
         var viewModel = _services.GetRequiredService<PopupViewModel>();
         await viewModel.LoadAsync().ConfigureAwait(true);
 

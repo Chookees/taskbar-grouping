@@ -55,4 +55,34 @@ public class CommandLineParserTests
 
         CommandLineParser.TryParseGroupId(args).Should().BeNull();
     }
+
+    [Fact]
+    public void HasPinMode_ReturnsTrue_WhenFlagPresent()
+    {
+        var args = new[] { "--pin-mode", "--group-id", "abc" };
+
+        CommandLineParser.HasPinMode(args).Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasPinMode_IsCaseInsensitive()
+    {
+        var args = new[] { "--Pin-Mode" };
+
+        CommandLineParser.HasPinMode(args).Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasPinMode_ReturnsFalse_WhenFlagAbsent()
+    {
+        var args = new[] { "--group-id", "abc" };
+
+        CommandLineParser.HasPinMode(args).Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasPinMode_ReturnsFalse_OnEmptyArgs()
+    {
+        CommandLineParser.HasPinMode(System.Array.Empty<string>()).Should().BeFalse();
+    }
 }

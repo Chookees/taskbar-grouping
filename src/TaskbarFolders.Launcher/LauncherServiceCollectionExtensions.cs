@@ -14,7 +14,13 @@ namespace TaskbarFolders.Launcher;
 /// the same registration graph can be exercised by composition tests without parsing CLI
 /// args or spawning real processes.
 /// </summary>
-[SupportedOSPlatform("windows")]
+/// <remarks>
+/// Annotation bumped from <c>"windows"</c> to <c>"windows10.0.19041.0"</c> in v0.4 because
+/// <see cref="TaskbarPinRunner"/> uses WinRT TaskbarManager which requires Win10 1903+.
+/// The project TFM <c>net8.0-windows10.0.19041.0</c> enforces this anyway; the explicit
+/// attribute lets CA1416 verify it.
+/// </remarks>
+[SupportedOSPlatform("windows10.0.19041.0")]
 public static class LauncherServiceCollectionExtensions
 {
     /// <summary>
@@ -43,9 +49,11 @@ public static class LauncherServiceCollectionExtensions
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();
         services.AddSingleton<ICursorAnchor, LauncherCursorAnchor>();
         services.AddSingleton<ITaskbarPositionHelper, TaskbarPositionHelper>();
+        services.AddSingleton<TaskbarPinRunner>();
 
         services.AddSingleton<PopupViewModel>();
         services.AddTransient<PopupWindow>();
+        services.AddTransient<PinHostWindow>();
 
         return services;
     }

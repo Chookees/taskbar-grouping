@@ -21,4 +21,33 @@ public static class GroupAumid
         ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
         return Prefix + groupId;
     }
+
+    /// <summary>
+    /// Reverses <see cref="For"/>: extracts the group id from a TaskbarFolders AUMID.
+    /// Used when Windows launches the pinned-via-API tile without preserving the original
+    /// command line — the launcher recovers its group from the AUMID Windows already assigned
+    /// to the process via <c>GetCurrentProcessExplicitAppUserModelID</c>.
+    /// </summary>
+    /// <param name="aumid">AUMID candidate, e.g. <c>TaskbarFolders.Group.abc-123</c>.</param>
+    /// <param name="groupId">On success, the parsed group id portion.</param>
+    /// <returns><see langword="true"/> if the AUMID matches the TaskbarFolders prefix and the suffix is non-empty.</returns>
+    public static bool TryExtractGroupId(string? aumid, out string groupId)
+    {
+        groupId = string.Empty;
+        if (string.IsNullOrEmpty(aumid))
+        {
+            return false;
+        }
+        if (!aumid.StartsWith(Prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+        var suffix = aumid[Prefix.Length..];
+        if (string.IsNullOrWhiteSpace(suffix))
+        {
+            return false;
+        }
+        groupId = suffix;
+        return true;
+    }
 }

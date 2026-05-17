@@ -30,4 +30,29 @@ public class GroupAumidTests
     {
         GroupAumid.Prefix.Should().Be("TaskbarFolders.Group.");
     }
+
+    [Theory]
+    [InlineData("g1")]
+    [InlineData("550e8400-e29b-41d4-a716-446655440000")]
+    [InlineData("3173c18755824bd0a107fc0c9cd78859")]
+    public void TryExtractGroupId_RoundTripsWithFor(string groupId)
+    {
+        var aumid = GroupAumid.For(groupId);
+
+        GroupAumid.TryExtractGroupId(aumid, out var parsed).Should().BeTrue();
+        parsed.Should().Be(groupId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("SomeOtherApp.Foo.bar")]
+    [InlineData("TaskbarFolders.Group.")]
+    [InlineData("TaskbarFolders.Group.   ")]
+    [InlineData("taskbarfolders.group.x")] // case-sensitive prefix check; must reject lower-case
+    public void TryExtractGroupId_RejectsMalformedOrForeignAumid(string? aumid)
+    {
+        GroupAumid.TryExtractGroupId(aumid, out var parsed).Should().BeFalse();
+        parsed.Should().BeEmpty();
+    }
 }

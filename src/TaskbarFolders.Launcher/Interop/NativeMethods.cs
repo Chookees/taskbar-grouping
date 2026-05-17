@@ -26,6 +26,35 @@ internal static class NativeMethods
     public static extern int SetCurrentProcessExplicitAppUserModelID(
         [MarshalAs(UnmanagedType.LPWStr)] string appId);
 
+    // Reads back the AUMID Windows assigned to the current process. Returns 0 (S_OK) if set
+    // and writes a CoTaskMem-allocated PWSTR to ppAppID (caller frees). Non-zero HRESULT
+    // means no explicit AUMID is set; ppAppID is null. Used by the v0.4 AUMID-recovery
+    // fallback when --group-id is absent (e.g. Windows launches the pinned-via-API tile
+    // without preserving the original command line).
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetCurrentProcessExplicitAppUserModelID(out IntPtr ppAppID);
+
+    /// <summary>
+    /// Convenience wrapper around <see cref="GetCurrentProcessExplicitAppUserModelID"/> that
+    /// marshals the returned PWSTR to a managed string and frees the CoTaskMem allocation.
+    /// </summary>
+    public static string? TryGetCurrentProcessAumid()
+    {
+        var hr = GetCurrentProcessExplicitAppUserModelID(out var ptr);
+        if (hr != 0 || ptr == IntPtr.Zero)
+        {
+            return null;
+        }
+        try
+        {
+            return Marshal.PtrToStringUni(ptr);
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(ptr);
+        }
+    }
+
     // user32
     [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
