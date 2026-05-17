@@ -104,4 +104,70 @@ public class TaskbarPositionHelperTests
         placement.Left.Should().Be(1920 + (1920 - 400) / 2);
         placement.Top.Should().Be(1040 - 300 - TaskbarPositionHelper.Margin);
     }
+
+    [Fact]
+    public void Placement_ClampsTop_WhenPopupTallerThanWorkArea()
+    {
+        // Pathological: popup taller than the work area. Top should clamp to work-area top
+        // so the header is still visible (worse than scrolling but better than off-screen).
+        var workArea = new Rect(0, 0, 1920, 400);
+        var bottomBar = new Rect(0, 400, 1920, 40);
+
+        var placement = TaskbarPositionHelper.CalculatePlacement(
+            new Size(400, 700), bottomBar, TaskbarEdge.Bottom, workArea, PopupPositionPreference.Auto);
+
+        placement.Top.Should().Be(0, "popup taller than work area → clamp to work-area top");
+    }
+
+    [Fact]
+    public void Placement_OnSecondaryMonitorWithNegativeX_StaysInItsWorkArea()
+    {
+        // Windows allows monitors arranged to the LEFT of the primary, producing negative X
+        // coordinates. The helper must use the supplied work-area coordinates verbatim and
+        // not assume the desktop starts at 0,0.
+        var leftWork = new Rect(-1920, 0, 1920, 1040);
+        var leftBar = new Rect(-1920, 1040, 1920, 40);
+
+        var placement = TaskbarPositionHelper.CalculatePlacement(
+            new Size(400, 300), leftBar, TaskbarEdge.Bottom, leftWork, PopupPositionPreference.Auto);
+
+        // Centred on the negative-X monitor span
+        placement.Left.Should().Be(-1920 + (1920 - 400) / 2);
+        placement.Top.Should().Be(1040 - 300 - TaskbarPositionHelper.Margin);
+    }
+
+    [Fact]
+    public void Placement_PopupExactlyFillsWorkAreaWidth_LandsAtMonitorLeft()
+    {
+        // Boundary: popup width equals work-area width exactly — Left must be the monitor's
+        // own Left edge (which is 0 here), not negative.
+        var workArea = new Rect(0, 0, 400, 1040);
+        var bottomBar = new Rect(0, 1040, 400, 40);
+
+        var placement = TaskbarPositionHelper.CalculatePlacement(
+            new Size(400, 300), bottomBar, TaskbarEdge.Bottom, workArea, PopupPositionPreference.Auto);
+
+        placement.Left.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(PopupPositionPreference.Above)]
+    [InlineData(PopupPositionPreference.Below)]
+    [InlineData(PopupPositionPreference.Auto)]
+    public void Placement_StaysWithinWorkArea_AcrossAllPreferencesOnStandardLayout(PopupPositionPreference preference)
+    {
+        // Sweep: a standard 1080p single-monitor layout must produce placement entirely
+        // inside the work area regardless of the user's vertical-anchor preference.
+        var workArea = new Rect(0, 0, 1920, 1040);
+        var bottomBar = new Rect(0, 1040, 1920, 40);
+        var popup = new Size(400, 300);
+
+        var placement = TaskbarPositionHelper.CalculatePlacement(
+            popup, bottomBar, TaskbarEdge.Bottom, workArea, preference);
+
+        placement.Left.Should().BeGreaterOrEqualTo(workArea.Left);
+        placement.Top.Should().BeGreaterOrEqualTo(workArea.Top);
+        (placement.Left + popup.Width).Should().BeLessOrEqualTo(workArea.Right);
+        (placement.Top + popup.Height).Should().BeLessOrEqualTo(workArea.Bottom);
+    }
 }
