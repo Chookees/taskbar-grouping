@@ -214,12 +214,25 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         // case where an earlier sync was skipped (e.g. launcher unresolvable on first save)
         // and is then fixed by an upgrade or environment change — retrying inline means the
         // user does not have to remove-and-re-add an app to trigger a sync.
+        // Catch the world so a SyncAsync throw (COM failure in ShortcutGenerator, IO error
+        // on .lnk write) still falls through to the user-visible Notify path below instead
+        // of bubbling as an unhandled AsyncRelayCommand exception.
         if (!File.Exists(fullShortcutPath))
         {
             _logger?.LogInformation(
                 "Pin-helper: shortcut {Path} missing — running a one-shot sync before reporting.",
                 fullShortcutPath);
-            await _syncService.SyncAsync(_boundItem.Config).ConfigureAwait(true);
+            try
+            {
+                await _syncService.SyncAsync(_boundItem.Config).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(
+                    ex,
+                    "Pin-helper: on-demand sync for group {GroupId} threw — falling through to user notification.",
+                    _boundItem.Id);
+            }
         }
 
         if (!File.Exists(fullShortcutPath))

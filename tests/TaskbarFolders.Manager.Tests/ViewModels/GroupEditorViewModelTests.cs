@@ -308,4 +308,42 @@ public class GroupEditorViewModelTests
         syncService.Verify(s => s.SyncAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>()), Times.Never);
         userConfirmation.Verify(u => u.Notify(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
+
+    [Fact]
+    public async Task ShowPinHelper_SwallowsSyncException_AndStillNotifies()
+    {
+        // If SyncAsync throws (e.g. CLSID_ShellLink COM failure, IO error on .lnk write)
+        // the unhandled exception used to escape AsyncRelayCommand and surface as a WPF
+        // unhandled-exception crash dialog. Verify it is now caught, logged, and the
+        // user-visible Notify path still runs.
+        var tempBase = Path.Combine(Path.GetTempPath(), "TaskbarFolders.PinHelperThrow." + Guid.NewGuid().ToString("N"));
+        var shortcutsDir = Path.Combine(tempBase, "shortcuts");
+        var shortcutPath = Path.Combine(shortcutsDir, "g.lnk");
+        Directory.CreateDirectory(shortcutsDir);
+
+        try
+        {
+            var (sut, _, _, _, _, syncService, paths, userConfirmation) = CreateSutWithCollaborators();
+            paths.Setup(p => p.GetGroupShortcutFile("g")).Returns(shortcutPath);
+            paths.Setup(p => p.ShortcutsDirectory).Returns(shortcutsDir);
+            syncService
+                .Setup(s => s.SyncAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("simulated COM failure"));
+
+            sut.Bind(new GroupListItemViewModel(new GroupConfig { Id = "g", GroupName = "g" }));
+
+            // Must not throw — exception is caught inside the command, replaced with Notify.
+            var act = async () => await sut.ShowPinHelperCommand.ExecuteAsync(null);
+            await act.Should().NotThrowAsync();
+
+            userConfirmation.Verify(u => u.Notify(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+        finally
+        {
+            if (Directory.Exists(tempBase))
+            {
+                Directory.Delete(tempBase, recursive: true);
+            }
+        }
+    }
 }
