@@ -4,7 +4,7 @@
 [![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ℹ️ **Status: v0.2.0.** First functional release — all features below are implemented. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
+> ℹ️ **Status: v0.2.1.** Patch release — `Show shortcut...` button now works in installed and portable builds (was a silent no-op in v0.2.0). See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 

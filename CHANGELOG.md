@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-17
+
+Patch release. The "Show shortcut..." button was a silent no-op for every installer and portable-ZIP user of v0.2.0.
+
+### Fixed
+
+- **Show shortcut button now works in installed builds.** `LauncherPathResolver` only checked for `TaskbarFolders.Launcher.exe` as a side-by-side neighbour of `TaskbarFolders.Manager.exe`. The Inno Setup installer (and the release `Compress-Archive` of `./publish/*`) places them in sibling folders (`{app}\Manager\` and `{app}\Launcher\`), so resolution returned null on every shipped build, `GroupSyncService` silently skipped shortcut generation, and the pin-helper command did nothing when clicked. Added a sibling-folder probe between the existing side-by-side and dev-layout strategies.
+- **Pin-helper now surfaces missing-shortcut conditions.** When the `.lnk` does not exist, the command runs a one-shot `SyncAsync` (covers the case where an earlier sync was skipped due to a now-fixed environment), then opens a dialog naming the log location instead of returning silently. Exceptions from the inline sync are caught and routed through the same dialog so they cannot escape as unhandled `AsyncRelayCommand` failures.
+- `GroupSyncService` log level for unresolved launcher bumped from Warning to Error — it is a user-blocking condition, not a soft warning. `LauncherPathResolver` itself now logs the full probed-paths list so support logs pinpoint which assumption broke.
+
+### Internal
+
+- `IUserConfirmation` gained `Notify(caption, message)` for one-button information dialogs (backed by `MessageBox` with `OK` + `Information` icon).
+- `LauncherPathResolver` exposes `internal TryResolveFrom(string baseDirectory)` so the probe sequence is exercised against fixture directories rather than `AppContext.BaseDirectory`. `InternalsVisibleTo TaskbarFolders.Manager.Tests` added to the Manager csproj.
+- 5 new resolver tests (installer-layout regression, side-by-side preference, no-match contract, blank-arg rejection, contract from v0.2.0) and 4 new view-model tests for the pin-helper happy path, sync-cannot-recover path, no-binding no-op, and SyncAsync-throws path.
+
 ## [0.2.0] - 2026-05-17
 
 First functional release. Everything described in the README is implemented and tested.
