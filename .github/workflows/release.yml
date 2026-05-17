@@ -36,9 +36,17 @@ jobs:
         run: Compress-Archive -Path ./publish/* -DestinationPath ./TaskbarFolders-portable.zip
 
       - name: Build Inno Setup installer
-        uses: jrsoftware/iscc-action@v1
-        with:
-          script-path: installer/setup.iss
+        shell: pwsh
+        # Inno Setup 6 is pre-installed on windows-latest runners; using the system iscc
+        # avoids depending on third-party GitHub Actions (the previous jrsoftware/iscc-action
+        # is no longer published, which is why v0.1.0 and the first v0.2.0 attempt failed).
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            throw "ISCC.exe not found at $iscc — runner image change suspected; check https://github.com/actions/runner-images for the current Inno Setup install path."
+          }
+          & $iscc installer/setup.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC exited with $LASTEXITCODE" }
 
       - name: Extract version from tag
         id: version
