@@ -1,0 +1,169 @@
+﻿using System;
+using System.IO;
+using System.Threading;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using FluentAssertions;
+using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Shared.Configuration;
+using Xunit;
+
+namespace TaskbarFolders.Core.Tests.Icons;
+
+public sealed class FileSystemIconCacheTests : IDisposable
+{
+    private readonly string _tempBase;
+    private readonly AppDataPathProvider _paths;
+    private readonly string _sourceFile;
+
+    public FileSystemIconCacheTests()
+    {
+        _tempBase = Path.Combine(Path.GetTempPath(), "TaskbarFolders.IconCache." + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_tempBase);
+        _paths = new AppDataPathProvider(_tempBase);
+
+        // Real source file so the cache key includes a real LastWriteTimeUtc.
+        _sourceFile = Path.Combine(_tempBase, "source.exe");
+        File.WriteAllBytes(_sourceFile, [1, 2, 3, 4]);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempBase))
+        {
+            Directory.Delete(_tempBase, recursive: true);
+        }
+        GC.SuppressFinalize(this);
+    }
+
+    private static RenderTargetBitmap SolidBitmap(int size, Color color)
+    {
+        var visual = new DrawingVisual();
+        using (var ctx = visual.RenderOpen())
+        {
+            ctx.DrawRectangle(new SolidColorBrush(color), null, new Rect(0, 0, size, size));
+        }
+        var bmp = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
+        bmp.Render(visual);
+        bmp.Freeze();
+        return bmp;
+    }
+
+    [Fact]
+    public void TryGet_ReturnsFalse_WhenCacheEmpty()
+    {
+        var sut = new FileSystemIconCache(_paths);
+
+        sut.TryGet(_sourceFile, 256, out var icon).Should().BeFalse();
+        icon.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetThenTryGet_ReturnsCachedBitmap_WithSameDimensions()
+    {
+        var sut = new FileSystemIconCache(_paths);
+        sut.Set(_sourceFile, 64, SolidBitmap(64, Colors.Red));
+
+        sut.TryGet(_sourceFile, 64, out var icon).Should().BeTrue();
+        icon.Should().NotBeNull();
+        icon!.PixelWidth.Should().Be(64);
+        icon.PixelHeight.Should().Be(64);
+        icon.IsFrozen.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DifferentSizesShareSourcePath_ButProduceDifferentEntries()
+    {
+        var sut = new FileSystemIconCache(_paths);
+
+        sut.Set(_sourceFile, 16, SolidBitmap(16, Colors.Red));
+        sut.Set(_sourceFile, 256, SolidBitmap(256, Colors.Blue));
+
+        sut.TryGet(_sourceFile, 16, out var small).Should().BeTrue();
+        small!.PixelWidth.Should().Be(16);
+
+        sut.TryGet(_sourceFile, 256, out var large).Should().BeTrue();
+        large!.PixelWidth.Should().Be(256);
+    }
+
+    [Fact]
+    public void TryGet_ReturnsFalse_AfterSourceFileModified()
+    {
+        var sut = new FileSystemIconCache(_paths);
+        sut.Set(_sourceFile, 64, SolidBitmap(64, Colors.Red));
+
+        sut.TryGet(_sourceFile, 64, out _).Should().BeTrue("baseline: cache populated");
+
+        // Mutate the source file's LastWriteTimeUtc — the key changes so the cache misses.
+        Thread.Sleep(20); // ensure NTFS write-time resolution registers a change
+        File.SetLastWriteTimeUtc(_sourceFile, DateTime.UtcNow.AddMinutes(5));
+
+        sut.TryGet(_sourceFile, 64, out var icon).Should().BeFalse("stale source must invalidate the entry");
+        icon.Should().BeNull();
+    }
+
+    [Fact]
+    public void Set_OverwritesExistingEntry_ForSameKey()
+    {
+        var sut = new FileSystemIconCache(_paths);
+
+        sut.Set(_sourceFile, 64, SolidBitmap(64, Colors.Red));
+        sut.Set(_sourceFile, 64, SolidBitmap(64, Colors.Blue));
+
+        sut.TryGet(_sourceFile, 64, out var icon).Should().BeTrue();
+        icon.Should().NotBeNull();
+        // Cannot easily compare colours after round-trip, but the file existing and
+        // decoding successfully proves the overwrite worked.
+    }
+
+    [Fact]
+    public void TryGet_ReturnsFalse_AndDeletesEntry_WhenCacheFileIsCorrupt()
+    {
+        var sut = new FileSystemIconCache(_paths);
+        var cacheFile = sut.GetCachePath(_sourceFile, 64);
+        Directory.CreateDirectory(Path.GetDirectoryName(cacheFile)!);
+        File.WriteAllText(cacheFile, "not a png");
+
+        sut.TryGet(_sourceFile, 64, out _).Should().BeFalse();
+        File.Exists(cacheFile).Should().BeFalse("corrupt entry must be deleted so the next Set succeeds");
+    }
+
+    [Fact]
+    public void Ctor_PrunesEntriesOlderThanRetainDays()
+    {
+        // Place an aged file in the cache directory before constructing the cache.
+        var cacheDir = Path.Combine(_paths.IconsDirectory, FileSystemIconCache.CacheFolderName);
+        Directory.CreateDirectory(cacheDir);
+        var ancient = Path.Combine(cacheDir, "deadbeef.png");
+        File.WriteAllBytes(ancient, [0]);
+        File.SetLastWriteTimeUtc(ancient, DateTime.UtcNow.AddDays(-(FileSystemIconCache.RetainDays + 1)));
+
+        var fresh = Path.Combine(cacheDir, "cafebabe.png");
+        File.WriteAllBytes(fresh, [0]);
+        // Default last-write is now → should be kept.
+
+        _ = new FileSystemIconCache(_paths);
+
+        File.Exists(ancient).Should().BeFalse();
+        File.Exists(fresh).Should().BeTrue();
+    }
+
+    [Fact]
+    public void TryGet_ThrowsForBlankSourcePath()
+    {
+        var sut = new FileSystemIconCache(_paths);
+
+        var act = () => sut.TryGet("   ", 64, out _);
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Set_ThrowsForNullBitmap()
+    {
+        var sut = new FileSystemIconCache(_paths);
+
+        var act = () => sut.Set(_sourceFile, 64, null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+}

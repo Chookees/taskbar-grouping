@@ -77,6 +77,7 @@ public partial class App : Application
         services.AddSingleton<IIconExtractor, ShellIconExtractor>();
         services.AddSingleton<ICompositeIconGenerator, CompositeIconGenerator>();
         services.AddSingleton<IIcoFileWriter, IcoFileWriter>();
+        services.AddSingleton<IIconCache, FileSystemIconCache>();
 
         // View models — transient so each view gets a fresh instance.
         services.AddTransient<MainWindowViewModel>();

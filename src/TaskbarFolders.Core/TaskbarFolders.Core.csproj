@@ -14,4 +14,8 @@
     <ProjectReference Include="..\TaskbarFolders.Shared\TaskbarFolders.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="TaskbarFolders.Core.Tests" />
+  </ItemGroup>
+
 </Project>
