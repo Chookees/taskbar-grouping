@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
+using TaskbarFolders.Core.Icons;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Shared.Configuration;
 using TaskbarFolders.Shared.Models;
@@ -26,10 +27,23 @@ public class MainWindowViewModelTests
         return mock;
     }
 
+    private static GroupEditorViewModel CreateEditor(IGroupConfigStore store)
+    {
+        return new GroupEditorViewModel(
+            Mock.Of<IIconExtractor>(),
+            Mock.Of<ICompositeIconGenerator>(),
+            Mock.Of<IIconCache>(),
+            store);
+    }
+
+    private static MainWindowViewModel CreateSut(Mock<IGroupConfigStore> store) =>
+        new(store.Object, CreateEditor(store.Object));
+
     [Fact]
     public void Title_HasDefaultValue()
     {
-        var sut = new MainWindowViewModel(Mock.Of<IGroupConfigStore>());
+        var store = CreateStoreWith();
+        var sut = CreateSut(store);
         sut.Title.Should().Be("TaskbarFolders Manager");
     }
 
@@ -41,7 +55,7 @@ public class MainWindowViewModelTests
             new GroupConfig { Id = "a", GroupName = "Apps" },
             new GroupConfig { Id = "c", GroupName = "code" });
 
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         await sut.LoadGroupsAsync();
 
         sut.Groups.Select(g => g.Name).Should().Equal("Apps", "Browsers", "code");
@@ -51,7 +65,7 @@ public class MainWindowViewModelTests
     public async Task LoadGroupsAsync_ReplacesPreviousContents()
     {
         var store = CreateStoreWith(new GroupConfig { Id = "x", GroupName = "X" });
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         await sut.LoadGroupsAsync();
         sut.Groups.Should().HaveCount(1);
 
@@ -71,7 +85,7 @@ public class MainWindowViewModelTests
         var store = CreateStoreWith(
             new GroupConfig { Id = "a", GroupName = "Apps" },
             new GroupConfig { Id = "z", GroupName = "Zed" });
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         await sut.LoadGroupsAsync();
 
         sut.NewGroupName = "Misc";
@@ -91,7 +105,7 @@ public class MainWindowViewModelTests
     public async Task AddGroupAsync_DoesNothing_ForBlankName(string? name)
     {
         var store = CreateStoreWith();
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         sut.NewGroupName = name!;
 
         await sut.AddGroupCommand.ExecuteAsync(null);
@@ -104,7 +118,7 @@ public class MainWindowViewModelTests
     public async Task AddGroupAsync_TrimsWhitespaceAroundName()
     {
         var store = CreateStoreWith();
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         sut.NewGroupName = "  Spaced  ";
 
         await sut.AddGroupCommand.ExecuteAsync(null);
@@ -121,7 +135,7 @@ public class MainWindowViewModelTests
             new GroupConfig { Id = "b", GroupName = "Browsers" },
         };
         var store = CreateStoreWith(configs);
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         await sut.LoadGroupsAsync();
 
         var toDelete = sut.Groups.Single(g => g.Id == "a");
@@ -141,7 +155,7 @@ public class MainWindowViewModelTests
             new GroupConfig { Id = "c", GroupName = "C" },
         };
         var store = CreateStoreWith(configs);
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         await sut.LoadGroupsAsync();
         sut.SelectedGroup = sut.Groups[1]; // B
 
@@ -156,7 +170,7 @@ public class MainWindowViewModelTests
     public async Task DeleteGroupAsync_ClearsSelection_WhenLastGroupRemoved()
     {
         var store = CreateStoreWith(new GroupConfig { Id = "only", GroupName = "Only" });
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         await sut.LoadGroupsAsync();
         sut.SelectedGroup = sut.Groups[0];
 
@@ -170,7 +184,7 @@ public class MainWindowViewModelTests
     public async Task DeleteGroupAsync_NoOps_ForNullArgument()
     {
         var store = CreateStoreWith(new GroupConfig { Id = "x", GroupName = "X" });
-        var sut = new MainWindowViewModel(store.Object);
+        var sut = CreateSut(store);
         await sut.LoadGroupsAsync();
 
         await sut.DeleteGroupCommand.ExecuteAsync(null);

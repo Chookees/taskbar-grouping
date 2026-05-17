@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="{Binding Title}"
-        Width="900" Height="600"
+        Width="980" Height="640"
         WindowStartupLocation="CenterScreen"
         d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}">
     <Grid>
@@ -55,30 +55,78 @@
             </ListBox>
         </DockPanel>
 
-        <!-- Detail pane: replaced by the group editor in M3.3 -->
-        <Grid Grid.Column="1">
-            <ContentControl Content="{Binding SelectedGroup}">
-                <ContentControl.ContentTemplate>
-                    <DataTemplate DataType="{x:Type vm:GroupListItemViewModel}">
-                        <StackPanel Margin="24" VerticalAlignment="Top">
-                            <TextBlock Text="{Binding Name}" FontSize="28" FontWeight="Light" />
-                            <TextBlock Text="{Binding Id}" FontSize="11" Opacity="0.5" Margin="0,4,0,16" />
-                            <Border Background="#F0F0F0" Padding="16" CornerRadius="8">
-                                <TextBlock TextWrapping="Wrap" Opacity="0.7">
-                                    Drag &amp; drop and the live composite preview land in M3.3 — for now this pane
-                                    proves the binding chain (sidebar selection → detail pane content) is wired.
-                                </TextBlock>
-                            </Border>
-                        </StackPanel>
-                    </DataTemplate>
-                </ContentControl.ContentTemplate>
-            </ContentControl>
-
-            <!-- Fallback when no group is selected -->
+        <!-- Detail pane: drives off MainWindowViewModel.Editor -->
+        <Grid Grid.Column="1" DataContext="{Binding Editor}">
+            <!-- Empty-state placeholder shown when nothing is selected -->
             <TextBlock Text="Select a group to view details, or click + Add to create one."
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        Opacity="0.5"
-                       Visibility="{Binding SelectedGroup, Converter={x:Static vm:NullToVisibilityConverter.Instance}}" />
+                       Visibility="{Binding BoundItem, Converter={x:Static vm:NullToVisibilityConverter.Instance}}" />
+
+            <!-- Editor content shown once a group is selected -->
+            <DockPanel Margin="24"
+                       Visibility="{Binding BoundItem, Converter={x:Static vm:NotNullToVisibilityConverter.Instance}}">
+                <!-- Header: name + live composite preview -->
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding BoundItem.Name}" FontSize="28" FontWeight="Light" />
+                        <TextBlock Text="{Binding BoundItem.Id}" FontSize="11" Opacity="0.5" Margin="0,4,0,0" />
+                    </StackPanel>
+                    <Border Grid.Column="1"
+                            Width="96" Height="96"
+                            Background="#F0F0F0"
+                            CornerRadius="12">
+                        <Image Source="{Binding CompositeIconPreview}"
+                               Stretch="Uniform" Margin="4" />
+                    </Border>
+                </Grid>
+
+                <!-- Drop zone hint + Add button -->
+                <Border DockPanel.Dock="Top"
+                        Padding="16" Margin="0,0,0,12"
+                        Background="#F5F5F5"
+                        BorderBrush="#D0D0D0" BorderThickness="1"
+                        CornerRadius="8"
+                        AllowDrop="True"
+                        PreviewDragOver="Editor_PreviewDragOver"
+                        Drop="Editor_Drop">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Content="Add app..." Padding="12,4"
+                                Click="AddAppPicker_Click" />
+                        <TextBlock VerticalAlignment="Center" Opacity="0.7"
+                                   Text="Drop .exe or .lnk files here, or use the button to browse." />
+                    </DockPanel>
+                </Border>
+
+                <!-- App list -->
+                <ListBox ItemsSource="{Binding Apps}" BorderThickness="0" Background="Transparent">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:AppEntryViewModel}">
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Image Grid.Column="0" Source="{Binding Icon}" Width="32" Height="32" Stretch="Uniform" />
+                                <StackPanel Grid.Column="1" Margin="8,0">
+                                    <TextBlock Text="{Binding Name}" FontSize="13" />
+                                    <TextBlock Text="{Binding Path}" FontSize="11" Opacity="0.5" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <Button Grid.Column="2"
+                                        Content="Remove" Padding="8,2"
+                                        Command="{Binding DataContext.RemoveAppCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
         </Grid>
     </Grid>
 </Window>

@@ -89,7 +89,11 @@ dotnet_diagnostic.CA1716.severity = none
 dotnet_diagnostic.CA1848.severity = none
 dotnet_diagnostic.CA1873.severity = none
 
-# Test projects use the established xUnit Method_Behavior_Condition naming convention
-# (CA1707 would forbid the underscores). Production code remains strict.
+# Test projects: relax the perf-oriented analyzer rules. Tests run once per build, not in
+# a hot path, so "use static readonly array fields" (CA1861) and "narrow return types"
+# (CA1859) just add boilerplate without any real benefit. Also relax CA1707 so xUnit's
+# Method_Behavior_Condition naming convention compiles. Production code stays strict.
 [tests/**/*.cs]
 dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1861.severity = none

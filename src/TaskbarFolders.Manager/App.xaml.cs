@@ -87,6 +87,7 @@ public partial class App : Application
         // View models — MainWindow is itself a singleton conceptually (one main window per process),
         // so the backing VM is singleton too. App.OnStartup loads groups into it before showing the window.
         services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<GroupEditorViewModel>();
 
         // Views — transient so each Show creates a fresh window instance.
         services.AddTransient<MainWindow>();

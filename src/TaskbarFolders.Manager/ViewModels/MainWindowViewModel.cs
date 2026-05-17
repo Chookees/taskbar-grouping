@@ -22,13 +22,27 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Initializes a new instance.</summary>
     /// <param name="store">Group configuration store, injected.</param>
+    /// <param name="editor">Editor view model for the detail pane, injected.</param>
     /// <param name="logger">Optional logger.</param>
-    public MainWindowViewModel(IGroupConfigStore store, ILogger<MainWindowViewModel>? logger = null)
+    public MainWindowViewModel(
+        IGroupConfigStore store,
+        GroupEditorViewModel editor,
+        ILogger<MainWindowViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(editor);
 
         _store = store;
+        Editor = editor;
         _logger = logger;
+    }
+
+    /// <summary>Detail-pane view model. Single instance reused across selection changes.</summary>
+    public GroupEditorViewModel Editor { get; }
+
+    partial void OnSelectedGroupChanged(GroupListItemViewModel? value)
+    {
+        Editor.Bind(value);
     }
 
     /// <summary>Window title shown in the chrome.</summary>

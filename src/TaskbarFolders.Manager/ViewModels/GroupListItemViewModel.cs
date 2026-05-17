@@ -37,4 +37,11 @@ public sealed partial class GroupListItemViewModel : ObservableObject
 
     /// <summary>Convenience pass-through for sidebar item count badges.</summary>
     public int AppCount => Config.Apps.Count;
+
+    /// <summary>
+    /// Raises <see cref="System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/> for
+    /// <see cref="AppCount"/>. Called by the editor after it mutates <see cref="Config"/>.Apps
+    /// so the sidebar badge refreshes.
+    /// </summary>
+    public void NotifyAppCountChanged() => OnPropertyChanged(nameof(AppCount));
 }
