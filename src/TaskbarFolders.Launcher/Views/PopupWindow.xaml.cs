@@ -23,6 +23,12 @@ namespace TaskbarFolders.Launcher.Views;
 /// </remarks>
 public partial class PopupWindow : Window
 {
+    /// <summary>Tile width + height in DIPs. Mirrors the Image width in the data template.</summary>
+    private const int TilePx = 96;
+
+    /// <summary>Outer padding on the popup Border in DIPs.</summary>
+    private const int PaddingPx = 12;
+
     private readonly PopupViewModel _viewModel;
     private readonly ITaskbarPositionHelper _positionHelper;
     private readonly AppSettings _settings;
@@ -51,11 +57,18 @@ public partial class PopupWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        // Ensure layout has measured so SizeToContent has set Width/Height before placing.
+        // Compute explicit Width + Height from the bound grid metrics — skips the SizeToContent
+        // measure pass that pre-v0.4 added ~5-10 ms before placement could be computed. Empty
+        // / unavailable groups fall back to MinHeight, keeping the banner-only layout centred.
+        var cols = Math.Max(_viewModel.Columns, 1);
+        var rows = (_viewModel.Apps.Count + cols - 1) / cols;
+        Width = Math.Clamp(cols * TilePx + 2 * PaddingPx, MinWidth, MaxWidth);
+        Height = Math.Clamp(Math.Max(rows, 1) * TilePx + 2 * PaddingPx, MinHeight, MaxHeight);
+
+        // Measure pass for hit-test rect correctness on the now-explicit size.
         UpdateLayout();
 
-        var size = new Size(ActualWidth > 0 ? ActualWidth : Width, ActualHeight > 0 ? ActualHeight : Height);
-        var placement = _positionHelper.ComputePlacement(size, _settings.PopupPosition);
+        var placement = _positionHelper.ComputePlacement(new Size(Width, Height), _settings.PopupPosition);
         Left = placement.Left;
         Top = placement.Top;
     }
