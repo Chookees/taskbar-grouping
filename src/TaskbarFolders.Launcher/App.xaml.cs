@@ -30,6 +30,20 @@ public partial class App : Application
     {
         ArgumentNullException.ThrowIfNull(e);
 
+        // Per-monitor DPI awareness must be set before any HWND is created so all popups
+        // render at the right scaling on mixed-DPI multi-monitor setups. Falling back
+        // silently is fine — Windows then treats us as system-DPI-aware (still correct
+        // on single-monitor or uniform-DPI rigs).
+        try
+        {
+            Interop.NativeMethods.SetProcessDpiAwarenessContext(
+                Interop.NativeMethods.DpiAwarenessContextPerMonitorAwareV2);
+        }
+        catch (System.EntryPointNotFoundException)
+        {
+            // Pre-1703 Windows — leave DPI awareness at the manifest default.
+        }
+
         var groupId = CommandLineParser.TryParseGroupId(e.Args);
         if (groupId is null)
         {
@@ -57,6 +71,7 @@ public partial class App : Application
 
         // Launcher-only services.
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();
+        services.AddSingleton<ITaskbarPositionHelper, TaskbarPositionHelper>();
 
         services.AddSingleton<PopupViewModel>();
         services.AddTransient<PopupWindow>();
