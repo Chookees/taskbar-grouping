@@ -64,3 +64,8 @@ dotnet_naming_style.camel_case_underscore.capitalization = camel_case
 
 # XML documentation
 dotnet_diagnostic.CS1591.severity = warning
+
+# CA1716: "Shared" namespace clashes with a VB.NET reserved keyword.
+# Not applicable here — this is a Windows-only C# WPF app with no VB.NET consumers,
+# and the "Shared" name is part of the documented module taxonomy (see docs/architecture.md).
+dotnet_diagnostic.CA1716.severity = none

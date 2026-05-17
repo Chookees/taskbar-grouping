@@ -1,10 +1,12 @@
 # User Guide
 
-## Installation
+> ⚠️ **Status: Pre-Alpha (v0.1.x).** This guide describes the target product. **None of the user-facing functionality below is implemented yet.** First functional release is planned for v0.2.0. See the [README](../README.md) for the current state.
+
+## Installation 🚧
 
 ### Using the Installer
 
-1. Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/YOUR_USER/TaskbarFolders/releases)
+1. Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
 2. Run the installer
 3. Follow the setup wizard
 4. Launch **TaskbarFolders Manager** from the Start Menu

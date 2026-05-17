@@ -1,10 +1,12 @@
 # API Reference
 
+> ⚠️ **Status: Pre-Alpha (v0.1.x).** Items marked ✅ exist in code; items marked 🚧 are target contracts that are not yet implemented. For implemented types, the file links lead to the actual source.
+
 ## TaskbarFolders.Core
 
 ### Namespace: `TaskbarFolders.Core.Icons`
 
-#### `IIconExtractor`
+#### `IIconExtractor` ✅ (interface only — no implementation yet)
 
 Extracts icons from executable files, shortcuts, and icon files.
 
@@ -23,7 +25,7 @@ public interface IIconExtractor
 
 ---
 
-#### `ICompositeIconGenerator`
+#### `ICompositeIconGenerator` ✅ (interface only — no implementation yet)
 
 Generates composite icons from multiple source icons in a grid layout.
 
@@ -46,7 +48,7 @@ public interface ICompositeIconGenerator
 
 ### Namespace: `TaskbarFolders.Shared.Models`
 
-#### `AppEntry`
+#### `AppEntry` ✅
 
 Represents a single application entry within a taskbar group.
 
@@ -59,7 +61,7 @@ Represents a single application entry within a taskbar group.
 
 ---
 
-#### `GroupConfig`
+#### `GroupConfig` ✅
 
 Configuration for a single taskbar group.
 
@@ -73,7 +75,7 @@ Configuration for a single taskbar group.
 
 ---
 
-#### `AppSettings`
+#### `AppSettings` ✅
 
 Global application settings.
 
@@ -86,9 +88,11 @@ Global application settings.
 
 ---
 
-### Namespace: `TaskbarFolders.Shared.Configuration`
+### Namespace: `TaskbarFolders.Shared.Configuration` 🚧
 
-#### `IGroupConfigStore`
+> 🚧 **Planned namespace.** Neither the namespace nor the interfaces below exist in the code yet. They are listed here as the target contract for milestone M1 (Foundational Plumbing).
+
+#### `IGroupConfigStore` 🚧
 
 Interface for persisting group configurations.
 
@@ -102,7 +106,7 @@ public interface IGroupConfigStore
 }
 ```
 
-#### `IAppSettingsStore`
+#### `IAppSettingsStore` 🚧
 
 Interface for persisting application settings.
 

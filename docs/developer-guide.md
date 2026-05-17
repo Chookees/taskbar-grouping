@@ -1,5 +1,7 @@
 # Developer Guide
 
+> ⚠️ **Status: Pre-Alpha (v0.1.x).** This guide describes the target development conventions. Some referenced components (ViewModels folder, `IGroupConfigStore`, `TaskbarPositionHelper`) do not yet exist — see the 🚧 markers below.
+
 ## Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
@@ -9,7 +11,7 @@
 ## Getting Started
 
 ```bash
-git clone https://github.com/YOUR_USER/TaskbarFolders.git
+git clone https://github.com/TODO-GH-OWNER/TaskbarFolders.git
 cd TaskbarFolders
 dotnet restore
 dotnet build
@@ -66,12 +68,12 @@ dotnet format
 
 ### Key Conventions
 
-- **File-scoped namespaces**: `namespace Foo.Bar;`
-- **Private fields**: `_camelCase` prefix
-- **XML documentation**: Required on all public members
-- **MVVM**: ViewModels in `ViewModels/`, Views in `Views/`, no code-behind logic
-- **DI**: Register services in `App.xaml.cs`, inject via constructor
-- **Async**: All I/O operations must be async
+- ✅ **File-scoped namespaces**: `namespace Foo.Bar;`
+- ✅ **Private fields**: `_camelCase` prefix
+- ✅ **XML documentation**: Required on all public members
+- 🚧 **MVVM**: ViewModels in `ViewModels/`, Views in `Views/`, no code-behind logic (folder will be added in M3)
+- 🚧 **DI**: Register services in `App.xaml.cs`, inject via constructor (bootstrap in M1)
+- 🚧 **Async**: All I/O operations must be async (enforced once persistence lands in M1)
 
 ## Architecture
 
@@ -79,10 +81,10 @@ See [architecture.md](architecture.md) for the full system overview.
 
 ### Key Patterns
 
-- **MVVM**: Views bind to ViewModels via DataContext
-- **Dependency Injection**: `Microsoft.Extensions.DependencyInjection`
-- **Repository Pattern**: `IGroupConfigStore` abstracts JSON persistence
-- **Strategy Pattern**: `IIconExtractor` allows different extraction methods
+- 🚧 **MVVM**: Views bind to ViewModels via DataContext (M3)
+- 🚧 **Dependency Injection**: `Microsoft.Extensions.DependencyInjection` (M1 bootstrap)
+- 🚧 **Repository Pattern**: `IGroupConfigStore` abstracts JSON persistence (M1)
+- 🚧 **Strategy Pattern**: `IIconExtractor` allows different extraction methods (interface ✅, implementation in M2)
 
 ## Debugging
 
@@ -98,9 +100,9 @@ dotnet run --project src/TaskbarFolders.Launcher -- --group-id <id>
 
 ### Common Issues
 
-- **Icon extraction fails**: Ensure the target .exe exists and is accessible
-- **Popup positioning wrong**: Check `TaskbarPositionHelper` for multi-monitor logic
-- **Build warnings as errors**: Fix all warnings or adjust `Directory.Build.props`
+- 🚧 **Icon extraction fails**: Ensure the target .exe exists and is accessible (relevant once `ShellIconExtractor` lands in M2)
+- 🚧 **Popup positioning wrong**: Check `TaskbarPositionHelper` for multi-monitor logic (helper will be added in M4)
+- ✅ **Build warnings as errors**: Fix all warnings or adjust `Directory.Build.props`
 
 ## Adding a New Feature
 

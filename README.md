@@ -1,38 +1,44 @@
 # TaskbarFolders
 
-[![CI](https://github.com/YOUR_USER/TaskbarFolders/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USER/TaskbarFolders/actions/workflows/ci.yml)
-[![Release](https://github.com/YOUR_USER/TaskbarFolders/actions/workflows/release.yml/badge.svg)](https://github.com/YOUR_USER/TaskbarFolders/releases)
+[![CI](https://github.com/TODO-GH-OWNER/TaskbarFolders/actions/workflows/ci.yml/badge.svg)](https://github.com/TODO-GH-OWNER/TaskbarFolders/actions/workflows/ci.yml)
+[![Release](https://github.com/TODO-GH-OWNER/TaskbarFolders/actions/workflows/release.yml/badge.svg)](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+> ⚠️ **Status: Pre-Alpha (v0.1.x).** This document describes the target product. Features are marked ✅ when implemented and 🚧 when planned. Today, only the project scaffold (solution structure, CI pipeline, models, interface stubs) is in place — no user-facing functionality exists yet. See [CHANGELOG.md](CHANGELOG.md) for shipped changes.
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 
-![TaskbarFolders Screenshot](assets/screenshots/preview.png)
+<!-- TODO: Add screenshot at assets/screenshots/preview.png once the Manager UI is implemented (M3). -->
 
-## Features
+## Planned Features
 
-- **Group apps into folders** – Drag & drop `.exe` and `.lnk` files into customizable groups
-- **Automatic composite icons** – Each group gets a 2×2 preview icon generated from the contained app icons
-- **Pin to taskbar** – Every group is a standalone `.exe` that can be pinned to the Windows taskbar
-- **Animated popup** – Click a group to reveal apps in a rounded-corner popup with blur background
-- **Light/Dark/System themes** – Follows your Windows theme or set per group
-- **Multi-monitor support** – Popup positions correctly on any monitor setup
-- **High-DPI aware** – Crisp rendering at all scaling levels (100%–200%)
+- 🚧 **Group apps into folders** – Drag & drop `.exe` and `.lnk` files into customizable groups
+- 🚧 **Automatic composite icons** – Each group gets a 2×2 preview icon generated from the contained app icons
+- 🚧 **Pin to taskbar** – Every group is a standalone `.exe` that can be pinned to the Windows taskbar
+- 🚧 **Animated popup** – Click a group to reveal apps in a rounded-corner popup with blur background
+- 🚧 **Light/Dark/System themes** – Follows your Windows theme or set per group
+- 🚧 **Multi-monitor support** – Popup positions correctly on any monitor setup
+- 🚧 **High-DPI aware** – Crisp rendering at all scaling levels (100%–200%)
 
-## Installation
+## Installation 🚧
 
-### Installer (recommended)
+> 🚧 **Not yet available.** First functional release is planned for v0.2.0 (see [project plan](docs/architecture.md)).
 
-1. Download the latest `TaskbarFolders-Setup.exe` from [Releases](https://github.com/YOUR_USER/TaskbarFolders/releases)
+### Installer (recommended) 🚧
+
+1. Download the latest `TaskbarFolders-Setup.exe` from [Releases](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
 2. Run the installer and follow the instructions
 3. Launch **TaskbarFolders Manager** from the Start Menu
 
-### Portable
+### Portable 🚧
 
-1. Download the latest `TaskbarFolders-portable.zip` from [Releases](https://github.com/YOUR_USER/TaskbarFolders/releases)
+1. Download the latest `TaskbarFolders-portable.zip` from [Releases](https://github.com/TODO-GH-OWNER/TaskbarFolders/releases)
 2. Extract to any folder
 3. Run `TaskbarFolders.Manager.exe`
 
-## Quick Start
+## Quick Start 🚧
+
+> 🚧 **Workflow described below is the target. Manager UI is not yet implemented.**
 
 1. Open **TaskbarFolders Manager**
 2. Click **New Group** and give it a name (e.g., "Dev Tools")
@@ -51,7 +57,7 @@
 ### Build
 
 ```bash
-git clone https://github.com/YOUR_USER/TaskbarFolders.git
+git clone https://github.com/TODO-GH-OWNER/TaskbarFolders.git
 cd TaskbarFolders
 dotnet restore
 dotnet build --configuration Release

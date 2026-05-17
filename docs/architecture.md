@@ -1,5 +1,7 @@
 # Architecture Overview
 
+> ⚠️ **Status: Pre-Alpha (v0.1.x).** This document describes the target architecture. Components marked ✅ exist in code; components marked 🚧 are planned. Today only the project skeleton (csproj structure, interface stubs, models) is in place.
+
 ## System Overview
 
 TaskbarFolders consists of two main executables and two shared libraries:
@@ -35,48 +37,50 @@ graph TB
 
 ## Components
 
-### Manager (TaskbarFolders.Manager)
+### Manager (TaskbarFolders.Manager) 🚧
 
 The main WPF application where users create, edit, and delete groups. Uses MVVM pattern with dependency injection.
 
 **Responsibilities:**
-- Group CRUD operations
-- Drag & drop of .exe/.lnk files
-- Live preview of composite icons
-- Settings management (autostart, theme, animations)
-- Generating launcher configurations and composite icons
+- 🚧 Group CRUD operations
+- 🚧 Drag & drop of .exe/.lnk files
+- 🚧 Live preview of composite icons
+- 🚧 Settings management (autostart, theme, animations)
+- 🚧 Generating launcher configurations and composite icons
 
-### Launcher (TaskbarFolders.Launcher)
+### Launcher (TaskbarFolders.Launcher) 🚧
 
 A lightweight WPF application. Each taskbar group uses the same launcher binary, differentiated by command-line arguments or config file association.
 
 **Responsibilities:**
-- Read group configuration on startup
-- Display animated popup with app grid
-- Launch selected applications
-- Auto-close on focus loss
-- Position popup near taskbar
+- 🚧 Read group configuration on startup
+- 🚧 Display animated popup with app grid
+- 🚧 Launch selected applications
+- 🚧 Auto-close on focus loss
+- 🚧 Position popup near taskbar
 
 ### Core (TaskbarFolders.Core)
 
 The icon processing engine.
 
 **Responsibilities:**
-- Extract icons from .exe, .lnk, and .ico files via Windows Shell API
-- Generate 2x2 composite icons
-- Write multi-resolution .ico files
-- Cache generated icons
+- 🚧 Extract icons from .exe, .lnk, and .ico files via Windows Shell API (interface ✅ `IIconExtractor`)
+- 🚧 Generate 2x2 composite icons (interface ✅ `ICompositeIconGenerator`)
+- 🚧 Write multi-resolution .ico files
+- 🚧 Cache generated icons
 
 ### Shared (TaskbarFolders.Shared)
 
 DTOs, configuration models, and shared utilities.
 
 **Responsibilities:**
-- Data models (AppEntry, GroupConfig, AppSettings)
-- JSON configuration persistence
-- Path utilities
+- ✅ Data models (`AppEntry`, `GroupConfig`, `AppSettings`)
+- 🚧 JSON configuration persistence
+- 🚧 Path utilities
 
-## Data Flow
+## Data Flow 🚧
+
+> 🚧 **All flows below describe planned behavior. None of these steps execute in v0.1.x.**
 
 ### Creating a Group
 
@@ -104,7 +108,7 @@ DTOs, configuration models, and shared utilities.
 - **P/Invoke for icon extraction**: Direct Windows Shell API for maximum compatibility
 - **Separate launcher binary**: Each group needs its own taskbar identity (icon + name)
 
-## Icon Engine Pipeline
+## Icon Engine Pipeline 🚧
 
 ```mermaid
 graph LR

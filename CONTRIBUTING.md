@@ -13,7 +13,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 ### Getting Started
 
 ```bash
-git clone https://github.com/YOUR_USER/TaskbarFolders.git
+git clone https://github.com/TODO-GH-OWNER/TaskbarFolders.git
 cd TaskbarFolders
 dotnet restore
 dotnet build
