@@ -10,14 +10,16 @@ namespace TaskbarFolders.Launcher.Views;
 
 /// <summary>
 /// Popup window displayed when a taskbar group is clicked. Reads the user's popup-position
-/// preference from <see cref="IAppSettingsStore"/>, places itself anchored on the cursor
-/// position at click time, plays a fade+scale open animation, and dismisses on focus loss.
+/// preference from the injected <see cref="AppSettings"/>, places itself anchored on the
+/// cursor position at click time, plays a fade+scale open animation, and dismisses on focus
+/// loss.
 /// </summary>
 /// <remarks>
 /// v0.3+: chrome is fully transparent — no acrylic backdrop, no border, no shadow. The
 /// previous TryEnableAcrylic path was removed; only the per-tile hover highlight is visible.
-/// AppSettings is now injected directly (v0.3+) rather than re-loaded via IAppSettingsStore;
-/// App.OnStartup loads once and registers the instance as a singleton.
+/// <see cref="AppSettings"/> is injected directly rather than re-loaded via
+/// <see cref="IAppSettingsStore"/>; App.OnStartup loads once and registers the instance as a
+/// singleton.
 /// </remarks>
 public partial class PopupWindow : Window
 {

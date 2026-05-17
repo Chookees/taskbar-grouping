@@ -128,6 +128,11 @@ public sealed partial class PopupViewModel : ObservableObject, IDisposable
         {
             // Atomically retire any previous load (e.g. caller invoking Start twice) so
             // its tasks observe cancellation and do not race with the new batch.
+            // Ordering invariant: Cancel BEFORE Dispose; new CTS BEFORE the token capture.
+            // Per-app tasks from the previous batch hold a captured token struct pointing
+            // at the now-disposed old CTS — IsCancellationRequested still returns true
+            // (the Cancel call set the flag before Dispose), so they observe cancellation
+            // correctly even after the swap.
             _iconLoadCts?.Cancel();
             _iconLoadCts?.Dispose();
             _iconLoadCts = new CancellationTokenSource();

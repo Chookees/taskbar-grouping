@@ -4,7 +4,7 @@
 [![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ℹ️ **Status: v0.2.1.** Patch release — `Show shortcut...` button now works in installed and portable builds (was a silent no-op in v0.2.0). See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
+> ℹ️ **Status: v0.3.0.** Minor release — popup is tile-anchored, chrome is fully transparent (only icons visible), icons stream in progressively so the popup paints instantly. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 
@@ -15,7 +15,7 @@
 - ✅ **Group apps into folders** – Drag & drop `.exe` and `.lnk` files into customizable groups
 - ✅ **Automatic composite icons** – Each group gets a 2×2 preview icon generated from the contained app icons
 - ✅ **Pin to taskbar** – Each group gets its own `.lnk` shortcut (with a distinct AppUserModelID) that you can pin to the Windows taskbar
-- ✅ **Animated popup** – Click a pinned group to reveal apps in a rounded-corner popup with Acrylic backdrop on Windows 11 22H2+
+- ✅ **Animated popup** – Click a pinned group to reveal apps in a fully-transparent popup anchored on the clicked tile; only the icons are visible (v0.3+)
 - ✅ **Light/Dark/System themes** – Follows your Windows theme or set per group; live-switches when Windows theme changes
 - ✅ **Multi-monitor support** – Popup positions itself adjacent to the taskbar on the monitor under the cursor; handles secondary monitors with negative X
 - ✅ **High-DPI aware** – Per-monitor V2 DPI awareness so the UI stays crisp on mixed-DPI setups (100 %–200 %)

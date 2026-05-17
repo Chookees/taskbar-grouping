@@ -36,8 +36,22 @@ public partial class App : Application
         // visually-random popup placement. GetCursorPos is a single user32 syscall, no
         // dependencies on DPI, COM, or WPF state. Seeded into ICursorAnchor below once DI
         // has been built.
-        Interop.NativeMethods.GetCursorPos(out var clickPoint);
-        var anchor = new System.Windows.Point(clickPoint.X, clickPoint.Y);
+        //
+        // GetCursorPos can fail on restricted desktops / session 0. Out param is default-
+        // initialised to (0, 0) on failure, which would silently anchor the popup at the
+        // top-left of the primary monitor. Detect the failure and fall back to the screen
+        // centre so the user sees the popup near the middle instead of jammed in a corner.
+        System.Windows.Point anchor;
+        if (Interop.NativeMethods.GetCursorPos(out var clickPoint))
+        {
+            anchor = new System.Windows.Point(clickPoint.X, clickPoint.Y);
+        }
+        else
+        {
+            anchor = new System.Windows.Point(
+                System.Windows.SystemParameters.PrimaryScreenWidth / 2,
+                System.Windows.SystemParameters.PrimaryScreenHeight / 2);
+        }
 
         // Per-monitor DPI awareness must be set before any HWND is created so all popups
         // render at the right scaling on mixed-DPI multi-monitor setups. Falling back

@@ -51,11 +51,18 @@ public sealed class CompositionRootTests : IDisposable
         // post-load in App.OnStartup; here we register a default instance so ValidateOnBuild
         // can resolve the full graph.
         services.AddSingleton(new AppSettings());
-        return services.BuildServiceProvider(new ServiceProviderOptions
+        var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,
             ValidateScopes = true,
         });
+
+        // Pre-seed the cursor anchor so any future composition test that calls
+        // TaskbarPositionHelper.ComputePlacement does not throw with a confusing
+        // "read before Seed" message. Production seeds in App.OnStartup; tests would
+        // otherwise have to remember to do the same.
+        provider.GetRequiredService<ICursorAnchor>().Seed(new System.Windows.Point(0, 0));
+        return provider;
     }
 
     [Theory]
