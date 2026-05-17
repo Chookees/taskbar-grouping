@@ -72,6 +72,8 @@ public sealed class CompositionRootTests : IDisposable
     [InlineData(typeof(ILauncherPathResolver))]
     [InlineData(typeof(IGroupSyncService))]
     [InlineData(typeof(IUserConfirmation))]
+    [InlineData(typeof(IProcessRunner))]
+    [InlineData(typeof(IPinToTaskbarService))]
     // View models — all resolvable means every constructor dependency is also registered
     [InlineData(typeof(MainWindowViewModel))]
     [InlineData(typeof(GroupEditorViewModel))]

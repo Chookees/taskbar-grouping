@@ -37,6 +37,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
     private readonly IGroupSyncService _syncService;
     private readonly IAppDataPathProvider _paths;
     private readonly IUserConfirmation _userConfirmation;
+    private readonly IPinToTaskbarService _pinService;
     private readonly ILogger<GroupEditorViewModel>? _logger;
 
     private GroupListItemViewModel? _boundItem;
@@ -53,6 +54,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         IGroupSyncService syncService,
         IAppDataPathProvider paths,
         IUserConfirmation userConfirmation,
+        IPinToTaskbarService pinService,
         ILogger<GroupEditorViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(extractor);
@@ -62,6 +64,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(syncService);
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(userConfirmation);
+        ArgumentNullException.ThrowIfNull(pinService);
 
         _extractor = extractor;
         _composer = composer;
@@ -70,6 +73,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         _syncService = syncService;
         _paths = paths;
         _userConfirmation = userConfirmation;
+        _pinService = pinService;
         _logger = logger;
     }
 
@@ -186,41 +190,96 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private async Task ShowPinHelperAsync()
+    private async Task PinToTaskbarAsync()
     {
         if (_boundItem is null)
         {
             return;
         }
 
-        var shortcutPath = _paths.GetGroupShortcutFile(_boundItem.Id);
+        // Make sure the .lnk exists before invoking the WinRT pin runner — the launcher
+        // process needs the on-disk shortcut to derive its launch identity, and the future
+        // pinned-tile click path uses the .lnk for AUMID-derived group resolution.
+        if (!await EnsureShortcutExistsAsync(_boundItem.Id).ConfigureAwait(true))
+        {
+            return; // EnsureShortcutExistsAsync already notified the user.
+        }
+
+        var result = await _pinService.PinAsync(_boundItem.Id).ConfigureAwait(true);
+        _logger?.LogInformation("PinToTaskbar for {GroupId} returned {Result}.", _boundItem.Id, result);
+
+        switch (result)
+        {
+            case PinResult.Success:
+                _userConfirmation.Notify(
+                    "Pinned",
+                    $"\"{_boundItem.Config.GroupName}\" is now on your taskbar.");
+                break;
+
+            case PinResult.UserDenied:
+                // User clicked Cancel in the system dialog — they know what happened, no Notify.
+                break;
+
+            case PinResult.Unsupported:
+                _logger?.LogWarning("Pin unsupported on this Windows build/SKU; opening Explorer fallback.");
+                _userConfirmation.Notify(
+                    "Pin not available",
+                    "This Windows build does not allow apps to pin themselves to the taskbar. " +
+                    "Opening the shortcut folder — right-click the .lnk and choose " +
+                    "\"Pin to taskbar\" (or \"Show more options\" → \"Pin to taskbar\" on Win11 22H2+).");
+                OpenShortcutInExplorer(_boundItem.Id);
+                break;
+
+            case PinResult.Error:
+            default:
+                _userConfirmation.Notify(
+                    "Pin failed",
+                    "Pinning to the taskbar failed unexpectedly. Opening the shortcut folder " +
+                    "so you can pin manually. Check %APPDATA%\\TaskbarFolders\\logs for details.");
+                OpenShortcutInExplorer(_boundItem.Id);
+                break;
+        }
+    }
+
+    [RelayCommand]
+    private void ShowShortcut()
+    {
+        if (_boundItem is null)
+        {
+            return;
+        }
+
+        OpenShortcutInExplorer(_boundItem.Id);
+    }
+
+    /// <summary>
+    /// Validates the shortcut path, runs a one-shot sync if missing, and notifies the user
+    /// when the .lnk still cannot be produced. Returns <see langword="true"/> if a usable
+    /// shortcut exists at the end.
+    /// </summary>
+    private async Task<bool> EnsureShortcutExistsAsync(string groupId)
+    {
+        var shortcutPath = _paths.GetGroupShortcutFile(groupId);
 
         // Defence in depth: AppDataPathProvider already rejects malformed ids, but a future
         // path-provider implementation could differ. Verify the resolved path is inside the
         // shortcuts directory before handing it to Explorer — keeps any argument-injection
-        // shape (`" --some-flag`) from sneaking into the command line.
+        // shape from sneaking into the command line.
         var shortcutsRoot = _paths.ShortcutsDirectory;
         var fullShortcutPath = Path.GetFullPath(shortcutPath);
         var fullRoot = Path.GetFullPath(shortcutsRoot);
         if (!fullShortcutPath.StartsWith(fullRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
             _logger?.LogError(
-                "Pin-helper refused: resolved shortcut path {Path} is outside the shortcuts root {Root}.",
+                "Pin: resolved shortcut path {Path} is outside the shortcuts root {Root}.",
                 fullShortcutPath, fullRoot);
-            return;
+            return false;
         }
 
-        // If the .lnk is missing, try to (re)generate it once before giving up. Covers the
-        // case where an earlier sync was skipped (e.g. launcher unresolvable on first save)
-        // and is then fixed by an upgrade or environment change — retrying inline means the
-        // user does not have to remove-and-re-add an app to trigger a sync.
-        // Catch the world so a SyncAsync throw (COM failure in ShortcutGenerator, IO error
-        // on .lnk write) still falls through to the user-visible Notify path below instead
-        // of bubbling as an unhandled AsyncRelayCommand exception.
-        if (!File.Exists(fullShortcutPath))
+        if (!File.Exists(fullShortcutPath) && _boundItem is not null)
         {
             _logger?.LogInformation(
-                "Pin-helper: shortcut {Path} missing — running a one-shot sync before reporting.",
+                "Pin: shortcut {Path} missing — running a one-shot sync before continuing.",
                 fullShortcutPath);
             try
             {
@@ -230,27 +289,44 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
             {
                 _logger?.LogError(
                     ex,
-                    "Pin-helper: on-demand sync for group {GroupId} threw — falling through to user notification.",
-                    _boundItem.Id);
+                    "Pin: on-demand sync for group {GroupId} threw.", groupId);
             }
         }
 
         if (!File.Exists(fullShortcutPath))
         {
-            _logger?.LogError(
-                "Pin-helper: shortcut {Path} still missing after sync — notifying user.",
-                fullShortcutPath);
+            _logger?.LogError("Pin: shortcut {Path} still missing after sync.", fullShortcutPath);
             _userConfirmation.Notify(
                 "Shortcut not available",
                 "The pinnable shortcut for this group could not be created. This usually means " +
                 "the launcher binary cannot be located, or no app icon could be extracted. " +
                 "Check the application log under %APPDATA%\\TaskbarFolders\\logs for the probed " +
                 "paths, then add an app to the group to retry.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void OpenShortcutInExplorer(string groupId)
+    {
+        var shortcutPath = _paths.GetGroupShortcutFile(groupId);
+        var fullShortcutPath = Path.GetFullPath(shortcutPath);
+        var fullRoot = Path.GetFullPath(_paths.ShortcutsDirectory);
+
+        // Same defence-in-depth check as above so this entry point is safe even if the
+        // caller bypasses EnsureShortcutExistsAsync.
+        if (!fullShortcutPath.StartsWith(fullRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger?.LogError("OpenShortcut: refused {Path} (outside shortcuts root).", fullShortcutPath);
+            return;
+        }
+        if (!File.Exists(fullShortcutPath))
+        {
+            _logger?.LogWarning("OpenShortcut: {Path} does not exist.", fullShortcutPath);
             return;
         }
 
-        // Open Explorer with the .lnk pre-selected so the user can pick "Pin to taskbar"
-        // (Win10 / older Win11) or use Show-More-Options on Win11 22H2+.
         using var process = Process.Start(new ProcessStartInfo
         {
             FileName = "explorer.exe",

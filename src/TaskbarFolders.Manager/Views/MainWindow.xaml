@@ -119,14 +119,19 @@
                         BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
                         CornerRadius="8">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right"
-                                Content="Show shortcut..."
-                                Padding="12,4"
-                                Command="{Binding ShowPinHelperCommand}" />
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="Pin to taskbar"
+                                    Padding="12,4"
+                                    Command="{Binding PinToTaskbarCommand}" />
+                            <Button Content="Show shortcut..."
+                                    Padding="12,4"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding ShowShortcutCommand}" />
+                        </StackPanel>
                         <TextBlock TextWrapping="Wrap" Opacity="0.7" VerticalAlignment="Center">
                             <Run Text="Pin to taskbar:" FontWeight="SemiBold" />
                             <LineBreak />
-                            <Run Text="Click " /><Run Text="Show shortcut..." FontStyle="Italic" /><Run Text=" then right-click the .lnk → Show more options → Pin to taskbar." />
+                            <Run Text="One click — Windows will ask you to allow it. If your build does not support direct pinning, use Show shortcut and right-click the .lnk." />
                         </TextBlock>
                     </DockPanel>
                 </Border>

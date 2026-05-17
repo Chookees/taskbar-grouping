@@ -45,6 +45,8 @@ public static class ManagerServiceCollectionExtensions
         services.AddSingleton<ILauncherPathResolver, LauncherPathResolver>();
         services.AddSingleton<IGroupSyncService, GroupSyncService>();
         services.AddSingleton<IUserConfirmation, MessageBoxUserConfirmation>();
+        services.AddSingleton<IProcessRunner, ProcessRunner>();
+        services.AddSingleton<IPinToTaskbarService, LauncherProcessPinService>();
 
         // View models — MainWindow is itself a singleton conceptually (one main window per
         // process), so the backing VM is singleton too. App.OnStartup loads groups into it
