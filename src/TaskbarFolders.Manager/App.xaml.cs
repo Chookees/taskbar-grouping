@@ -68,20 +68,20 @@ public partial class App : Application
         var viewModel = _host.Services.GetRequiredService<MainWindowViewModel>();
         await viewModel.LoadGroupsAsync().ConfigureAwait(true);
 
-        // v0.4.1 heal-up: ensure every existing group has a Start Menu anchor .lnk so the
-        // one-click pin via TaskbarManager.RequestPinCurrentAppAsync can persist the pin.
-        // No-op on subsequent launches (file already present). Cheap on small group counts.
-        var store = _host.Services.GetRequiredService<IGroupConfigStore>();
-        var sync = _host.Services.GetRequiredService<IGroupSyncService>();
-        var existingGroups = await store.LoadAllAsync().ConfigureAwait(true);
-        foreach (var g in existingGroups)
-        {
-            sync.EnsureStartMenuShortcut(g);
-        }
-
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();
+
+        // v0.4.1 heal-up: ensure every existing group has a Start Menu anchor .lnk so the
+        // one-click pin via TaskbarManager.RequestPinCurrentAppAsync can persist the pin.
+        // Run AFTER Show() so the user-visible first paint is not blocked. Iterate the
+        // already-loaded VM groups instead of re-issuing a LoadAllAsync (avoids a duplicate
+        // disk pass). No-op on subsequent launches (file already present).
+        var sync = _host.Services.GetRequiredService<IGroupSyncService>();
+        foreach (var groupVm in viewModel.Groups)
+        {
+            sync.EnsureStartMenuShortcut(groupVm.Config);
+        }
 
         // Deferred startup IO: prune stale icon-cache PNGs and old log files in the background
         // so the first paint of MainWindow is not blocked by ~10-70 ms of enumerate-and-delete.

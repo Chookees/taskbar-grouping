@@ -87,16 +87,26 @@ public partial class PopupWindow : Window
         {
             ScheduleAnimationOnFirstRender(storyboard);
         }
-        else if (!_settings.EnableAnimations && FindName("ChromeRoot") is Border chrome)
+        else
         {
-            // Animations disabled — snap the popup visible immediately so user does not see
-            // a permanently invisible window (XAML default Opacity=0 + ScaleX/Y=0.5).
+            // Either animations are disabled OR the storyboard resource was not found.
+            // The XAML defaults Opacity=0 + ScaleX/Y=0.5 mean a missing storyboard would
+            // leave the popup permanently invisible — snap to the end state so the user
+            // always sees the popup, regardless of resource lookup outcome.
+            SnapToEndState();
+        }
+    }
+
+    private void SnapToEndState()
+    {
+        if (FindName("ChromeRoot") is Border chrome)
+        {
             chrome.Opacity = 1;
-            if (RenderTransform is ScaleTransform snap)
-            {
-                snap.ScaleX = 1;
-                snap.ScaleY = 1;
-            }
+        }
+        if (RenderTransform is ScaleTransform scale)
+        {
+            scale.ScaleX = 1;
+            scale.ScaleY = 1;
         }
     }
 

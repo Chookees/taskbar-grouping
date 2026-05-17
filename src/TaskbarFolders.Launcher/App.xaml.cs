@@ -253,13 +253,19 @@ public partial class App : Application
 
         // Single timing summary, emitted from the Loaded handler so we also capture the
         // "from process start to user-visible first paint" wall-clock (tLoaded), not just
-        // up to Show(). Each value is wall-clock ms from tStart so the user can read the
-        // breakdown directly. See docs/PERF.md for the meaning of each checkpoint.
+        // up to Show(). `processAge` is the time from Process.StartTime to tStart —
+        // captures the .NET runtime cold-start cost (native-lib extraction, JIT, WPF
+        // assembly load) that happens BEFORE RunPopupModeAsync is even called. Without
+        // this, the log would mislead into chasing later phases when the dominant cost
+        // is often runtime bootstrap.
+        var processStart = Process.GetCurrentProcess().StartTime;
         popup.Loaded += (_, _) =>
         {
             var tLoaded = Stopwatch.GetTimestamp();
+            var processAge = (DateTime.Now - processStart).TotalMilliseconds;
             logger.LogInformation(
-                "Startup timing (ms from tStart): aumid={Aumid:F0} settings={Settings:F0} di={Di:F0} theme={Theme:F0} vm={Vm:F0} show={Show:F0} loaded={Loaded:F0}",
+                "Startup timing (ms from tStart, processAge={ProcAge:F0}): aumid={Aumid:F0} settings={Settings:F0} di={Di:F0} theme={Theme:F0} vm={Vm:F0} show={Show:F0} loaded={Loaded:F0}",
+                processAge,
                 ToMs(tStart, tAumid),
                 ToMs(tStart, tSettings),
                 ToMs(tStart, tDi),

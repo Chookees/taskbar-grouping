@@ -171,12 +171,14 @@ public sealed class GroupSyncService : IGroupSyncService
                 IconPath: iconPath,
                 ShortcutPath: startMenuPath));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
-            // Start Menu write failure should not break the main sync flow — the per-group
+            // Start Menu write failure must NOT break the main sync flow — the per-group
             // .lnk under shortcuts/ is already written and is the primary artifact. Pin
-            // attempts will fail until the Start Menu entry is restored, but everything
-            // else (popup launch via Show shortcut, etc.) keeps working.
+            // attempts will fail until the Start Menu entry is restored, but Show shortcut
+            // and .lnk-pinned tile flows keep working. Catches everything including
+            // COMException from the IShellLinkW interop chain (CLSID_ShellLink failures,
+            // IPersistFile save failures, IPropertyStore commit failures).
             _logger?.LogWarning(ex, "Failed to write Start Menu shortcut for {GroupId}.", config.Id);
         }
     }
@@ -206,7 +208,13 @@ public sealed class GroupSyncService : IGroupSyncService
         {
             return fallback;
         }
-        return sanitised.Length > 60 ? sanitised[..60].TrimEnd('.', ' ') : sanitised;
+        if (sanitised.Length > 60)
+        {
+            sanitised = sanitised[..60].TrimEnd('.', ' ');
+        }
+        // Defensive: a 60-char-plus input of only dots+spaces becomes empty after the
+        // post-clamp trim. Fall back to id so callers never see an empty filename stem.
+        return sanitised.Length == 0 ? fallback : sanitised;
     }
 
     private List<BitmapSource> CollectSourceIcons(GroupConfig config)
