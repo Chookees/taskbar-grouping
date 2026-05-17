@@ -76,6 +76,7 @@ public partial class App : Application
         // will replace IIconExtractor with a caching decorator.
         services.AddSingleton<IIconExtractor, ShellIconExtractor>();
         services.AddSingleton<ICompositeIconGenerator, CompositeIconGenerator>();
+        services.AddSingleton<IIcoFileWriter, IcoFileWriter>();
 
         // View models — transient so each view gets a fresh instance.
         services.AddTransient<MainWindowViewModel>();

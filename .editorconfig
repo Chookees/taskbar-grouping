@@ -62,6 +62,18 @@ dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.camel_case_underscore.required_prefix = _
 dotnet_naming_style.camel_case_underscore.capitalization = camel_case
 
+# Constants are PascalCase regardless of accessibility — more specific than the
+# private-field rule (required_modifiers wins) so applies to `private const` too.
+dotnet_naming_rule.constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.applicable_accessibilities = *
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
 # XML documentation
 dotnet_diagnostic.CS1591.severity = warning
 
