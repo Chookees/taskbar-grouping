@@ -106,10 +106,13 @@ public sealed class JsonGroupConfigStore : IGroupConfigStore
         var config = await JsonSerializer.DeserializeAsync<GroupConfig>(stream, _options, cancellationToken)
             .ConfigureAwait(false);
 
-        if (config is not null && string.IsNullOrWhiteSpace(config.Id))
+        if (config is not null)
         {
-            // Reconstruct identifier from the file name when the JSON omitted it.
-            // Mirrors the plan's M1.4 note on hand-written configs and preserves load/save symmetry.
+            // The file name (sans extension) is the canonical group id — Save writes to
+            // GetGroupFile(config.Id) so disk layout is the source of truth. Override
+            // whatever id appears in the JSON so that:
+            //   - JSON without "id" works (GroupConfig.Id defaults to a fresh Guid we never want to surface)
+            //   - A user-renamed file keeps its new identity instead of resurrecting the stale id
             config.Id = Path.GetFileNameWithoutExtension(file);
         }
 

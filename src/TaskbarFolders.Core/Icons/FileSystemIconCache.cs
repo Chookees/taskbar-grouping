@@ -56,10 +56,19 @@ public sealed class FileSystemIconCache : IIconCache
 
         try
         {
-            var decoder = new PngBitmapDecoder(
-                new Uri(cachedFile, UriKind.Absolute),
-                BitmapCreateOptions.PreservePixelFormat,
-                BitmapCacheOption.OnLoad);
+            // Read into a MemoryStream so we own and close the FileStream immediately.
+            // Passing the Uri ctor of PngBitmapDecoder leaves the underlying FileStream
+            // open until the decoder is GC'd — on Windows Server CI this is slow enough
+            // that a same-call File.Delete races with the still-open handle.
+            byte[] bytes;
+            using (var fs = new FileStream(cachedFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                bytes = new byte[fs.Length];
+                fs.ReadExactly(bytes);
+            }
+
+            using var memory = new MemoryStream(bytes, writable: false);
+            var decoder = new PngBitmapDecoder(memory, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
 
             if (decoder.Frames.Count == 0)
             {
@@ -71,7 +80,7 @@ public sealed class FileSystemIconCache : IIconCache
             icon = frame;
             return true;
         }
-        catch (Exception ex) when (ex is IOException or NotSupportedException or FileFormatException)
+        catch (Exception ex) when (ex is IOException or NotSupportedException or FileFormatException or ArgumentException)
         {
             // Corrupt cache entry — delete and miss so caller regenerates.
             _logger?.LogWarning(ex, "Corrupt cache entry {File}; deleting", cachedFile);
