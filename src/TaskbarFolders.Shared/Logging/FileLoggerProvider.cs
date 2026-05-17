@@ -70,6 +70,14 @@ public sealed class FileLoggerProvider : ILoggerProvider
             return;
         }
 
+        // Defensive: deferred prune means the directory could have been deleted between
+        // ctor and Task.Run completion. EnumerateFiles would throw DirectoryNotFoundException
+        // and the StartBackgroundPrune wrapper only swallows IOException.
+        if (!Directory.Exists(_options.Directory))
+        {
+            return;
+        }
+
         var cutoff = DateTime.UtcNow.AddDays(-_options.RetainDays);
         var pattern = $"{_options.FilePrefix}-*.log";
 

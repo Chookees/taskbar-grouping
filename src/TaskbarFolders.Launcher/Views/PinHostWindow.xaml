@@ -3,15 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TaskbarFolders"
         Width="1" Height="1"
-        Left="-32000" Top="-32000"
+        WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
+        Opacity="0"
         ShowInTaskbar="False"
         Topmost="True"
         ShowActivated="True">
-    <!-- Invisible host window required by Windows.UI.Shell.TaskbarManager: the system
+    <!-- Host window required by Windows.UI.Shell.TaskbarManager: the system
          "Allow [App] to pin?" dialog needs a foreground HWND from the calling process to
-         attach to. Off-screen + transparent + no taskbar entry means the user never sees
-         this window; the system dialog itself is centred on the active monitor by Windows. -->
+         attach to. 1×1 fully transparent (Opacity=0) means the user does not see it. The
+         window is centred on the primary screen rather than off-screen — Win11 24H2 will
+         not promote off-screen 1×1 windows to foreground, and the WinRT
+         InitializeWithWindow.Initialize call needs an actual on-screen HWND for the
+         dialog to parent correctly. The dialog itself is centred on the active monitor by
+         Windows. -->
 </Window>

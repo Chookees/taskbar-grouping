@@ -38,7 +38,11 @@ public static class GroupAumid
         {
             return false;
         }
-        if (!aumid.StartsWith(Prefix, StringComparison.Ordinal))
+        // Case-insensitive prefix match because Windows AUMID comparison itself is
+        // case-insensitive (PKEY_AppUserModel_ID uses wcsicmp). A third-party tool or
+        // a manual shell:::AppsFolder edit can normalise the prefix to a different case;
+        // we accept any case here so recovery still works.
+        if (!aumid.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }

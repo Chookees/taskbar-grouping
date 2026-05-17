@@ -2,9 +2,11 @@
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Interop;
 using Microsoft.Extensions.Logging;
 using Windows.Foundation.Metadata;
 using Windows.UI.Shell;
+using WinRT.Interop;
 
 namespace TaskbarFolders.Launcher.Services;
 
@@ -61,9 +63,15 @@ public sealed class TaskbarPinRunner
                 return 2;
             }
 
-            // RequestPinCurrentAppAsync shows a system-managed "Allow [App] to pin?" dialog.
-            // The dialog attaches to the foreground HWND of the calling process — that is
-            // why we need the activated PinHostWindow to exist when this is invoked.
+            // CRITICAL: Win32 desktop callers MUST attach the WinRT instance to a HWND via
+            // InitializeWithWindow.Initialize before invoking any modal-UI method. Without it
+            // the system "Allow [App] to pin?" dialog has no parent on multi-monitor /
+            // multi-app foregrounds and either appears behind other windows or fails silently.
+            var hwnd = new WindowInteropHelper(foregroundWindow).EnsureHandle();
+            InitializeWithWindow.Initialize(manager, hwnd);
+
+            // RequestPinCurrentAppAsync shows a system-managed "Allow [App] to pin?" dialog
+            // parented to the HWND we just attached above.
             var pinned = await manager.RequestPinCurrentAppAsync();
 
             if (pinned)

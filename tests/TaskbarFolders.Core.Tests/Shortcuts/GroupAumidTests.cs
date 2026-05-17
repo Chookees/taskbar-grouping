@@ -49,10 +49,21 @@ public class GroupAumidTests
     [InlineData("SomeOtherApp.Foo.bar")]
     [InlineData("TaskbarFolders.Group.")]
     [InlineData("TaskbarFolders.Group.   ")]
-    [InlineData("taskbarfolders.group.x")] // case-sensitive prefix check; must reject lower-case
     public void TryExtractGroupId_RejectsMalformedOrForeignAumid(string? aumid)
     {
         GroupAumid.TryExtractGroupId(aumid, out var parsed).Should().BeFalse();
         parsed.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("taskbarfolders.group.x", "x")]
+    [InlineData("TASKBARFOLDERS.GROUP.abc123", "abc123")]
+    [InlineData("TaskbarFolders.GROUP.MixedCase", "MixedCase")]
+    public void TryExtractGroupId_AcceptsAnyPrefixCasing(string aumid, string expectedSuffix)
+    {
+        // Windows AUMID comparison is case-insensitive — accept any prefix casing so the
+        // recovery path works even if a third-party tool normalised the AUMID.
+        GroupAumid.TryExtractGroupId(aumid, out var parsed).Should().BeTrue();
+        parsed.Should().Be(expectedSuffix);
     }
 }

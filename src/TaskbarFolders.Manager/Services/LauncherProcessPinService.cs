@@ -14,8 +14,12 @@ namespace TaskbarFolders.Manager.Services;
 /// </summary>
 public sealed class LauncherProcessPinService : IPinToTaskbarService
 {
-    /// <summary>Hard cap on how long the launcher pin process may run.</summary>
-    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// Hard cap on how long the launcher pin process may run. Generous because the user is
+    /// staring at a system Yes/No dialog — alt-tabbing, reading, phone call: 30 s is too
+    /// tight; 2 minutes is a comfortable upper bound that still catches stuck processes.
+    /// </summary>
+    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(2);
 
     private readonly ILauncherPathResolver _resolver;
     private readonly IProcessRunner _runner;

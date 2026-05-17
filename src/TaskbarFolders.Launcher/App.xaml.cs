@@ -42,7 +42,7 @@ public partial class App : Application
     {
         ArgumentNullException.ThrowIfNull(e);
 
-        var groupId = ResolveGroupId(e.Args);
+        var (groupId, fromAumid) = ResolveGroupId(e.Args);
         if (groupId is null)
         {
             Trace.TraceError(
@@ -52,36 +52,50 @@ public partial class App : Application
             return;
         }
 
-        if (CommandLineParser.HasPinMode(e.Args))
+        // Any unhandled exception inside the async branches would otherwise crash the
+        // process via async-void with an unobservable exit code; the Manager would map
+        // the resulting random exit code to PinResult.Error. Wrap so we always shutdown
+        // with a documented exit code.
+        try
         {
-            await RunPinModeAsync(groupId).ConfigureAwait(true);
-            return;
-        }
+            if (CommandLineParser.HasPinMode(e.Args))
+            {
+                await RunPinModeAsync(groupId, fromAumid).ConfigureAwait(true);
+                return;
+            }
 
-        await RunPopupModeAsync(e, groupId).ConfigureAwait(true);
+            await RunPopupModeAsync(e, groupId, fromAumid).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError("Launcher OnStartup threw: {0}", ex);
+            Shutdown(3);
+        }
     }
 
     /// <summary>
     /// Resolves the target group id from either the explicit <c>--group-id</c> argument
     /// (Manager-spawned + .lnk-pinned paths) or the AUMID Windows already assigned to the
     /// process (TaskbarManager-pinned tile paths where the original command line is not
-    /// preserved). Returns <see langword="null"/> if neither source yields an id.
+    /// preserved). Returns a tuple of the id and whether it was recovered from the AUMID;
+    /// callers use the latter to decide whether to re-stamp the AUMID (re-stamping an
+    /// inherited AUMID can cause identity drift if Windows normalised the string).
     /// </summary>
-    private static string? ResolveGroupId(string[] args)
+    private static (string? GroupId, bool FromAumid) ResolveGroupId(string[] args)
     {
         var fromArgs = CommandLineParser.TryParseGroupId(args);
         if (fromArgs is not null)
         {
-            return fromArgs;
+            return (fromArgs, false);
         }
 
         var assignedAumid = Interop.NativeMethods.TryGetCurrentProcessAumid();
         if (assignedAumid is not null && GroupAumid.TryExtractGroupId(assignedAumid, out var fromAumid))
         {
-            return fromAumid;
+            return (fromAumid, true);
         }
 
-        return null;
+        return (null, false);
     }
 
     /// <summary>
@@ -89,11 +103,17 @@ public partial class App : Application
     /// host window so the WinRT pin dialog has a foreground parent, awaits the pin runner,
     /// shuts down with the runner's exit code so the Manager can react to the outcome.
     /// </summary>
-    private async Task RunPinModeAsync(string groupId)
+    private async Task RunPinModeAsync(string groupId, bool aumidAlreadyInherited)
     {
-        // AUMID must be stamped before the WinRT call so RequestPinCurrentAppAsync pins
-        // the right identity. The HRESULT is discarded (non-fatal on very old Windows).
-        _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
+        // AUMID must match GroupAumid.For(groupId) before the WinRT call so
+        // RequestPinCurrentAppAsync pins the right identity. Skip the stamp when Windows
+        // already gave us the AUMID via process activation — re-stamping the inherited
+        // string could drift the identity if Windows normalised the case or trimmed
+        // whitespace differently from our For() formatter.
+        if (!aumidAlreadyInherited)
+        {
+            _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
+        }
 
         var paths = new AppDataPathProvider();
         var services = new ServiceCollection();
@@ -126,7 +146,7 @@ public partial class App : Application
     /// Popup-mode entry point. Existing v0.3 startup path, factored out to keep
     /// <see cref="OnStartup"/> a thin dispatcher.
     /// </summary>
-    private async Task RunPopupModeAsync(StartupEventArgs e, string groupId)
+    private async Task RunPopupModeAsync(StartupEventArgs e, string groupId, bool aumidAlreadyInherited)
     {
         // Capture the cursor position FIRST, before anything else can take 100+ ms. This is
         // the click location — by the time WPF has bootstrapped (~300–500 ms) the cursor has
@@ -163,7 +183,12 @@ public partial class App : Application
 
         // Stamp the process AUMID BEFORE any window is created so Windows matches the
         // popup to the pinned tile (which carries the same AUMID via PKEY_AppUserModel_ID).
-        _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
+        // Skip when Windows already gave us the AUMID via process activation — see
+        // RunPinModeAsync for the identity-drift rationale.
+        if (!aumidAlreadyInherited)
+        {
+            _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
+        }
 
         var paths = new AppDataPathProvider();
 
