@@ -130,9 +130,24 @@ public sealed class FileSystemIconCacheTests : IDisposable
     }
 
     [Fact]
-    public void Ctor_PrunesEntriesOlderThanRetainDays()
+    public void Ctor_DoesNotPrune_LeavesStaleEntriesForBackgroundSweep()
     {
-        // Place an aged file in the cache directory before constructing the cache.
+        // v0.4 contract: ctor must NOT touch the cache directory. Pruning is deferred to
+        // StartBackgroundPrune so the launcher startup is not blocked by enumerate-and-delete.
+        var cacheDir = Path.Combine(_paths.IconsDirectory, FileSystemIconCache.CacheFolderName);
+        Directory.CreateDirectory(cacheDir);
+        var ancient = Path.Combine(cacheDir, "deadbeef.png");
+        File.WriteAllBytes(ancient, [0]);
+        File.SetLastWriteTimeUtc(ancient, DateTime.UtcNow.AddDays(-(FileSystemIconCache.RetainDays + 1)));
+
+        _ = new FileSystemIconCache(_paths);
+
+        File.Exists(ancient).Should().BeTrue("v0.4 ctor does not prune");
+    }
+
+    [Fact]
+    public void StartBackgroundPrune_DeletesStaleEntries()
+    {
         var cacheDir = Path.Combine(_paths.IconsDirectory, FileSystemIconCache.CacheFolderName);
         Directory.CreateDirectory(cacheDir);
         var ancient = Path.Combine(cacheDir, "deadbeef.png");
@@ -141,12 +156,19 @@ public sealed class FileSystemIconCacheTests : IDisposable
 
         var fresh = Path.Combine(cacheDir, "cafebabe.png");
         File.WriteAllBytes(fresh, [0]);
-        // Default last-write is now → should be kept.
 
-        _ = new FileSystemIconCache(_paths);
+        var sut = new FileSystemIconCache(_paths);
+        sut.StartBackgroundPrune();
 
-        File.Exists(ancient).Should().BeFalse();
-        File.Exists(fresh).Should().BeTrue();
+        // Background task — poll up to 2 s for the deletion to land.
+        var deadline = DateTime.UtcNow.AddSeconds(2);
+        while (File.Exists(ancient) && DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(20);
+        }
+
+        File.Exists(ancient).Should().BeFalse("background prune must remove stale entries");
+        File.Exists(fresh).Should().BeTrue("fresh entries must survive");
     }
 
     [Fact]

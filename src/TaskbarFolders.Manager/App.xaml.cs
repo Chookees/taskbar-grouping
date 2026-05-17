@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using TaskbarFolders.Core.Icons;
 using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
@@ -68,6 +71,13 @@ public partial class App : Application
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();
+
+        // Deferred startup IO: prune stale icon-cache PNGs and old log files in the background
+        // so the first paint of MainWindow is not blocked by ~10-70 ms of enumerate-and-delete.
+        _host.Services.GetRequiredService<IIconCache>().StartBackgroundPrune();
+        _host.Services.GetServices<ILoggerProvider>()
+            .OfType<FileLoggerProvider>()
+            .FirstOrDefault()?.StartBackgroundPrune();
 
         base.OnStartup(e);
     }

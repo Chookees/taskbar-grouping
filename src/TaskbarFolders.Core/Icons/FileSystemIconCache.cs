@@ -38,9 +38,26 @@ public sealed class FileSystemIconCache : IIconCache
 
         _cacheDir = Path.Combine(paths.IconsDirectory, CacheFolderName);
         _logger = logger;
-
-        PruneStaleEntries();
     }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Schedules <see cref="PruneStaleEntries"/> on the thread pool. App.OnStartup calls this
+    /// once after the main window has been shown so the sweep does not block the first paint.
+    /// IOException is swallowed inside the background task — the next launch will retry.
+    /// </remarks>
+    public void StartBackgroundPrune() =>
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            try
+            {
+                PruneStaleEntries();
+            }
+            catch (IOException ex)
+            {
+                _logger?.LogWarning(ex, "Background icon-cache prune failed; will retry next launch.");
+            }
+        });
 
     /// <inheritdoc/>
     public bool TryGet(string sourcePath, int size, [NotNullWhen(true)] out BitmapSource? icon)

@@ -22,4 +22,12 @@ public interface IIconCache
     /// <param name="size">Pixel size of the icon being cached.</param>
     /// <param name="icon">Icon bitmap. Must be freezable.</param>
     void Set(string sourcePath, int size, BitmapSource icon);
+
+    /// <summary>
+    /// Kicks off a background sweep that deletes cache entries past the retention window.
+    /// Fire-and-forget — returns immediately. Pre-v0.4 the sweep ran inside the ctor and
+    /// blocked startup by ~10-50 ms depending on cache size; v0.4 defers it to post-Show.
+    /// Default implementation is a no-op so in-memory or fixture caches do not have to opt in.
+    /// </summary>
+    void StartBackgroundPrune() { }
 }

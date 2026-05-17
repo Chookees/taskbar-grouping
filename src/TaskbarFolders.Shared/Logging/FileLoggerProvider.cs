@@ -9,8 +9,9 @@ namespace TaskbarFolders.Shared.Logging;
 /// <summary>
 /// <see cref="ILoggerProvider"/> that produces <see cref="FileLogger"/> instances writing to
 /// daily-rotated files under <see cref="FileLoggerOptions.Directory"/>.
-/// Prunes log files older than <see cref="FileLoggerOptions.RetainDays"/> once at construction
-/// (keeps the per-log path free of IO beyond a single append).
+/// Prunes log files older than <see cref="FileLoggerOptions.RetainDays"/> when
+/// <see cref="StartBackgroundPrune"/> is called (App.OnStartup post-Show); pre-v0.4 the prune
+/// ran inside the ctor and added ~5-20 ms to startup.
 /// </summary>
 public sealed class FileLoggerProvider : ILoggerProvider
 {
@@ -32,8 +33,25 @@ public sealed class FileLoggerProvider : ILoggerProvider
         }
 
         Directory.CreateDirectory(_options.Directory);
-        PruneOldFiles();
     }
+
+    /// <summary>
+    /// Schedules a background sweep of stale log files. Fire-and-forget. Call once from
+    /// App.OnStartup after the main window has been shown so the file IO does not block
+    /// the first paint. IOException is swallowed; next launch will retry.
+    /// </summary>
+    public void StartBackgroundPrune() =>
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            try
+            {
+                PruneOldFiles();
+            }
+            catch (IOException)
+            {
+                // Next launch will retry; logging the exception here would risk recursion.
+            }
+        });
 
     /// <inheritdoc/>
     public ILogger CreateLogger(string categoryName) =>

@@ -107,45 +107,70 @@ public sealed class FileLoggerProviderTests : IDisposable
     }
 
     [Fact]
-    public void Ctor_PrunesFilesOlderThanRetentionWindow()
+    public void Ctor_DoesNotPrune_LeavesStaleFilesForBackgroundSweep()
     {
-        // Arrange: write a stale file (40 days old) and a fresh file (today).
+        // v0.4 contract: ctor must NOT touch existing log files. Pruning is deferred to
+        // StartBackgroundPrune so the per-process startup is not blocked by enumerate-and-delete.
+        Directory.CreateDirectory(_tempDir);
+        var stale = Path.Combine(_tempDir, "test-" + DateTime.UtcNow.AddDays(-40).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".log");
+        File.WriteAllText(stale, "old");
+
+        using var provider = new FileLoggerProvider(Options(_tempDir, "test", retainDays: 14));
+
+        File.Exists(stale).Should().BeTrue("v0.4 ctor does not prune");
+    }
+
+    [Fact]
+    public void StartBackgroundPrune_DeletesStaleFiles()
+    {
         Directory.CreateDirectory(_tempDir);
         var stale = Path.Combine(_tempDir, "test-" + DateTime.UtcNow.AddDays(-40).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".log");
         var fresh = Path.Combine(_tempDir, "test-" + DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".log");
         File.WriteAllText(stale, "old");
         File.WriteAllText(fresh, "new");
 
-        // Act: provider construction runs the pruner.
         using var provider = new FileLoggerProvider(Options(_tempDir, "test", retainDays: 14));
+        provider.StartBackgroundPrune();
 
-        // Assert
-        File.Exists(stale).Should().BeFalse();
+        // Background task — poll up to 2 s for the deletion to land.
+        var deadline = DateTime.UtcNow.AddSeconds(2);
+        while (File.Exists(stale) && DateTime.UtcNow < deadline)
+        {
+            System.Threading.Thread.Sleep(20);
+        }
+
+        File.Exists(stale).Should().BeFalse("background prune must remove stale files");
         File.Exists(fresh).Should().BeTrue();
     }
 
     [Fact]
-    public void Ctor_KeepsAllFiles_WhenRetainDaysIsZeroOrNegative()
+    public void StartBackgroundPrune_KeepsAllFiles_WhenRetainDaysIsZeroOrNegative()
     {
         Directory.CreateDirectory(_tempDir);
         var ancient = Path.Combine(_tempDir, "test-2000-01-01.log");
         File.WriteAllText(ancient, "ancient");
 
         using var provider = new FileLoggerProvider(Options(_tempDir, "test", retainDays: 0));
+        provider.StartBackgroundPrune();
+
+        // Settle window — prune is no-op so the file must remain.
+        System.Threading.Thread.Sleep(100);
 
         File.Exists(ancient).Should().BeTrue();
     }
 
     [Fact]
-    public void Ctor_IgnoresFilesThatDoNotMatchTheDatePattern()
+    public void StartBackgroundPrune_IgnoresFilesThatDoNotMatchTheDatePattern()
     {
         Directory.CreateDirectory(_tempDir);
         var stray = Path.Combine(_tempDir, "test-not-a-date.log");
         File.WriteAllText(stray, "weird");
 
         using var provider = new FileLoggerProvider(Options(_tempDir, "test"));
+        provider.StartBackgroundPrune();
 
-        // Should not throw and should leave the stray file alone (not a parseable date).
+        System.Threading.Thread.Sleep(100);
+
         File.Exists(stray).Should().BeTrue();
     }
 }

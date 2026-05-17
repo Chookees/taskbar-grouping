@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TaskbarFolders.Core.Icons;
 using TaskbarFolders.Core.Shortcuts;
 using TaskbarFolders.Launcher.Configuration;
 using TaskbarFolders.Launcher.Services;
@@ -128,6 +130,13 @@ public partial class App : Application
         popup.Show();
 
         viewModel.StartIconLoad();
+
+        // Deferred startup IO: prune stale icon-cache PNGs and old log files in the background
+        // so the first paint of the popup is not blocked by ~10-70 ms of enumerate-and-delete.
+        _services.GetRequiredService<IIconCache>().StartBackgroundPrune();
+        _services.GetServices<ILoggerProvider>()
+            .OfType<FileLoggerProvider>()
+            .FirstOrDefault()?.StartBackgroundPrune();
 
         base.OnStartup(e);
     }
