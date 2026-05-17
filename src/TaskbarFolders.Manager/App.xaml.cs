@@ -2,6 +2,7 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TaskbarFolders.Core.Icons;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
 using TaskbarFolders.Shared.Configuration;
@@ -71,12 +72,14 @@ public partial class App : Application
         services.AddSingleton<IGroupConfigStore, JsonGroupConfigStore>();
         services.AddSingleton<IAppSettingsStore, JsonAppSettingsStore>();
 
+        // Icon engine — singletons; ShellIconExtractor is stateless and the cache (M2.4)
+        // will replace IIconExtractor with a caching decorator.
+        services.AddSingleton<IIconExtractor, ShellIconExtractor>();
+
         // View models — transient so each view gets a fresh instance.
         services.AddTransient<MainWindowViewModel>();
 
         // Views — transient so each Show creates a fresh window instance.
         services.AddTransient<MainWindow>();
-
-        // Icon engine implementations are wired in M2.
     }
 }
