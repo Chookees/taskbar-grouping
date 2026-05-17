@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -14,11 +15,13 @@ using TaskbarFolders.Shared.Models;
 namespace TaskbarFolders.Launcher.ViewModels;
 
 /// <summary>
-/// Backing view model for <see cref="Views.PopupWindow"/>. Loads the group identified by
-/// <see cref="LauncherOptions.GroupId"/>, populates an <see cref="ObservableCollection{T}"/>
-/// of <see cref="PopupAppViewModel"/>s with extracted icons, and handles clicks.
+/// Backing view model for <see cref="Views.PopupWindow"/>. Two-phase load:
+/// <see cref="LoadAsync"/> populates names + grid metadata fast (no icons), then
+/// <see cref="StartIconLoad"/> extracts and assigns icons in parallel after the
+/// window has been shown so the popup appears instantly rather than waiting for
+/// per-app shell icon extraction.
 /// </summary>
-public sealed partial class PopupViewModel : ObservableObject
+public sealed partial class PopupViewModel : ObservableObject, IDisposable
 {
     /// <summary>Pixel size requested from the icon extractor for tiles.</summary>
     public const int IconSize = 64;
@@ -29,6 +32,9 @@ public sealed partial class PopupViewModel : ObservableObject
     private readonly IProcessLauncher _launcher;
     private readonly LauncherOptions _options;
     private readonly ILogger<PopupViewModel>? _logger;
+
+    private readonly object _iconLoadLock = new();
+    private CancellationTokenSource? _iconLoadCts;
 
     /// <summary>Initializes a new instance.</summary>
     public PopupViewModel(
@@ -76,8 +82,10 @@ public sealed partial class PopupViewModel : ObservableObject
     public event EventHandler? LaunchSucceeded;
 
     /// <summary>
-    /// Reads the group config and extracts each app's icon. Must be called once after
-    /// construction (typically from the window's Loaded handler or App.OnStartup).
+    /// Reads the group config and populates <see cref="Apps"/> with icon-less view models.
+    /// Returns fast (~5 ms) so the window can be shown without waiting for shell icon
+    /// extraction. Call <see cref="StartIconLoad"/> after <c>Window.Show</c> to stream
+    /// icons in.
     /// </summary>
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -96,11 +104,7 @@ public sealed partial class PopupViewModel : ObservableObject
         Apps.Clear();
         foreach (var entry in config.Apps)
         {
-            var app = new PopupAppViewModel(entry)
-            {
-                Icon = LoadIcon(entry.Path),
-            };
-            Apps.Add(app);
+            Apps.Add(new PopupAppViewModel(entry));
         }
 
         if (Apps.Count == 0)
@@ -109,6 +113,49 @@ public sealed partial class PopupViewModel : ObservableObject
             _logger?.LogWarning("Group {GroupId} is empty.", _options.GroupId);
         }
     }
+
+    /// <summary>
+    /// Starts a fire-and-forget per-app icon extraction. Each task checks the cache, falls
+    /// back to <see cref="IIconExtractor.ExtractIcon"/> on a thread-pool thread, freezes the
+    /// resulting <see cref="BitmapSource"/> so it can cross threads, then assigns it to the
+    /// owning <see cref="PopupAppViewModel"/>. Replaces an earlier sync per-app extraction
+    /// that blocked the UI thread for 200 ms–3 s before the popup could paint.
+    /// </summary>
+    public void StartIconLoad()
+    {
+        CancellationToken token;
+        lock (_iconLoadLock)
+        {
+            // Atomically retire any previous load (e.g. caller invoking Start twice) so
+            // its tasks observe cancellation and do not race with the new batch.
+            _iconLoadCts?.Cancel();
+            _iconLoadCts?.Dispose();
+            _iconLoadCts = new CancellationTokenSource();
+            token = _iconLoadCts.Token;
+        }
+
+        foreach (var app in Apps)
+        {
+            _ = LoadIconForAsync(app, token);
+        }
+    }
+
+    /// <summary>
+    /// Cancels any in-flight icon-load tasks. Called by the window on Close so post-close
+    /// task completions cannot mutate a disposed view model.
+    /// </summary>
+    public void CancelIconLoad()
+    {
+        lock (_iconLoadLock)
+        {
+            _iconLoadCts?.Cancel();
+            _iconLoadCts?.Dispose();
+            _iconLoadCts = null;
+        }
+    }
+
+    /// <inheritdoc/>
+    public void Dispose() => CancelIconLoad();
 
     [RelayCommand]
     private void LaunchApp(PopupAppViewModel? app)
@@ -135,18 +182,54 @@ public sealed partial class PopupViewModel : ObservableObject
         }
     }
 
-    private System.Windows.Media.Imaging.BitmapSource? LoadIcon(string path)
+    private async Task LoadIconForAsync(PopupAppViewModel app, CancellationToken token)
     {
-        if (_cache.TryGet(path, IconSize, out var cached))
+        try
         {
-            return cached;
-        }
+            if (_cache.TryGet(app.Path, IconSize, out var cached))
+            {
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+                app.Icon = cached;
+                return;
+            }
 
-        var icon = _extractor.ExtractIcon(path, IconSize);
-        if (icon is not null)
-        {
-            _cache.Set(path, IconSize, icon);
+            // Extract + freeze on the thread-pool thread so the BitmapSource can safely cross
+            // threads when assignment marshals back to the UI thread via ConfigureAwait(true).
+            var icon = await Task.Run(
+                () =>
+                {
+                    var bitmap = _extractor.ExtractIcon(app.Path, IconSize);
+                    if (bitmap is not null && bitmap.CanFreeze && !bitmap.IsFrozen)
+                    {
+                        bitmap.Freeze();
+                    }
+                    return bitmap;
+                },
+                token).ConfigureAwait(true);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (icon is not null)
+            {
+                _cache.Set(app.Path, IconSize, icon);
+                app.Icon = icon;
+            }
         }
-        return icon;
+        catch (OperationCanceledException)
+        {
+            // Window closed mid-extraction — drop silently.
+        }
+        catch (Exception ex)
+        {
+            // A single bad path must not crash the launcher process; the tile shows the
+            // empty placeholder. Log so support can correlate with shell errors.
+            _logger?.LogWarning(ex, "Failed to extract icon for {Path}.", app.Path);
+        }
     }
 }

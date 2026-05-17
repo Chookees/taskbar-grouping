@@ -93,6 +93,9 @@ public partial class PopupWindow : Window
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        // Cancel any in-flight icon-load tasks so post-close task completions cannot
+        // mutate the now-detached view model.
+        _viewModel.CancelIconLoad();
         _viewModel.LaunchSucceeded -= OnLaunchSucceeded;
         Closed -= OnClosed;
         SourceInitialized -= OnSourceInitialized;

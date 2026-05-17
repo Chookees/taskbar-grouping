@@ -1,5 +1,8 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using FluentAssertions;
 using Moq;
@@ -15,6 +18,20 @@ namespace TaskbarFolders.Launcher.Tests.ViewModels;
 
 public class PopupViewModelTests
 {
+    private static BitmapSource StubIcon()
+    {
+        // RenderTargetBitmap is freezable and can be created on a non-UI thread for tests.
+        var bmp = new RenderTargetBitmap(32, 32, 96, 96, PixelFormats.Pbgra32);
+        var visual = new DrawingVisual();
+        using (var ctx = visual.RenderOpen())
+        {
+            ctx.DrawRectangle(Brushes.Red, null, new Rect(0, 0, 32, 32));
+        }
+        bmp.Render(visual);
+        bmp.Freeze();
+        return bmp;
+    }
+
     private static (PopupViewModel sut,
                     Mock<IGroupConfigStore> store,
                     Mock<IIconExtractor> extractor,
@@ -94,17 +111,124 @@ public class PopupViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_UsesCacheWhenAvailable_AndSetsOnMiss()
+    public async Task LoadAsync_DoesNotTouchCacheOrExtractor_AndLeavesAppIconsNull()
     {
+        // v0.3 contract: LoadAsync is metadata-only. Icon work happens in StartIconLoad.
+        // This test pins the contract so any future regression that re-introduces sync
+        // extraction in LoadAsync is caught immediately.
         var config = new GroupConfig { Id = "g", GroupName = "g", Apps = { new AppEntry { Name = "a", Path = "a.exe" } } };
         var (sut, _, extractor, cache, _) = CreateSut("g", config);
 
         await sut.LoadAsync();
 
-        // Cache was queried and missed → extractor called → result stored back
-        cache.Verify(c => c.TryGet("a.exe", PopupViewModel.IconSize, out It.Ref<BitmapSource?>.IsAny), Times.Once);
+        sut.Apps.Should().HaveCount(1);
+        sut.Apps[0].Icon.Should().BeNull("LoadAsync does not extract icons in v0.3+");
+        cache.Verify(c => c.TryGet(It.IsAny<string>(), It.IsAny<int>(), out It.Ref<BitmapSource?>.IsAny), Times.Never);
+        extractor.Verify(e => e.ExtractIcon(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task StartIconLoad_AfterLoadAsync_InvokesExtractorForEachAppOnCacheMiss()
+    {
+        var config = new GroupConfig
+        {
+            Id = "g",
+            GroupName = "g",
+            Apps =
+            {
+                new AppEntry { Name = "a", Path = "a.exe" },
+                new AppEntry { Name = "b", Path = "b.exe" },
+            },
+        };
+        var (sut, _, extractor, _, _) = CreateSut("g", config);
+
+        // TCS gate: signal when both per-app extractor calls have landed so the assertion
+        // is deterministic instead of timing-dependent.
+        var calls = 0;
+        var allDone = new TaskCompletionSource();
+        extractor.Setup(e => e.ExtractIcon(It.IsAny<string>(), It.IsAny<int>()))
+                 .Returns(() =>
+                 {
+                     if (Interlocked.Increment(ref calls) == 2)
+                     {
+                         allDone.SetResult();
+                     }
+                     return null;
+                 });
+
+        await sut.LoadAsync();
+        sut.StartIconLoad();
+        await allDone.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
         extractor.Verify(e => e.ExtractIcon("a.exe", PopupViewModel.IconSize), Times.Once);
-        // ExtractIcon returned null in this test, so Set is not called — fine, the contract only stores non-null icons.
+        extractor.Verify(e => e.ExtractIcon("b.exe", PopupViewModel.IconSize), Times.Once);
+    }
+
+    [Fact]
+    public async Task StartIconLoad_ServesFromCache_WithoutInvokingExtractor()
+    {
+        var config = new GroupConfig { Id = "g", GroupName = "g", Apps = { new AppEntry { Name = "a", Path = "a.exe" } } };
+        var (sut, _, extractor, cache, _) = CreateSut("g", config);
+
+        var stub = StubIcon();
+        BitmapSource? hit = stub;
+        cache.Setup(c => c.TryGet("a.exe", PopupViewModel.IconSize, out hit)).Returns(true);
+
+        await sut.LoadAsync();
+        sut.StartIconLoad();
+
+        // No TCS gate needed — cache hits are synchronous; one tiny yield lets the per-app
+        // task run and assign Icon, but the extractor must never have been called.
+        await Task.Delay(50);
+
+        sut.Apps[0].Icon.Should().BeSameAs(stub);
+        extractor.Verify(e => e.ExtractIcon(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task StartIconLoad_StoresExtractedIcon_InCache()
+    {
+        var config = new GroupConfig { Id = "g", GroupName = "g", Apps = { new AppEntry { Name = "a", Path = "a.exe" } } };
+        var (sut, _, extractor, cache, _) = CreateSut("g", config);
+
+        var stub = StubIcon();
+        extractor.Setup(e => e.ExtractIcon("a.exe", PopupViewModel.IconSize)).Returns(stub);
+
+        await sut.LoadAsync();
+        sut.StartIconLoad();
+        await Task.Delay(100);
+
+        cache.Verify(c => c.Set("a.exe", PopupViewModel.IconSize, stub), Times.Once);
+        sut.Apps[0].Icon.Should().BeSameAs(stub);
+    }
+
+    [Fact]
+    public async Task CancelIconLoad_AfterStart_PreventsFurtherExtractorAssignment()
+    {
+        // Hard-gate the extractor on a manually completed TCS so the test controls timing.
+        var config = new GroupConfig { Id = "g", GroupName = "g", Apps = { new AppEntry { Name = "a", Path = "a.exe" } } };
+        var (sut, _, extractor, _, _) = CreateSut("g", config);
+
+        var release = new TaskCompletionSource();
+        extractor.Setup(e => e.ExtractIcon("a.exe", PopupViewModel.IconSize))
+                 .Returns(() =>
+                 {
+                     release.Task.GetAwaiter().GetResult();
+                     return StubIcon();
+                 });
+
+        await sut.LoadAsync();
+        sut.StartIconLoad();
+
+        // Cancel BEFORE the extractor returns. The per-app task should observe cancellation
+        // and skip the Icon = assignment even though ExtractIcon eventually produces a value.
+        sut.CancelIconLoad();
+        release.SetResult();
+
+        // Give the canceled task time to finish its lifecycle.
+        await Task.Delay(100);
+
+        sut.Apps[0].Icon.Should().BeNull("cancellation must prevent the post-extract assignment");
     }
 
     [Fact]

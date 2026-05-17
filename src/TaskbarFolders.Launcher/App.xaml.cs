@@ -82,12 +82,19 @@ public partial class App : Application
         var settings = await _services.GetRequiredService<IAppSettingsStore>().LoadAsync().ConfigureAwait(true);
         LauncherThemeApplier.Apply(this, settings.Theme);
 
-        // Hydrate the view model before the window builds so the icon grid paints in one frame.
-        await _services.GetRequiredService<PopupViewModel>().LoadAsync().ConfigureAwait(true);
+        // Two-phase load: metadata first (group name, columns, app names — ~5 ms) so the
+        // window can paint immediately, then per-app icon extraction in the background.
+        // Pre-v0.3 this awaited the full icon-extraction pipeline before Show(), which froze
+        // the UI for 200 ms–3 s on cold cache. The window now appears within ~50 ms; icons
+        // stream in as they resolve.
+        var viewModel = _services.GetRequiredService<PopupViewModel>();
+        await viewModel.LoadAsync().ConfigureAwait(true);
 
         var popup = _services.GetRequiredService<Views.PopupWindow>();
         MainWindow = popup;
         popup.Show();
+
+        viewModel.StartIconLoad();
 
         base.OnStartup(e);
     }
