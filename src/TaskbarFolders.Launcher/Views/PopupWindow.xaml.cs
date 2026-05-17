@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Animation;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
 using TaskbarFolders.Shared.Configuration;
+using TaskbarFolders.Shared.Models;
 
 namespace TaskbarFolders.Launcher.Views;
 
@@ -16,29 +16,29 @@ namespace TaskbarFolders.Launcher.Views;
 /// <remarks>
 /// v0.3+: chrome is fully transparent — no acrylic backdrop, no border, no shadow. The
 /// previous TryEnableAcrylic path was removed; only the per-tile hover highlight is visible.
+/// AppSettings is now injected directly (v0.3+) rather than re-loaded via IAppSettingsStore;
+/// App.OnStartup loads once and registers the instance as a singleton.
 /// </remarks>
 public partial class PopupWindow : Window
 {
     private readonly PopupViewModel _viewModel;
     private readonly ITaskbarPositionHelper _positionHelper;
-    private readonly IAppSettingsStore _settingsStore;
-
-    private bool _animationsEnabled = true;
+    private readonly AppSettings _settings;
 
     /// <summary>Initializes a new instance of the <see cref="PopupWindow"/> class.</summary>
     public PopupWindow(
         PopupViewModel viewModel,
         ITaskbarPositionHelper positionHelper,
-        IAppSettingsStore settingsStore)
+        AppSettings settings)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(positionHelper);
-        ArgumentNullException.ThrowIfNull(settingsStore);
+        ArgumentNullException.ThrowIfNull(settings);
 
         InitializeComponent();
         _viewModel = viewModel;
         _positionHelper = positionHelper;
-        _settingsStore = settingsStore;
+        _settings = settings;
         DataContext = viewModel;
 
         _viewModel.LaunchSucceeded += OnLaunchSucceeded;
@@ -47,28 +47,20 @@ public partial class PopupWindow : Window
         Loaded += OnLoaded;
     }
 
-    private async void OnSourceInitialized(object? sender, EventArgs e)
+    private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        await PositionAndConfigureAsync().ConfigureAwait(true);
-    }
-
-    private async Task PositionAndConfigureAsync()
-    {
-        var settings = await _settingsStore.LoadAsync().ConfigureAwait(true);
-        _animationsEnabled = settings.EnableAnimations;
-
         // Ensure layout has measured so SizeToContent has set Width/Height before placing.
         UpdateLayout();
 
         var size = new Size(ActualWidth > 0 ? ActualWidth : Width, ActualHeight > 0 ? ActualHeight : Height);
-        var placement = _positionHelper.ComputePlacement(size, settings.PopupPosition);
+        var placement = _positionHelper.ComputePlacement(size, _settings.PopupPosition);
         Left = placement.Left;
         Top = placement.Top;
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        if (!_animationsEnabled)
+        if (!_settings.EnableAnimations)
         {
             return;
         }

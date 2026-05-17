@@ -9,6 +9,7 @@ using TaskbarFolders.Launcher.Configuration;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
 using TaskbarFolders.Shared.Configuration;
+using TaskbarFolders.Shared.Models;
 using Xunit;
 
 namespace TaskbarFolders.Launcher.Tests;
@@ -46,6 +47,10 @@ public sealed class CompositionRootTests : IDisposable
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddTaskbarFoldersLauncher(_options, _paths);
+        // v0.3+: PopupWindow takes AppSettings as a ctor param. Production registers it
+        // post-load in App.OnStartup; here we register a default instance so ValidateOnBuild
+        // can resolve the full graph.
+        services.AddSingleton(new AppSettings());
         return services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,

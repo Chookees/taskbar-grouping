@@ -9,6 +9,7 @@ using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
 using TaskbarFolders.Shared.Configuration;
 using TaskbarFolders.Shared.Logging;
+using TaskbarFolders.Shared.Models;
 
 namespace TaskbarFolders.Launcher;
 
@@ -72,9 +73,15 @@ public partial class App : Application
 
         var paths = new AppDataPathProvider();
 
+        // Load settings BEFORE the DI container is built so the resolved AppSettings instance
+        // can be registered as a singleton. Replaces the v0.2 pattern that loaded settings
+        // twice — once here, once again inside PopupWindow.PositionAndConfigureAsync.
+        var settings = await new JsonAppSettingsStore(paths).LoadAsync().ConfigureAwait(true);
+
         var services = new ServiceCollection();
         services.AddLogging(logging => logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "launcher"));
         services.AddTaskbarFoldersLauncher(new LauncherOptions(groupId), paths);
+        services.AddSingleton(settings);
         // ValidateOnBuild/ValidateScopes match the production composition tests so any DI
         // regression fails at process start rather than at first GetService.
         _services = services.BuildServiceProvider(new ServiceProviderOptions
@@ -92,7 +99,6 @@ public partial class App : Application
 
         // Apply the persisted theme before the window is built so DynamicResource bindings
         // paint correctly on the first frame.
-        var settings = await _services.GetRequiredService<IAppSettingsStore>().LoadAsync().ConfigureAwait(true);
         LauncherThemeApplier.Apply(this, settings.Theme);
 
         // Two-phase load: metadata first (group name, columns, app names — ~5 ms) so the
