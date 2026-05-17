@@ -3,11 +3,10 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
-using TaskbarFolders.Launcher.Interop;
+using TaskbarFolders.Core.Interop;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
 using TaskbarFolders.Shared.Configuration;
-using TaskbarFolders.Shared.Models;
 
 namespace TaskbarFolders.Launcher.Views;
 
@@ -56,15 +55,9 @@ public partial class PopupWindow : Window
     private void TryEnableAcrylic()
     {
         var hwnd = new WindowInteropHelper(this).Handle;
-        if (hwnd == IntPtr.Zero)
-        {
-            return;
-        }
-
-        var backdrop = NativeMethods.DWMSBT_TRANSIENTWINDOW; // Acrylic
-        // Returns non-zero HRESULT on pre-22H2 Windows — silently fall back to the
-        // semi-transparent themed brush configured in XAML.
-        _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
+        // Returns false on pre-22H2 Windows — silently fall back to the semi-transparent
+        // themed brush configured in XAML.
+        _ = WindowBackdrop.TryApply(hwnd, WindowBackdropKind.Acrylic);
     }
 
     private async Task PositionAndConfigureAsync()

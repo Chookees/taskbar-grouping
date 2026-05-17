@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
+using TaskbarFolders.Core.Interop;
 using TaskbarFolders.Manager.ViewModels;
 
 namespace TaskbarFolders.Manager.Views;
@@ -25,6 +27,17 @@ public partial class MainWindow : Window
 
         InitializeComponent();
         DataContext = viewModel;
+        SourceInitialized += OnSourceInitialized;
+    }
+
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        // Enable Mica on the title-bar area for the Win11-native look (Settings / File
+        // Explorer wear Mica too). Pre-22H2 Windows return non-zero HRESULT and we keep
+        // the themed solid brushes — no visual regression on older systems.
+        var hwnd = new WindowInteropHelper(this).Handle;
+        _ = WindowBackdrop.TryApply(hwnd, WindowBackdropKind.Mica);
+        SourceInitialized -= OnSourceInitialized;
     }
 
     private void NewGroupName_KeyDown(object sender, KeyEventArgs e)

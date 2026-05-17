@@ -47,15 +47,6 @@ internal static class NativeMethods
     // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)-4
     public static readonly IntPtr DpiAwarenessContextPerMonitorAwareV2 = new(-4);
 
-    // dwmapi — Mica / Acrylic backdrop on Windows 11 22H2+
-    [DllImport("dwmapi.dll", ExactSpelling = true)]
-    public static extern int DwmSetWindowAttribute(IntPtr hWnd, uint attr, ref int attrValue, int attrSize);
-
-    public const uint DWMWA_SYSTEMBACKDROP_TYPE = 38;
-
-    public const int DWMSBT_AUTO = 0;
-    public const int DWMSBT_NONE = 1;
-    public const int DWMSBT_MAINWINDOW = 2;       // Mica
-    public const int DWMSBT_TRANSIENTWINDOW = 3;  // Acrylic — best fit for popups
-    public const int DWMSBT_TABBEDWINDOW = 4;     // Mica Alt
+    // DwmSetWindowAttribute backdrop control moved to TaskbarFolders.Core.Interop.WindowBackdrop
+    // — both Manager and Launcher consume that single helper.
 }
