@@ -156,7 +156,7 @@ public sealed class GroupSyncService : IGroupSyncService
                 File.Delete(path);
             }
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
             _logger?.LogWarning(ex, "Could not delete {Path}.", path);
         }

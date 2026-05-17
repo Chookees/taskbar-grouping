@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace TaskbarFolders.Shared.Configuration;
 
@@ -8,7 +9,7 @@ namespace TaskbarFolders.Shared.Configuration;
 /// <see cref="Environment.SpecialFolder.ApplicationData"/>.
 /// Tests can use the secondary constructor to point at a temporary directory.
 /// </summary>
-public sealed class AppDataPathProvider : IAppDataPathProvider
+public sealed partial class AppDataPathProvider : IAppDataPathProvider
 {
     /// <summary>Application sub-folder name under the base directory.</summary>
     public const string AppFolderName = "TaskbarFolders";
@@ -27,6 +28,16 @@ public sealed class AppDataPathProvider : IAppDataPathProvider
 
     /// <summary>File name of the global settings document.</summary>
     public const string SettingsFileName = "settings.json";
+
+    /// <summary>
+    /// Whitelist for group ids. Permits the characters Windows AUMIDs accept
+    /// (<c>A-Z a-z 0-9 . _ -</c>) — also rejects any path-separator or <c>..</c>
+    /// sequence so a hand-edited JSON cannot escape the per-app data root.
+    /// Length-capped at 128 to stay inside the AUMID maximum (so the same id
+    /// can be reused as <c>TaskbarFolders.Group.&lt;id&gt;</c> without overflow).
+    /// </summary>
+    [GeneratedRegex(@"^[A-Za-z0-9._-]{1,96}$", RegexOptions.CultureInvariant)]
+    private static partial Regex GroupIdPattern();
 
     /// <summary>
     /// Initializes a new instance using <see cref="Environment.SpecialFolder.ApplicationData"/>
@@ -69,24 +80,33 @@ public sealed class AppDataPathProvider : IAppDataPathProvider
     /// <inheritdoc/>
     public string GetGroupFile(string groupId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
-
+        ValidateGroupId(groupId);
         return Path.Combine(GroupsDirectory, $"{groupId}.json");
     }
 
     /// <inheritdoc/>
     public string GetGroupIconFile(string groupId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
-
+        ValidateGroupId(groupId);
         return Path.Combine(IconsDirectory, $"{groupId}.ico");
     }
 
     /// <inheritdoc/>
     public string GetGroupShortcutFile(string groupId)
     {
+        ValidateGroupId(groupId);
+        return Path.Combine(ShortcutsDirectory, $"{groupId}.lnk");
+    }
+
+    private static void ValidateGroupId(string groupId)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
 
-        return Path.Combine(ShortcutsDirectory, $"{groupId}.lnk");
+        if (!GroupIdPattern().IsMatch(groupId))
+        {
+            throw new ArgumentException(
+                $"Invalid group id '{groupId}'. Must match {GroupIdPattern()} — letters, digits, dot, underscore, hyphen; max 96 chars; no path separators.",
+                nameof(groupId));
+        }
     }
 }

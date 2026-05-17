@@ -40,6 +40,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
 
     private GroupListItemViewModel? _boundItem;
     private CancellationTokenSource? _previewCts;
+    private readonly object _previewCtsLock = new();
     private bool _disposed;
 
     /// <summary>Initializes a new instance with the dependencies it needs to render previews and persist edits.</summary>
@@ -101,15 +102,22 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
             return;
         }
 
-        foreach (var entry in item.Config.Apps)
+        // Rebuild Apps inside a try/finally so an exception in LoadIconInto cannot leave
+        // the editor in a state where the collection-changed handler is permanently detached.
+        try
         {
-            var appVm = new AppEntryViewModel(entry);
-            Apps.Add(appVm);
-            LoadIconInto(appVm);
+            foreach (var entry in item.Config.Apps)
+            {
+                var appVm = new AppEntryViewModel(entry);
+                Apps.Add(appVm);
+                LoadIconInto(appVm);
+            }
         }
-
-        Apps.CollectionChanged += OnAppsCollectionChanged;
-        SchedulePreviewRefresh();
+        finally
+        {
+            Apps.CollectionChanged += OnAppsCollectionChanged;
+            SchedulePreviewRefresh();
+        }
     }
 
     [RelayCommand]
@@ -182,11 +190,27 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         }
 
         var shortcutPath = _paths.GetGroupShortcutFile(_boundItem.Id);
-        if (!File.Exists(shortcutPath))
+
+        // Defence in depth: AppDataPathProvider already rejects malformed ids, but a future
+        // path-provider implementation could differ. Verify the resolved path is inside the
+        // shortcuts directory before handing it to Explorer — keeps any argument-injection
+        // shape (`" --some-flag`) from sneaking into the command line.
+        var shortcutsRoot = _paths.ShortcutsDirectory;
+        var fullShortcutPath = Path.GetFullPath(shortcutPath);
+        var fullRoot = Path.GetFullPath(shortcutsRoot);
+        if (!fullShortcutPath.StartsWith(fullRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger?.LogError(
+                "Pin-helper refused: resolved shortcut path {Path} is outside the shortcuts root {Root}.",
+                fullShortcutPath, fullRoot);
+            return;
+        }
+
+        if (!File.Exists(fullShortcutPath))
         {
             _logger?.LogWarning(
                 "Pin-helper invoked but shortcut {Path} does not exist yet — add at least one app to generate it.",
-                shortcutPath);
+                fullShortcutPath);
             return;
         }
 
@@ -195,7 +219,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         using var process = Process.Start(new ProcessStartInfo
         {
             FileName = "explorer.exe",
-            Arguments = $"/select,\"{shortcutPath}\"",
+            Arguments = $"/select,\"{fullShortcutPath}\"",
             UseShellExecute = true,
         });
     }
@@ -205,10 +229,20 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
 
     private async void SchedulePreviewRefresh()
     {
-        _previewCts?.Cancel();
-        _previewCts?.Dispose();
-        _previewCts = new CancellationTokenSource();
-        var token = _previewCts.Token;
+        CancellationToken token;
+        lock (_previewCtsLock)
+        {
+            // Atomically retire the previous CTS before publishing the new one so two
+            // concurrent CollectionChanged callbacks cannot race on the field and trip
+            // an ObjectDisposedException when the second one tries to Cancel a CTS that
+            // the first already disposed.
+            var previous = _previewCts;
+            _previewCts = new CancellationTokenSource();
+            token = _previewCts.Token;
+
+            previous?.Cancel();
+            previous?.Dispose();
+        }
 
         try
         {
@@ -287,9 +321,12 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         }
 
         Apps.CollectionChanged -= OnAppsCollectionChanged;
-        _previewCts?.Cancel();
-        _previewCts?.Dispose();
-        _previewCts = null;
+        lock (_previewCtsLock)
+        {
+            _previewCts?.Cancel();
+            _previewCts?.Dispose();
+            _previewCts = null;
+        }
         _disposed = true;
     }
 }

@@ -36,6 +36,14 @@ public sealed class RegistryAutoStartService : IAutoStartService
         var exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException("Could not determine the current process path.");
 
+        // Embedded quote would break the Run-key parser. Symlink targets on NTFS can
+        // contain double-quotes, so reject explicitly rather than corrupt the registry.
+        if (exePath.Contains('"', StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Process path '{exePath}' contains a double-quote, which cannot be safely written to the Run key.");
+        }
+
         // Quote the value so Windows handles paths with spaces correctly.
         key.SetValue(ValueName, $"\"{exePath}\"");
     }

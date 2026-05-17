@@ -73,6 +73,14 @@ public sealed class ThemeService : IThemeService, IDisposable
             ? new Uri(DarkDictionaryUri, UriKind.Relative)
             : new Uri(LightDictionaryUri, UriKind.Relative);
 
+        // SystemEvents.UserPreferenceChanged fires for many categories beyond app theme
+        // (accent colour, regional, mouse settings). Skip the dictionary swap when the
+        // resolved URI hasn't actually changed so we don't churn the visual tree.
+        if (_currentDictionary is { Source: { } currentSource } && currentSource == uri)
+        {
+            return;
+        }
+
         var newDict = new ResourceDictionary { Source = uri };
         var merged = app.Resources.MergedDictionaries;
 
@@ -113,8 +121,11 @@ public sealed class ThemeService : IThemeService, IDisposable
         }
 
         // Must run on the UI thread because Application.Resources are dispatcher-affine.
+        // BeginInvoke is fire-and-forget — a theme repaint has no return value and the
+        // synchronous Invoke could deadlock if the UI thread is blocked on anything that
+        // ultimately waits on the SystemEvents thread.
         var app = Application.Current;
-        app?.Dispatcher.Invoke(ApplyCurrent);
+        app?.Dispatcher.BeginInvoke(new Action(ApplyCurrent));
     }
 
     /// <inheritdoc/>

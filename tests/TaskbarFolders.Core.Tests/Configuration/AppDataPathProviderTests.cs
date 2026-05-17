@@ -81,4 +81,39 @@ public class AppDataPathProviderTests
         sut.GetGroupShortcutFile("abc")
             .Should().Be(Path.Combine("C:/base", "TaskbarFolders", "shortcuts", "abc.lnk"));
     }
+
+    [Theory]
+    [InlineData("../escape")]
+    [InlineData("..\\escape")]
+    [InlineData("with/slash")]
+    [InlineData("with\\backslash")]
+    [InlineData("with space")]
+    [InlineData("name:colon")]
+    [InlineData("name*star")]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void GetGroup_RejectsIdsThatCouldEscapeTheAppDataRoot(string badId)
+    {
+        var sut = new AppDataPathProvider("C:/base");
+
+        FluentActions.Invoking(() => sut.GetGroupFile(badId)).Should().Throw<System.ArgumentException>();
+        FluentActions.Invoking(() => sut.GetGroupIconFile(badId)).Should().Throw<System.ArgumentException>();
+        FluentActions.Invoking(() => sut.GetGroupShortcutFile(badId)).Should().Throw<System.ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData("guid-like_id.1")]
+    [InlineData("550e8400e29b41d4a716446655440000")]
+    [InlineData("with-hyphen")]
+    [InlineData("with.dot")]
+    [InlineData("with_underscore")]
+    public void GetGroup_AcceptsValidIdShapes(string okId)
+    {
+        var sut = new AppDataPathProvider("C:/base");
+
+        // Should not throw for any of these.
+        sut.GetGroupFile(okId);
+        sut.GetGroupIconFile(okId);
+        sut.GetGroupShortcutFile(okId);
+    }
 }

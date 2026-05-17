@@ -62,8 +62,24 @@ public sealed class ShortcutGenerator : IShortcutGenerator
             // Save atomically: write to .tmp first, then replace, so a crashed write never
             // leaves a half-written .lnk that Explorer would render as a broken pin.
             var temp = request.ShortcutPath + ".tmp";
-            ((IPersistFile)link).Save(temp, fRemember: true);
-            File.Move(temp, request.ShortcutPath, overwrite: true);
+            var moved = false;
+            try
+            {
+                ((IPersistFile)link).Save(temp, fRemember: true);
+                File.Move(temp, request.ShortcutPath, overwrite: true);
+                moved = true;
+            }
+            finally
+            {
+                if (!moved && File.Exists(temp))
+                {
+                    // Save or Move threw — clean up the half-written .tmp so it never lingers
+                    // alongside the real shortcuts. Best-effort: a failed delete here would
+                    // be overwritten on the next successful save anyway.
+                    try { File.Delete(temp); }
+                    catch (IOException) { /* best-effort */ }
+                }
+            }
 
             _logger?.LogInformation(
                 "Wrote shortcut {Path} for group {GroupId} with AUMID {Aumid}.",
