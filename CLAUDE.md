@@ -70,10 +70,38 @@ If you suppress an analyzer, add the rationale in `.editorconfig` next to the su
 ## Where things live at runtime
 
 - Group configs: `%APPDATA%/TaskbarFolders/groups/<id>.json`
-- Per-group shortcut (Strategy C `.lnk`): `%APPDATA%/TaskbarFolders/groups/<id>/<name>.lnk`
+- Per-group composite icon: `%APPDATA%/TaskbarFolders/icons/<id>.ico`
+- Per-group shortcut (Strategy C `.lnk`): `%APPDATA%/TaskbarFolders/shortcuts/<id>.lnk`
 - Settings: `%APPDATA%/TaskbarFolders/settings.json`
 - Icon cache: `%APPDATA%/TaskbarFolders/icons/cache/<sha256>.png`
 - Logs: `%APPDATA%/TaskbarFolders/logs/{manager,launcher}-yyyy-MM-dd.log`
+
+## Installed layout (read before touching `LauncherPathResolver`)
+
+The Inno Setup installer and the portable ZIP both ship Manager and Launcher in **sibling folders**, not one directory:
+
+```
+{app}\Manager\TaskbarFolders.Manager.exe
+{app}\Launcher\TaskbarFolders.Launcher.exe
+```
+
+`LauncherPathResolver` probes three layouts (`side-by-side` → `sibling folder` → `dev sln walk-up`). Any new packaging must match one of those, or the resolver gains a fourth probe. The v0.2.0 release shipped without the sibling probe and the `Show shortcut...` button was silently broken for every install — regression test in `LauncherPathResolverTests.TryResolveFrom_FindsLauncherInSiblingFolder_MatchingInstallerLayout` guards against repeating it.
+
+## Workflow for non-trivial work
+
+This project is solo-maintained; senior-dev workflow expectations apply.
+
+**1. Analyse before changing anything.** Read the files end-to-end (XAML binding → VM command → service → P/Invoke), check the runtime log under `%APPDATA%/TaskbarFolders/logs/`, and form a falsifiable root-cause hypothesis. Quote line numbers when you state the cause.
+
+**2. Orchestrate subagents when the task warrants it.** Rule of thumb: trivial edits go direct; multi-file fixes get a `Plan` agent first; bug investigations across more than two files get an `Explore` agent in parallel; anything user-blocking gets a `general-purpose` agent for independent code review **before push**. Brief each agent self-contained (file paths, line numbers, constraints from this CLAUDE.md) — they cannot see the conversation.
+
+**3. Bug-fixing waves.** Group changes into reviewable commits: one commit per behavioural concern (e.g. resolver fix, UX fix, UX defence-in-depth), each with its own tests. Run `dotnet build -c Release` after every wave (tests need WindowsDesktop 8.0 x64 which is CI-only). Address code-review findings as a polish commit on top — never amend a pushed commit, never amend across reviewable boundaries.
+
+**4. Commits.** Conventional Commits (`fix(manager): …`, `feat(core): …`). Body explains the *why* and the *blast radius*, not the *what* — assume the reader has the diff. No AI/agent mentions, no `Co-Authored-By` trailers. Run `dotnet format` before staging — the CI `--verify-no-changes` step is unforgiving about charset (UTF-8 BOM) and line endings (CRLF for `.cs`/`.xaml`).
+
+**5. Pushing & releasing.** Bug fixes land on `develop` directly (no PR — solo-maintained). Patch releases tag `v0.x.y` from `develop`; `release.yml` publishes the assets. Bump `Directory.Build.props:Version`, `installer/setup.iss:MyAppVersion`, the README status banner, and add a `CHANGELOG.md` section in the same commit as the tag-eligible state. If a fix is user-blocking on a shipped version, cut a patch release the same day.
+
+**6. CLAUDE.md upkeep.** When a fix introduces a new convention or invariant, surface it here — the next session reads this file before doing anything else.
 
 ## Release
 
