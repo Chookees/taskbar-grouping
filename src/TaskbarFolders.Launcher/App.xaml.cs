@@ -148,6 +148,12 @@ public partial class App : Application
     /// </summary>
     private async Task RunPopupModeAsync(StartupEventArgs e, string groupId, bool aumidAlreadyInherited)
     {
+        // v0.4.1: per-checkpoint Stopwatch timestamps so the launcher-*.log shows where the
+        // user's perceived popup-open time goes. The single LogInformation line at the end
+        // is the only output the user has to look at. GetTimestamp() costs ~10 ns per call;
+        // negligible against the 100s of ms we are profiling.
+        var tStart = Stopwatch.GetTimestamp();
+
         // Capture the cursor position FIRST, before anything else can take 100+ ms. This is
         // the click location — by the time WPF has bootstrapped (~300–500 ms) the cursor has
         // typically drifted, which is why the v0.2 helper's late GetCursorPos call produced
@@ -189,12 +195,14 @@ public partial class App : Application
         {
             _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
         }
+        var tAumid = Stopwatch.GetTimestamp();
 
         var paths = new AppDataPathProvider();
 
         // Load settings BEFORE the DI container is built so the resolved AppSettings instance
         // can be registered as a singleton (v0.3 single-load pattern).
         var settings = await new JsonAppSettingsStore(paths).LoadAsync().ConfigureAwait(true);
+        var tSettings = Stopwatch.GetTimestamp();
 
         var services = new ServiceCollection();
         services.AddLogging(logging => logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "launcher"));
@@ -209,26 +217,30 @@ public partial class App : Application
 #else
         _services = services.BuildServiceProvider();
 #endif
+        var tDi = Stopwatch.GetTimestamp();
 
         // Seed the cursor anchor BEFORE PopupViewModel/PopupWindow are resolved so any
         // placement lookup during the first paint sees a populated value.
         _services.GetRequiredService<ICursorAnchor>().Seed(anchor);
 
-        _services.GetRequiredService<ILogger<App>>()
-            .LogInformation("Launcher starting for group {GroupId}.", groupId);
+        var logger = _services.GetRequiredService<ILogger<App>>();
+        logger.LogInformation("Launcher starting for group {GroupId}.", groupId);
 
         // Apply the persisted theme before the window is built so DynamicResource bindings
         // paint correctly on the first frame.
         LauncherThemeApplier.Apply(this, settings.Theme);
+        var tTheme = Stopwatch.GetTimestamp();
 
         // Two-phase load: metadata first (group name, columns, app names — ~5 ms) so the
         // window can paint immediately, then per-app icon extraction in the background.
         var viewModel = _services.GetRequiredService<PopupViewModel>();
         await viewModel.LoadAsync().ConfigureAwait(true);
+        var tVm = Stopwatch.GetTimestamp();
 
         var popup = _services.GetRequiredService<Views.PopupWindow>();
         MainWindow = popup;
         popup.Show();
+        var tShown = Stopwatch.GetTimestamp();
 
         viewModel.StartIconLoad();
 
@@ -239,8 +251,28 @@ public partial class App : Application
             .OfType<FileLoggerProvider>()
             .FirstOrDefault()?.StartBackgroundPrune();
 
+        // Single timing summary, emitted from the Loaded handler so we also capture the
+        // "from process start to user-visible first paint" wall-clock (tLoaded), not just
+        // up to Show(). Each value is wall-clock ms from tStart so the user can read the
+        // breakdown directly. See docs/PERF.md for the meaning of each checkpoint.
+        popup.Loaded += (_, _) =>
+        {
+            var tLoaded = Stopwatch.GetTimestamp();
+            logger.LogInformation(
+                "Startup timing (ms from tStart): aumid={Aumid:F0} settings={Settings:F0} di={Di:F0} theme={Theme:F0} vm={Vm:F0} show={Show:F0} loaded={Loaded:F0}",
+                ToMs(tStart, tAumid),
+                ToMs(tStart, tSettings),
+                ToMs(tStart, tDi),
+                ToMs(tStart, tTheme),
+                ToMs(tStart, tVm),
+                ToMs(tStart, tShown),
+                ToMs(tStart, tLoaded));
+        };
+
         base.OnStartup(e);
     }
+
+    private static double ToMs(long from, long to) => (to - from) * 1000.0 / Stopwatch.Frequency;
 
     /// <inheritdoc/>
     protected override void OnExit(ExitEventArgs e)
