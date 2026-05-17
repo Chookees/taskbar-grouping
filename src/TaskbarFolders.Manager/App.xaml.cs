@@ -31,6 +31,14 @@ public partial class App : Application
                 logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "manager");
             })
             .ConfigureServices((_, services) => services.AddTaskbarFoldersManager())
+            // Match the production wiring to what the composition tests assert. ValidateOnBuild
+            // surfaces missing registrations and lifetime mismatches at process start instead of
+            // at first GetService — Host.CreateDefaultBuilder only enables this in Development.
+            .UseDefaultServiceProvider((_, options) =>
+            {
+                options.ValidateOnBuild = true;
+                options.ValidateScopes = true;
+            })
             .Build();
     }
 

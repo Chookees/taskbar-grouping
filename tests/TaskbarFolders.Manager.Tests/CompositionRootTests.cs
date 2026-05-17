@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System;
+using System.IO;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskbarFolders.Core.Icons;
@@ -17,13 +19,34 @@ namespace TaskbarFolders.Manager.Tests;
 /// only surface at App.OnStartup (DI mismatch, missing registration, lifetime conflict)
 /// and lets the build fail fast in CI.
 /// </summary>
-public class CompositionRootTests
+public sealed class CompositionRootTests : IDisposable
 {
-    private static ServiceProvider BuildProvider()
+    private readonly string _tempBase;
+
+    public CompositionRootTests()
+    {
+        // Temp-rooted path provider so a future constructor that ever starts touching disk
+        // (a cache hydration, say) cannot mutate the developer's real %APPDATA%.
+        _tempBase = Path.Combine(Path.GetTempPath(), "TaskbarFolders.MgrComp." + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_tempBase);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempBase))
+        {
+            Directory.Delete(_tempBase, recursive: true);
+        }
+        GC.SuppressFinalize(this);
+    }
+
+    private ServiceProvider BuildProvider()
     {
         var services = new ServiceCollection();
         services.AddLogging(); // satisfy ILogger<T> dependencies
         services.AddTaskbarFoldersManager();
+        // Replace the default %APPDATA%-rooted provider with a temp-rooted one for tests.
+        services.AddSingleton<IAppDataPathProvider>(new AppDataPathProvider(_tempBase));
         return services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,

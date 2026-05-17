@@ -42,8 +42,9 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          dotnet tool install --global dotnet-reportgenerator-globaltool
-          reportgenerator `
+          # Tool version pinned in .config/dotnet-tools.json so CI can't silently drift.
+          dotnet tool restore
+          dotnet reportgenerator `
             -reports:./TestResults/**/coverage.cobertura.xml `
             -targetdir:./TestResults/CoverageReport `
             -reporttypes:"Html;TextSummary"

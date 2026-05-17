@@ -66,7 +66,13 @@ public partial class App : Application
         var services = new ServiceCollection();
         services.AddLogging(logging => logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "launcher"));
         services.AddTaskbarFoldersLauncher(new LauncherOptions(groupId), paths);
-        _services = services.BuildServiceProvider();
+        // ValidateOnBuild/ValidateScopes match the production composition tests so any DI
+        // regression fails at process start rather than at first GetService.
+        _services = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true,
+        });
 
         _services.GetRequiredService<ILogger<App>>()
             .LogInformation("Launcher starting for group {GroupId}.", groupId);

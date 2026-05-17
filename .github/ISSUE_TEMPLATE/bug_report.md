@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 
 ## Environment
 - **OS:** Windows 11 [version]
-- **TaskbarFolders Version:** [e.g., 0.1.0]
+- **TaskbarFolders Version:** [e.g., 0.2.0]
 - **Display Scaling:** [e.g., 125%]
 - **Monitor Setup:** [e.g., single monitor, dual monitor]
 
