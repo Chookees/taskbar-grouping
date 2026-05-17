@@ -2,8 +2,6 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using TaskbarFolders.Core.Icons;
-using TaskbarFolders.Core.Shortcuts;
 using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
@@ -32,7 +30,7 @@ public partial class App : Application
                 var paths = new AppDataPathProvider();
                 logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "manager");
             })
-            .ConfigureServices(ConfigureServices)
+            .ConfigureServices((_, services) => services.AddTaskbarFoldersManager())
             .Build();
     }
 
@@ -75,40 +73,5 @@ public partial class App : Application
         _host.Dispose();
 
         base.OnExit(e);
-    }
-
-    private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
-    {
-        // Persistence — singletons because the stores carry no per-call state and the
-        // path provider is rooted at %APPDATA% for the lifetime of the process.
-        services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
-        services.AddSingleton<IGroupConfigStore, JsonGroupConfigStore>();
-        services.AddSingleton<IAppSettingsStore, JsonAppSettingsStore>();
-
-        // Icon engine — singletons; ShellIconExtractor is stateless and the cache (M2.4)
-        // will replace IIconExtractor with a caching decorator.
-        services.AddSingleton<IIconExtractor, ShellIconExtractor>();
-        services.AddSingleton<ICompositeIconGenerator, CompositeIconGenerator>();
-        services.AddSingleton<IIcoFileWriter, IcoFileWriter>();
-        services.AddSingleton<IIconCache, FileSystemIconCache>();
-
-        // Manager-side services.
-        services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
-        services.AddSingleton<ISystemThemeProbe, RegistrySystemThemeProbe>();
-        services.AddSingleton<IThemeService, ThemeService>();
-        services.AddSingleton<IShortcutGenerator, ShortcutGenerator>();
-        services.AddSingleton<ILauncherPathResolver, LauncherPathResolver>();
-        services.AddSingleton<IGroupSyncService, GroupSyncService>();
-        services.AddSingleton<IUserConfirmation, MessageBoxUserConfirmation>();
-
-        // View models — MainWindow is itself a singleton conceptually (one main window per process),
-        // so the backing VM is singleton too. App.OnStartup loads groups into it before showing the window.
-        services.AddSingleton<MainWindowViewModel>();
-        services.AddSingleton<GroupEditorViewModel>();
-        services.AddTransient<SettingsViewModel>();
-
-        // Views — transient so each Show creates a fresh window instance.
-        services.AddTransient<MainWindow>();
-        services.AddTransient<SettingsWindow>();
     }
 }
