@@ -98,13 +98,20 @@ public partial class App : Application
         services.AddLogging(logging => logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "launcher"));
         services.AddTaskbarFoldersLauncher(new LauncherOptions(groupId), paths);
         services.AddSingleton(settings);
-        // ValidateOnBuild/ValidateScopes match the production composition tests so any DI
-        // regression fails at process start rather than at first GetService.
+        // ValidateOnBuild eagerly walks the DI graph at BuildServiceProvider time —
+        // catches misregistrations early, but adds ~20-30 ms to per-click launcher startup.
+        // Debug builds keep it (developer-facing fail-fast); Release skips it. CI runs
+        // CompositionRootTests which exercises ValidateOnBuild explicitly so the safety
+        // net is still in place for shipped code.
+#if DEBUG
         _services = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,
             ValidateScopes = true,
         });
+#else
+        _services = services.BuildServiceProvider();
+#endif
 
         // Seed the cursor anchor BEFORE PopupViewModel/PopupWindow are resolved so any
         // placement lookup during the first paint sees a populated value.
