@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using TaskbarFolders.Launcher.Services;
@@ -84,8 +85,38 @@ public partial class PopupWindow : Window
 
         if (_settings.EnableAnimations && TryFindResource("OpenAnimation") is Storyboard storyboard)
         {
-            storyboard.Begin(this);
+            ScheduleAnimationOnFirstRender(storyboard);
         }
+        else if (!_settings.EnableAnimations && FindName("ChromeRoot") is Border chrome)
+        {
+            // Animations disabled — snap the popup visible immediately so user does not see
+            // a permanently invisible window (XAML default Opacity=0 + ScaleX/Y=0.5).
+            chrome.Opacity = 1;
+            if (RenderTransform is ScaleTransform snap)
+            {
+                snap.ScaleX = 1;
+                snap.ScaleY = 1;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Defers <see cref="Storyboard.Begin(System.Windows.FrameworkElement)"/> until the first
+    /// composition frame. v0.4 fired Begin directly from <see cref="OnSourceInitialized"/>;
+    /// on cold launches the WPF first paint happened AFTER the 200 ms animation timeline had
+    /// already elapsed, so users only ever saw the end state. Subscribing to
+    /// <see cref="CompositionTarget.Rendering"/> and starting on the next render tick
+    /// guarantees the timeline begins on a frame the user will actually see.
+    /// </summary>
+    private void ScheduleAnimationOnFirstRender(Storyboard storyboard)
+    {
+        EventHandler? onFrame = null;
+        onFrame = (_, _) =>
+        {
+            CompositionTarget.Rendering -= onFrame;
+            storyboard.Begin(this);
+        };
+        CompositionTarget.Rendering += onFrame;
     }
 
     private void OnDeactivated(object? sender, EventArgs e) => Close();
