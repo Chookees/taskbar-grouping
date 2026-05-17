@@ -32,6 +32,14 @@ public class AppDataPathProviderTests
     }
 
     [Fact]
+    public void LogsDirectory_IsRootSlashLogs()
+    {
+        var sut = new AppDataPathProvider("C:/base");
+
+        sut.LogsDirectory.Should().Be(Path.Combine("C:/base", "TaskbarFolders", "logs"));
+    }
+
+    [Fact]
     public void SettingsFile_IsSettingsJsonAtRoot()
     {
         var sut = new AppDataPathProvider("C:/base");

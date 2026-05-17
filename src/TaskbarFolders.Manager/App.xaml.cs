@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
 using TaskbarFolders.Shared.Configuration;
+using TaskbarFolders.Shared.Logging;
 
 namespace TaskbarFolders.Manager;
 
@@ -23,6 +24,11 @@ public partial class App : Application
     {
         _host = Host.CreateDefaultBuilder()
             .UseContentRoot(AppContext.BaseDirectory)
+            .ConfigureLogging((_, logging) =>
+            {
+                var paths = new AppDataPathProvider();
+                logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "manager");
+            })
             .ConfigureServices(ConfigureServices)
             .Build();
     }

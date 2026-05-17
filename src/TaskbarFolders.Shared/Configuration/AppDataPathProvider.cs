@@ -19,6 +19,9 @@ public sealed class AppDataPathProvider : IAppDataPathProvider
     /// <summary>Sub-folder containing generated icon files.</summary>
     public const string IconsFolderName = "icons";
 
+    /// <summary>Sub-folder containing rotated log files.</summary>
+    public const string LogsFolderName = "logs";
+
     /// <summary>File name of the global settings document.</summary>
     public const string SettingsFileName = "settings.json";
 
@@ -50,6 +53,9 @@ public sealed class AppDataPathProvider : IAppDataPathProvider
 
     /// <inheritdoc/>
     public string IconsDirectory => Path.Combine(AppDataRoot, IconsFolderName);
+
+    /// <inheritdoc/>
+    public string LogsDirectory => Path.Combine(AppDataRoot, LogsFolderName);
 
     /// <inheritdoc/>
     public string SettingsFile => Path.Combine(AppDataRoot, SettingsFileName);

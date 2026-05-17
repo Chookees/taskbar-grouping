@@ -15,6 +15,9 @@ public interface IAppDataPathProvider
     /// <summary>Gets the directory containing generated composite and per-group icons.</summary>
     string IconsDirectory { get; }
 
+    /// <summary>Gets the directory containing rotated diagnostic log files.</summary>
+    string LogsDirectory { get; }
+
     /// <summary>Gets the path to the global application settings file.</summary>
     string SettingsFile { get; }
 

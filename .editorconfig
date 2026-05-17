@@ -70,6 +70,13 @@ dotnet_diagnostic.CS1591.severity = warning
 # and the "Shared" name is part of the documented module taxonomy (see docs/architecture.md).
 dotnet_diagnostic.CA1716.severity = none
 
+# CA1848 + CA1873: prefer LoggerMessage delegates over direct ILogger.LogXxx calls.
+# We accept the small allocation cost in non-hot paths (startup, error reporting, UI events).
+# Code that does land in a real hot path (e.g. per-icon extraction in M2) should opt back in
+# locally by introducing [LoggerMessage]-attributed partials.
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1873.severity = none
+
 # Test projects use the established xUnit Method_Behavior_Condition naming convention
 # (CA1707 would forbid the underscores). Production code remains strict.
 [tests/**/*.cs]

@@ -2,9 +2,11 @@
 using System.Diagnostics;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using TaskbarFolders.Launcher.Configuration;
 using TaskbarFolders.Launcher.Views;
 using TaskbarFolders.Shared.Configuration;
+using TaskbarFolders.Shared.Logging;
 
 namespace TaskbarFolders.Launcher;
 
@@ -28,23 +30,29 @@ public partial class App : Application
         var groupId = CommandLineParser.TryParseGroupId(e.Args);
         if (groupId is null)
         {
-            // Started without the required argument (e.g. manual double-click without context).
-            // M4 replaces this with a user-visible toast; until logging lands in M1.6 we trace and exit.
+            // No DI/logger yet — emit a trace so dev/QA can see this in a debugger; M4 will
+            // additionally surface this as a user-visible toast.
             Trace.TraceError("Launcher started without required {0} argument.", CommandLineParser.GroupIdArg);
             Shutdown(1);
             return;
         }
 
+        var paths = new AppDataPathProvider();
+
         var services = new ServiceCollection();
+        services.AddLogging(logging => logging.AddTaskbarFoldersFileLogging(paths.LogsDirectory, "launcher"));
         services.AddSingleton(new LauncherOptions(groupId));
 
         // Persistence — the launcher is read-only against group configs and settings.
-        services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
+        services.AddSingleton<IAppDataPathProvider>(paths);
         services.AddSingleton<IGroupConfigStore, JsonGroupConfigStore>();
         services.AddSingleton<IAppSettingsStore, JsonAppSettingsStore>();
 
         services.AddTransient<PopupWindow>();
         _services = services.BuildServiceProvider();
+
+        _services.GetRequiredService<ILogger<App>>()
+            .LogInformation("Launcher starting for group {GroupId}.", groupId);
 
         var popup = _services.GetRequiredService<PopupWindow>();
         MainWindow = popup;
