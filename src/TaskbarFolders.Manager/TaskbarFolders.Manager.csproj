@@ -9,6 +9,7 @@
     <RootNamespace>TaskbarFolders.Manager</RootNamespace>
     <AssemblyName>TaskbarFolders.Manager</AssemblyName>
     <ApplicationIcon>..\..\assets\icons\manager.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <Description>TaskbarFolders Manager - Main WPF application for creating and managing taskbar groups</Description>
   </PropertyGroup>
 
