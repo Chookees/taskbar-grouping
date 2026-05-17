@@ -10,11 +10,13 @@ namespace TaskbarFolders.Shared.Configuration;
 public static class JsonOptions
 {
     /// <summary>
-    /// Default options: camelCase property names, indented output, and null values omitted on write.
+    /// Default options: camelCase property names, indented output, null values omitted on write,
+    /// and source-generated type metadata via <see cref="SerializationContext"/>.
     /// </summary>
     public static JsonSerializerOptions Default { get; } = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        TypeInfoResolver = SerializationContext.Default,
     };
 }
