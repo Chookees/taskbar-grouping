@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
+using TaskbarFolders.Launcher.Configuration;
 
 namespace TaskbarFolders.Launcher.Views;
 
@@ -7,8 +9,15 @@ namespace TaskbarFolders.Launcher.Views;
 /// </summary>
 public partial class PopupWindow : Window
 {
-    public PopupWindow()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PopupWindow"/> class.
+    /// </summary>
+    /// <param name="options">Launcher options including the target group identifier.</param>
+    public PopupWindow(LauncherOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         InitializeComponent();
+        Title = $"TaskbarFolders [{options.GroupId}]";
     }
 }
