@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using System.Windows.Media.Imaging;
 using FluentAssertions;
 using Moq;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Shared.Configuration;
 using TaskbarFolders.Shared.Models;
@@ -36,6 +38,19 @@ public class GroupEditorViewModelTests
                     Mock<IIconCache> cache,
                     Mock<IGroupConfigStore> store) CreateSut()
     {
+        var (sut, extractor, composer, cache, store, _, _, _) = CreateSutWithCollaborators();
+        return (sut, extractor, composer, cache, store);
+    }
+
+    private static (GroupEditorViewModel sut,
+                    Mock<IIconExtractor> extractor,
+                    Mock<ICompositeIconGenerator> composer,
+                    Mock<IIconCache> cache,
+                    Mock<IGroupConfigStore> store,
+                    Mock<IGroupSyncService> syncService,
+                    Mock<IAppDataPathProvider> paths,
+                    Mock<IUserConfirmation> userConfirmation) CreateSutWithCollaborators()
+    {
         var extractor = new Mock<IIconExtractor>();
         extractor.Setup(e => e.ExtractIcon(It.IsAny<string>(), It.IsAny<int>())).Returns(StubIcon());
 
@@ -50,14 +65,21 @@ public class GroupEditorViewModelTests
         var store = new Mock<IGroupConfigStore>();
         store.Setup(s => s.SaveAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
+        var syncService = new Mock<IGroupSyncService>();
+        syncService.Setup(s => s.SyncAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var paths = new Mock<IAppDataPathProvider>();
+        var userConfirmation = new Mock<IUserConfirmation>();
+
         var sut = new GroupEditorViewModel(
             extractor.Object,
             composer.Object,
             cache.Object,
             store.Object,
-            Mock.Of<TaskbarFolders.Manager.Services.IGroupSyncService>(),
-            Mock.Of<TaskbarFolders.Shared.Configuration.IAppDataPathProvider>());
-        return (sut, extractor, composer, cache, store);
+            syncService.Object,
+            paths.Object,
+            userConfirmation.Object);
+        return (sut, extractor, composer, cache, store, syncService, paths, userConfirmation);
     }
 
     [Fact]
@@ -203,5 +225,87 @@ public class GroupEditorViewModelTests
         await sut.RemoveAppCommand.ExecuteAsync(null);
 
         store.Verify(s => s.SaveAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ShowPinHelper_RunsSync_WhenShortcutMissing_AndDoesNotNotify_IfSyncCreatesIt()
+    {
+        // Reproduces the v0.2.0 silent-failure scenario one step further down: shortcut is
+        // missing when the user clicks, but the on-demand sync recreates it. Expected
+        // outcome: SyncAsync invoked exactly once, Notify never called.
+        var tempBase = Path.Combine(Path.GetTempPath(), "TaskbarFolders.PinHelperOk." + Guid.NewGuid().ToString("N"));
+        var shortcutsDir = Path.Combine(tempBase, "shortcuts");
+        var shortcutPath = Path.Combine(shortcutsDir, "g.lnk");
+        Directory.CreateDirectory(shortcutsDir);
+
+        try
+        {
+            var (sut, _, _, _, _, syncService, paths, userConfirmation) = CreateSutWithCollaborators();
+            paths.Setup(p => p.GetGroupShortcutFile("g")).Returns(shortcutPath);
+            paths.Setup(p => p.ShortcutsDirectory).Returns(shortcutsDir);
+            syncService
+                .Setup(s => s.SyncAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    File.WriteAllBytes(shortcutPath, [0x4C]);
+                    return Task.CompletedTask;
+                });
+
+            sut.Bind(new GroupListItemViewModel(new GroupConfig { Id = "g", GroupName = "g" }));
+            await sut.ShowPinHelperCommand.ExecuteAsync(null);
+
+            syncService.Verify(s => s.SyncAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>()), Times.Once);
+            userConfirmation.Verify(u => u.Notify(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+        finally
+        {
+            if (Directory.Exists(tempBase))
+            {
+                Directory.Delete(tempBase, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ShowPinHelper_Notifies_WhenSyncStillLeavesShortcutMissing()
+    {
+        // Resolver-unrecoverable path (e.g. launcher binary truly cannot be located):
+        // sync runs but produces no .lnk. The user must see a message, not silence.
+        var tempBase = Path.Combine(Path.GetTempPath(), "TaskbarFolders.PinHelperFail." + Guid.NewGuid().ToString("N"));
+        var shortcutsDir = Path.Combine(tempBase, "shortcuts");
+        var shortcutPath = Path.Combine(shortcutsDir, "g.lnk");
+        Directory.CreateDirectory(shortcutsDir);
+
+        try
+        {
+            var (sut, _, _, _, _, syncService, paths, userConfirmation) = CreateSutWithCollaborators();
+            paths.Setup(p => p.GetGroupShortcutFile("g")).Returns(shortcutPath);
+            paths.Setup(p => p.ShortcutsDirectory).Returns(shortcutsDir);
+            // syncService default mock returns Task.CompletedTask without touching the filesystem.
+
+            sut.Bind(new GroupListItemViewModel(new GroupConfig { Id = "g", GroupName = "g" }));
+            await sut.ShowPinHelperCommand.ExecuteAsync(null);
+
+            syncService.Verify(s => s.SyncAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>()), Times.Once);
+            userConfirmation.Verify(u => u.Notify(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+        finally
+        {
+            if (Directory.Exists(tempBase))
+            {
+                Directory.Delete(tempBase, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ShowPinHelper_NoOp_WhenNothingBound()
+    {
+        var (sut, _, _, _, _, syncService, _, userConfirmation) = CreateSutWithCollaborators();
+
+        await sut.ShowPinHelperCommand.ExecuteAsync(null);
+
+        syncService.Verify(s => s.SyncAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>()), Times.Never);
+        userConfirmation.Verify(u => u.Notify(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 }

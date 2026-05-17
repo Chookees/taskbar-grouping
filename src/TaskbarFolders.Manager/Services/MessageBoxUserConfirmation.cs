@@ -21,4 +21,15 @@ public sealed class MessageBoxUserConfirmation : IUserConfirmation
 
         return result == MessageBoxResult.Yes;
     }
+
+    /// <inheritdoc/>
+    public void Notify(string caption, string message)
+    {
+        MessageBox.Show(
+            message,
+            caption,
+            MessageBoxButton.OK,
+            MessageBoxImage.Information,
+            MessageBoxResult.OK);
+    }
 }

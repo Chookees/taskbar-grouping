@@ -36,7 +36,8 @@ public class MainWindowViewModelTests
             Mock.Of<IIconCache>(),
             store,
             Mock.Of<IGroupSyncService>(),
-            Mock.Of<IAppDataPathProvider>());
+            Mock.Of<IAppDataPathProvider>(),
+            Mock.Of<IUserConfirmation>());
     }
 
     private static MainWindowViewModel CreateSut(Mock<IGroupConfigStore> store) =>

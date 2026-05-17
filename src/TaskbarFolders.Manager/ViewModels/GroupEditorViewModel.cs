@@ -36,6 +36,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
     private readonly IGroupConfigStore _store;
     private readonly IGroupSyncService _syncService;
     private readonly IAppDataPathProvider _paths;
+    private readonly IUserConfirmation _userConfirmation;
     private readonly ILogger<GroupEditorViewModel>? _logger;
 
     private GroupListItemViewModel? _boundItem;
@@ -51,6 +52,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         IGroupConfigStore store,
         IGroupSyncService syncService,
         IAppDataPathProvider paths,
+        IUserConfirmation userConfirmation,
         ILogger<GroupEditorViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(extractor);
@@ -59,6 +61,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(syncService);
         ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(userConfirmation);
 
         _extractor = extractor;
         _composer = composer;
@@ -66,6 +69,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         _store = store;
         _syncService = syncService;
         _paths = paths;
+        _userConfirmation = userConfirmation;
         _logger = logger;
     }
 
@@ -182,7 +186,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void ShowPinHelper()
+    private async Task ShowPinHelperAsync()
     {
         if (_boundItem is null)
         {
@@ -206,11 +210,29 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // If the .lnk is missing, try to (re)generate it once before giving up. Covers the
+        // case where an earlier sync was skipped (e.g. launcher unresolvable on first save)
+        // and is then fixed by an upgrade or environment change — retrying inline means the
+        // user does not have to remove-and-re-add an app to trigger a sync.
         if (!File.Exists(fullShortcutPath))
         {
-            _logger?.LogWarning(
-                "Pin-helper invoked but shortcut {Path} does not exist yet — add at least one app to generate it.",
+            _logger?.LogInformation(
+                "Pin-helper: shortcut {Path} missing — running a one-shot sync before reporting.",
                 fullShortcutPath);
+            await _syncService.SyncAsync(_boundItem.Config).ConfigureAwait(true);
+        }
+
+        if (!File.Exists(fullShortcutPath))
+        {
+            _logger?.LogError(
+                "Pin-helper: shortcut {Path} still missing after sync — notifying user.",
+                fullShortcutPath);
+            _userConfirmation.Notify(
+                "Shortcut not available",
+                "The pinnable shortcut for this group could not be created. This usually means " +
+                "the launcher binary cannot be located, or no app icon could be extracted. " +
+                "Check the application log under %APPDATA%\\TaskbarFolders\\logs for the probed " +
+                "paths, then add an app to the group to retry.");
             return;
         }
 
