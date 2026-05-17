@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Core.Shortcuts;
 using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Manager.Views;
@@ -95,6 +96,9 @@ public partial class App : Application
         services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
         services.AddSingleton<ISystemThemeProbe, RegistrySystemThemeProbe>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IShortcutGenerator, ShortcutGenerator>();
+        services.AddSingleton<ILauncherPathResolver, LauncherPathResolver>();
+        services.AddSingleton<IGroupSyncService, GroupSyncService>();
 
         // View models — MainWindow is itself a singleton conceptually (one main window per process),
         // so the backing VM is singleton too. App.OnStartup loads groups into it before showing the window.

@@ -112,6 +112,25 @@
                     </DockPanel>
                 </Border>
 
+                <!-- Pin-to-taskbar helper: shows shortcut location in Explorer with inline guidance -->
+                <Border DockPanel.Dock="Top"
+                        Padding="12" Margin="0,0,0,12"
+                        Background="{DynamicResource SurfaceMuted}"
+                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                        CornerRadius="8">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Content="Show shortcut..."
+                                Padding="12,4"
+                                Command="{Binding ShowPinHelperCommand}" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.7" VerticalAlignment="Center">
+                            <Run Text="Pin to taskbar:" FontWeight="SemiBold" />
+                            <LineBreak />
+                            <Run Text="Click " /><Run Text="Show shortcut..." FontStyle="Italic" /><Run Text=" then right-click the .lnk → Show more options → Pin to taskbar." />
+                        </TextBlock>
+                    </DockPanel>
+                </Border>
+
                 <!-- App list -->
                 <ListBox ItemsSource="{Binding Apps}" BorderThickness="0" Background="Transparent">
                     <ListBox.ItemTemplate>

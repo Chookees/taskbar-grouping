@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Shared.Configuration;
 using TaskbarFolders.Shared.Models;
 
@@ -32,6 +34,8 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
     private readonly ICompositeIconGenerator _composer;
     private readonly IIconCache _cache;
     private readonly IGroupConfigStore _store;
+    private readonly IGroupSyncService _syncService;
+    private readonly IAppDataPathProvider _paths;
     private readonly ILogger<GroupEditorViewModel>? _logger;
 
     private GroupListItemViewModel? _boundItem;
@@ -44,17 +48,23 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         ICompositeIconGenerator composer,
         IIconCache cache,
         IGroupConfigStore store,
+        IGroupSyncService syncService,
+        IAppDataPathProvider paths,
         ILogger<GroupEditorViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(extractor);
         ArgumentNullException.ThrowIfNull(composer);
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(syncService);
+        ArgumentNullException.ThrowIfNull(paths);
 
         _extractor = extractor;
         _composer = composer;
         _cache = cache;
         _store = store;
+        _syncService = syncService;
+        _paths = paths;
         _logger = logger;
     }
 
@@ -142,6 +152,7 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         if (added > 0)
         {
             await _store.SaveAsync(_boundItem.Config).ConfigureAwait(true);
+            await _syncService.SyncAsync(_boundItem.Config).ConfigureAwait(true);
             _boundItem.NotifyAppCountChanged();
         }
     }
@@ -158,7 +169,35 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
         Apps.Remove(app);
 
         await _store.SaveAsync(_boundItem.Config).ConfigureAwait(true);
+        await _syncService.SyncAsync(_boundItem.Config).ConfigureAwait(true);
         _boundItem.NotifyAppCountChanged();
+    }
+
+    [RelayCommand]
+    private void ShowPinHelper()
+    {
+        if (_boundItem is null)
+        {
+            return;
+        }
+
+        var shortcutPath = _paths.GetGroupShortcutFile(_boundItem.Id);
+        if (!File.Exists(shortcutPath))
+        {
+            _logger?.LogWarning(
+                "Pin-helper invoked but shortcut {Path} does not exist yet — add at least one app to generate it.",
+                shortcutPath);
+            return;
+        }
+
+        // Open Explorer with the .lnk pre-selected so the user can pick "Pin to taskbar"
+        // (Win10 / older Win11) or use Show-More-Options on Win11 22H2+.
+        using var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = "explorer.exe",
+            Arguments = $"/select,\"{shortcutPath}\"",
+            UseShellExecute = true,
+        });
     }
 
     private void OnAppsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) =>

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Shared.Configuration;
 using TaskbarFolders.Shared.Models;
 
@@ -18,22 +19,23 @@ namespace TaskbarFolders.Manager.ViewModels;
 public sealed partial class MainWindowViewModel : ObservableObject
 {
     private readonly IGroupConfigStore _store;
+    private readonly IGroupSyncService _syncService;
     private readonly ILogger<MainWindowViewModel>? _logger;
 
     /// <summary>Initializes a new instance.</summary>
-    /// <param name="store">Group configuration store, injected.</param>
-    /// <param name="editor">Editor view model for the detail pane, injected.</param>
-    /// <param name="logger">Optional logger.</param>
     public MainWindowViewModel(
         IGroupConfigStore store,
         GroupEditorViewModel editor,
+        IGroupSyncService syncService,
         ILogger<MainWindowViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(editor);
+        ArgumentNullException.ThrowIfNull(syncService);
 
         _store = store;
         Editor = editor;
+        _syncService = syncService;
         _logger = logger;
     }
 
@@ -94,6 +96,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedGroup = item;
         NewGroupName = string.Empty;
 
+        // No apps yet → SyncAsync is a no-op. Still call it so the contract stays consistent
+        // (any future addition that needs to fire on every save sees the event).
+        await _syncService.SyncAsync(config).ConfigureAwait(true);
+
         _logger?.LogInformation("Created group {Id} '{Name}'.", config.Id, config.GroupName);
     }
 
@@ -106,6 +112,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         await _store.DeleteAsync(group.Id).ConfigureAwait(true);
+        _syncService.RemoveArtifacts(group.Id);
 
         var index = Groups.IndexOf(group);
         Groups.Remove(group);

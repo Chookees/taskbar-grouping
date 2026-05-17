@@ -1,0 +1,164 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.Versioning;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
+using Microsoft.Extensions.Logging;
+using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Core.Shortcuts;
+using TaskbarFolders.Shared.Configuration;
+using TaskbarFolders.Shared.Models;
+
+namespace TaskbarFolders.Manager.Services;
+
+/// <summary>
+/// Default <see cref="IGroupSyncService"/>. Pipelines the icon engine and the shortcut writer
+/// from a single entry point so view models do not have to know the per-group artifact layout.
+/// </summary>
+[SupportedOSPlatform("windows")]
+public sealed class GroupSyncService : IGroupSyncService
+{
+    /// <summary>Pixel size requested when extracting per-app icons for the composite source.</summary>
+    public const int CompositeSourceIconSize = 128;
+
+    private readonly IAppDataPathProvider _paths;
+    private readonly IIconExtractor _extractor;
+    private readonly ICompositeIconGenerator _composer;
+    private readonly IIcoFileWriter _icoWriter;
+    private readonly IIconCache _cache;
+    private readonly IShortcutGenerator _shortcutGenerator;
+    private readonly ILauncherPathResolver _launcherResolver;
+    private readonly ILogger<GroupSyncService>? _logger;
+
+    /// <summary>Initializes a new instance.</summary>
+    public GroupSyncService(
+        IAppDataPathProvider paths,
+        IIconExtractor extractor,
+        ICompositeIconGenerator composer,
+        IIcoFileWriter icoWriter,
+        IIconCache cache,
+        IShortcutGenerator shortcutGenerator,
+        ILauncherPathResolver launcherResolver,
+        ILogger<GroupSyncService>? logger = null)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(extractor);
+        ArgumentNullException.ThrowIfNull(composer);
+        ArgumentNullException.ThrowIfNull(icoWriter);
+        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(shortcutGenerator);
+        ArgumentNullException.ThrowIfNull(launcherResolver);
+
+        _paths = paths;
+        _extractor = extractor;
+        _composer = composer;
+        _icoWriter = icoWriter;
+        _cache = cache;
+        _shortcutGenerator = shortcutGenerator;
+        _launcherResolver = launcherResolver;
+        _logger = logger;
+    }
+
+    /// <inheritdoc/>
+    public async Task SyncAsync(GroupConfig config, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+
+        if (config.Apps.Count == 0)
+        {
+            _logger?.LogDebug("Group {GroupId} has no apps; skipping shortcut sync.", config.Id);
+            return;
+        }
+
+        var launcher = _launcherResolver.TryResolve();
+        if (launcher is null)
+        {
+            _logger?.LogWarning(
+                "Launcher binary could not be resolved; per-group shortcut for {GroupId} not regenerated.",
+                config.Id);
+            return;
+        }
+
+        var icons = CollectSourceIcons(config);
+        if (icons.Count == 0)
+        {
+            _logger?.LogWarning(
+                "None of the apps in {GroupId} produced an extractable icon; shortcut not regenerated.",
+                config.Id);
+            return;
+        }
+
+        var composite = _composer.GenerateComposite(icons);
+
+        var iconPath = _paths.GetGroupIconFile(config.Id);
+        await _icoWriter.WriteAsync(composite, iconPath, cancellationToken).ConfigureAwait(false);
+
+        _shortcutGenerator.Generate(new GroupShortcutRequest(
+            GroupId: config.Id,
+            DisplayName: config.GroupName,
+            TargetExePath: launcher,
+            IconPath: iconPath,
+            ShortcutPath: _paths.GetGroupShortcutFile(config.Id)));
+    }
+
+    /// <inheritdoc/>
+    public void RemoveArtifacts(string groupId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
+
+        TryDelete(_paths.GetGroupIconFile(groupId));
+        TryDelete(_paths.GetGroupShortcutFile(groupId));
+    }
+
+    private List<BitmapSource> CollectSourceIcons(GroupConfig config)
+    {
+        var icons = new List<BitmapSource>(Math.Min(config.Apps.Count, CompositeIconGenerator.MaxTiles));
+        foreach (var app in config.Apps.Take(CompositeIconGenerator.MaxTiles))
+        {
+            var icon = LoadIcon(app.Path);
+            if (icon is not null)
+            {
+                icons.Add(icon);
+            }
+        }
+        return icons;
+    }
+
+    private BitmapSource? LoadIcon(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        if (_cache.TryGet(path, CompositeSourceIconSize, out var cached))
+        {
+            return cached;
+        }
+
+        var icon = _extractor.ExtractIcon(path, CompositeSourceIconSize);
+        if (icon is not null)
+        {
+            _cache.Set(path, CompositeSourceIconSize, icon);
+        }
+        return icon;
+    }
+
+    private void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (IOException ex)
+        {
+            _logger?.LogWarning(ex, "Could not delete {Path}.", path);
+        }
+    }
+}

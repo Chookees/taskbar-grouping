@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Manager.ViewModels;
 using TaskbarFolders.Shared.Configuration;
 using TaskbarFolders.Shared.Models;
@@ -33,11 +34,13 @@ public class MainWindowViewModelTests
             Mock.Of<IIconExtractor>(),
             Mock.Of<ICompositeIconGenerator>(),
             Mock.Of<IIconCache>(),
-            store);
+            store,
+            Mock.Of<IGroupSyncService>(),
+            Mock.Of<IAppDataPathProvider>());
     }
 
     private static MainWindowViewModel CreateSut(Mock<IGroupConfigStore> store) =>
-        new(store.Object, CreateEditor(store.Object));
+        new(store.Object, CreateEditor(store.Object), Mock.Of<IGroupSyncService>());
 
     [Fact]
     public void Title_HasDefaultValue()

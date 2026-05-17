@@ -50,7 +50,13 @@ public class GroupEditorViewModelTests
         var store = new Mock<IGroupConfigStore>();
         store.Setup(s => s.SaveAsync(It.IsAny<GroupConfig>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-        var sut = new GroupEditorViewModel(extractor.Object, composer.Object, cache.Object, store.Object);
+        var sut = new GroupEditorViewModel(
+            extractor.Object,
+            composer.Object,
+            cache.Object,
+            store.Object,
+            Mock.Of<TaskbarFolders.Manager.Services.IGroupSyncService>(),
+            Mock.Of<TaskbarFolders.Shared.Configuration.IAppDataPathProvider>());
         return (sut, extractor, composer, cache, store);
     }
 
