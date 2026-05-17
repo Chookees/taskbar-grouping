@@ -4,6 +4,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Core.Shortcuts;
 using TaskbarFolders.Launcher.Configuration;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
@@ -53,6 +54,14 @@ public partial class App : Application
             Shutdown(1);
             return;
         }
+
+        // Stamp the process AUMID BEFORE any window is created so Windows matches the
+        // popup to the pinned .lnk tile (which carries the same AUMID via PKEY_AppUserModel_ID).
+        // Without this the taskbar would show a second "ghost" entry for the running process.
+        // The HRESULT is discarded: a non-zero result here means very old Windows or a
+        // restricted token, neither of which is fatal — the popup still works, just without
+        // grouping under the pinned tile.
+        _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
 
         var paths = new AppDataPathProvider();
 

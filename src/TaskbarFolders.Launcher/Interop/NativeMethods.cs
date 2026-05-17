@@ -20,6 +20,12 @@ internal static class NativeMethods
     public const uint ABE_RIGHT = 2;
     public const uint ABE_BOTTOM = 3;
 
+    // Sets the AppUserModelID for the current process. Must be called before any window is
+    // shown so taskbar pinning identity locks to the expected tile.
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    public static extern int SetCurrentProcessExplicitAppUserModelID(
+        [MarshalAs(UnmanagedType.LPWStr)] string appId);
+
     // user32
     [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

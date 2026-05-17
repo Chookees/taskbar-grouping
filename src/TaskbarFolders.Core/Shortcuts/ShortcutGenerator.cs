@@ -17,8 +17,6 @@ namespace TaskbarFolders.Core.Shortcuts;
 [SupportedOSPlatform("windows")]
 public sealed class ShortcutGenerator : IShortcutGenerator
 {
-    private const string AumidPrefix = "TaskbarFolders.Group.";
-
     private readonly ILogger<ShortcutGenerator>? _logger;
 
     /// <summary>Initializes a new instance.</summary>
@@ -29,11 +27,7 @@ public sealed class ShortcutGenerator : IShortcutGenerator
     }
 
     /// <inheritdoc/>
-    public string BuildAumid(string groupId)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(groupId);
-        return AumidPrefix + groupId;
-    }
+    public string BuildAumid(string groupId) => GroupAumid.For(groupId);
 
     /// <inheritdoc/>
     public void Generate(GroupShortcutRequest request)
