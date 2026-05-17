@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-18
+
+Minor release. Launcher polish triggered by hands-on use of v0.3.0: the open animation felt too subtle, the popup still had measurable startup overhead, and pinning a group to the taskbar took three manual clicks through the Explorer context menu.
+
+### Changed
+
+- **Popup grows up out of the clicked tile.** The open storyboard now scales 0.5→1.0 over 200 ms with a `QuinticEase` curve, and the `ScaleTransform` pivot moved from top-left to the bottom-centre of the popup (`CenterX = Width/2`, `CenterY = Height`). Since the popup sits directly above the clicked tile per `TaskbarPositionHelper`, the pivot-at-bottom-centre produces a "grow up out of the tile" feel instead of a fade-in-place. The animation now fires from `OnSourceInitialized` (before first paint) so frame 1 already shows scale=0.5 rather than a brief snap-to-1.0.
+- **One-click pin to taskbar.** The new **Pin to taskbar** button in the Manager spawns the Launcher in `--pin-mode`, which calls `Windows.UI.Shell.TaskbarManager.RequestPinCurrentAppAsync()`. Windows shows its native "Allow [App] to pin?" dialog; clicking Allow pins the group with its distinct AUMID. The previous **Show shortcut...** behaviour remains as a secondary button for users on Windows builds where TaskbarManager is unsupported (LTSC, Education) — the Manager auto-falls-back to the Explorer flow in that case.
+
+### Performance
+
+- **Deferred startup IO.** `FileSystemIconCache.PruneStaleEntries` and `FileLoggerProvider.PruneOldFiles` moved out of their constructors into `StartBackgroundPrune()` methods that App.OnStartup fires post-`Show()`. Saves ~15-70 ms on the first-paint critical path depending on cache + log retention state.
+- **Explicit popup dimensions.** `PopupWindow.SizeToContent="WidthAndHeight"` replaced with an explicit `Width = cols * 96 + 24, Height = rows * 96 + 24` computation in `OnSourceInitialized`. Skips the WPF measure pass that used to add ~5-10 ms before placement could be computed.
+- **DI graph validation only in Debug.** `ServiceProvider` is built with `ValidateOnBuild=true / ValidateScopes=true` in Debug builds only. Release skips the eager-walk (~20-30 ms). `CompositionRootTests` exercise the validation explicitly so the safety net is preserved in CI.
+
+### Internal
+
+- `Windows.UI.Shell.TaskbarManager` requires WinRT projections, so `TaskbarFolders.Launcher.csproj` TFM bumped from `net8.0-windows` to `net8.0-windows10.0.19041.0` (Win10 1903+). Launcher.Tests TFM matches; Manager + Shared stay on `net8.0-windows`.
+- `TaskbarPinRunner` attaches the WinRT manager to a foreground HWND via `WinRT.Interop.InitializeWithWindow.Initialize` so the system pin dialog parents correctly on multi-monitor / multi-foreground setups.
+- `PinHostWindow` (1×1, fully transparent, centred on the primary screen) is the foreground HWND the WinRT pin dialog attaches to. Off-screen positioning broke foreground promotion on Win11 24H2 — centred + `Opacity=0` is the working compromise.
+- `GroupAumid.TryExtractGroupId` reverses `GroupAumid.For` so the Launcher can recover its group id from the AUMID Windows assigned to the process. Used when Windows launches a TaskbarManager-pinned tile without preserving the original `--group-id` command line. Case-insensitive prefix match mirrors Windows' own wcsicmp-based AUMID comparison.
+- `App.OnStartup` split into `RunPinModeAsync` + `RunPopupModeAsync` branches with a shared `ResolveGroupId` helper. Both branches wrapped in try/catch so any unhandled async-void exception produces a documented exit code (`Shutdown(3)`) instead of a random WPF crash code.
+- `LauncherProcessPinService` (Manager) spawns the Launcher via the new `IProcessRunner` abstraction (testable Process.Start wrapper) with a 2-minute timeout, maps the exit code (0=Success, 1=UserDenied, 2=Unsupported, 3=Error) to a `PinResult` enum. View model receives the result and routes Notify accordingly.
+- `IIconCache.StartBackgroundPrune` is a C# 8 default interface method (no-op default) so existing mocks continue to work.
+
 ## [0.3.0] - 2026-05-17
 
 Minor release. Launcher popup polish triggered by hands-on use of v0.2.1: the popup opened slowly, the chrome was too visible, and placement was anchored on the taskbar centre rather than the clicked tile.
