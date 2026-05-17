@@ -4,7 +4,7 @@
 [![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ℹ️ **Status: v0.4.0.** Minor release — popup grows up out of the clicked tile (200 ms QuinticEase), opens even faster (deferred prunes + explicit popup size + Release-only DI validation), and a new **Pin to taskbar** button does it in one click via Windows' native pin-permission dialog. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
+> ℹ️ **Status: v0.4.1.** Patch — fixes three v0.4.0 regressions: pin button now actually pins (writes the Start Menu anchor required by TaskbarManager), open animation is visible on cold launches (XAML defaults match animation From state + Begin on first composition frame), startup adds per-checkpoint timing log for diagnosing perceived slowness. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-18
+
+Patch release. Three v0.4.0 regressions reported from real-world install on Win11 24H2:
+
+### Fixed
+
+- **Pin to taskbar button actually pins now.** v0.4.0 wrote the per-group `.lnk` only under `%APPDATA%/TaskbarFolders/shortcuts/<id>.lnk` — invisible to the Shell AppsFolder index. `TaskbarManager.RequestPinCurrentAppAsync` requires a Start Menu shortcut with the matching AUMID to anchor the pin; without one the call silently fails to persist even though the system dialog shows and the API returns success. v0.4.1 writes a sibling `.lnk` at `%APPDATA%/Microsoft/Windows/Start Menu/Programs/TaskbarFolders/<display-name>.lnk` on every sync. A heal-up loop runs on Manager startup so existing v0.4.0 groups also gain Start Menu anchors.
+- **Open animation visible on cold launches.** v0.4.0 fired the storyboard from `OnSourceInitialized`, but WPF first paint happened 100-200 ms later — by the time the user saw frame 1, the 200 ms timeline had elapsed and the popup snapped to its end state. v0.4.1 sets XAML defaults to match the animation's From state (Border `Opacity=0`, `ScaleX/Y=0.5`) and uses a one-shot `CompositionTarget.Rendering` subscription to start `Storyboard.Begin` on the first composition frame. Also avoids the Win11 24H2 paint-skip path triggered by `AllowsTransparency=True + Window.Opacity=0` by animating the inner Border's opacity instead of the Window's.
+
+### Added
+
+- **Per-checkpoint startup timing log.** Launcher `popup-mode` now logs a single line on first paint with the wall-clock ms from `tStart` to each phase (`aumid`, `settings`, `di`, `theme`, `vm`, `show`, `loaded`) plus `processAge` capturing the .NET runtime cold-start cost that happens before our code runs. Read via `%APPDATA%/TaskbarFolders/logs/launcher-*.log`. Will inform the v0.4.2 / v0.5 perf work — until we know where the user's reported ~1 s per click goes, architectural changes (persistent launcher daemon, drop `PublishSingleFile`, etc.) would be speculative.
+
+### Known limitations (deferred)
+
+- **Group rename leaves the old Start Menu .lnk as an orphan.** The new filename gets written but the old one remains. v0.5 will add a reconciler that enumerates `StartMenuDirectory` and deletes anchors whose AUMID does not match any current group.
+
 ## [0.4.0] - 2026-05-18
 
 Minor release. Launcher polish triggered by hands-on use of v0.3.0: the open animation felt too subtle, the popup still had measurable startup overhead, and pinning a group to the taskbar took three manual clicks through the Explorer context menu.
