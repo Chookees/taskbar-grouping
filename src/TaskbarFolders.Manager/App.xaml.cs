@@ -99,6 +99,7 @@ public partial class App : Application
         services.AddSingleton<IShortcutGenerator, ShortcutGenerator>();
         services.AddSingleton<ILauncherPathResolver, LauncherPathResolver>();
         services.AddSingleton<IGroupSyncService, GroupSyncService>();
+        services.AddSingleton<IUserConfirmation, MessageBoxUserConfirmation>();
 
         // View models — MainWindow is itself a singleton conceptually (one main window per process),
         // so the backing VM is singleton too. App.OnStartup loads groups into it before showing the window.

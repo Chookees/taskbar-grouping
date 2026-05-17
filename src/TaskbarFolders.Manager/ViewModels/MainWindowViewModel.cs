@@ -20,6 +20,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 {
     private readonly IGroupConfigStore _store;
     private readonly IGroupSyncService _syncService;
+    private readonly IUserConfirmation _confirmation;
     private readonly ILogger<MainWindowViewModel>? _logger;
 
     /// <summary>Initializes a new instance.</summary>
@@ -27,15 +28,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IGroupConfigStore store,
         GroupEditorViewModel editor,
         IGroupSyncService syncService,
+        IUserConfirmation confirmation,
         ILogger<MainWindowViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(editor);
         ArgumentNullException.ThrowIfNull(syncService);
+        ArgumentNullException.ThrowIfNull(confirmation);
 
         _store = store;
         Editor = editor;
         _syncService = syncService;
+        _confirmation = confirmation;
         _logger = logger;
     }
 
@@ -107,6 +111,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private async Task DeleteGroupAsync(GroupListItemViewModel? group)
     {
         if (group is null)
+        {
+            return;
+        }
+
+        var confirmed = _confirmation.Confirm(
+            caption: "Delete group?",
+            message: $"Delete \"{group.Name}\" and its shortcut?\n\n"
+                   + "If you pinned this group to the taskbar, remove the pin manually "
+                   + "by right-clicking it and choosing \"Unpin from taskbar\".");
+        if (!confirmed)
         {
             return;
         }

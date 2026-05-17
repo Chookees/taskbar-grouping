@@ -40,7 +40,18 @@ public class MainWindowViewModelTests
     }
 
     private static MainWindowViewModel CreateSut(Mock<IGroupConfigStore> store) =>
-        new(store.Object, CreateEditor(store.Object), Mock.Of<IGroupSyncService>());
+        CreateSut(store, alwaysConfirm: true);
+
+    private static MainWindowViewModel CreateSut(Mock<IGroupConfigStore> store, bool alwaysConfirm)
+    {
+        var confirmation = new Mock<IUserConfirmation>();
+        confirmation.Setup(c => c.Confirm(It.IsAny<string>(), It.IsAny<string>())).Returns(alwaysConfirm);
+        return new MainWindowViewModel(
+            store.Object,
+            CreateEditor(store.Object),
+            Mock.Of<IGroupSyncService>(),
+            confirmation.Object);
+    }
 
     [Fact]
     public void Title_HasDefaultValue()
@@ -193,6 +204,19 @@ public class MainWindowViewModelTests
         await sut.DeleteGroupCommand.ExecuteAsync(null);
 
         sut.Groups.Should().HaveCount(1);
+        store.Verify(s => s.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_DoesNothing_WhenUserDeclinesConfirmation()
+    {
+        var store = CreateStoreWith(new GroupConfig { Id = "x", GroupName = "X" });
+        var sut = CreateSut(store, alwaysConfirm: false);
+        await sut.LoadGroupsAsync();
+
+        await sut.DeleteGroupCommand.ExecuteAsync(sut.Groups[0]);
+
+        sut.Groups.Should().HaveCount(1, "user declined the confirmation prompt");
         store.Verify(s => s.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
