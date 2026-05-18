@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using System.Windows;
@@ -69,6 +71,27 @@ public sealed class TaskbarPinRunner
             // multi-app foregrounds and either appears behind other windows or fails silently.
             var hwnd = new WindowInteropHelper(foregroundWindow).EnsureHandle();
             InitializeWithWindow.Initialize(manager, hwnd);
+
+            // v0.4.2 diagnostic: log the Start Menu anchor directory contents at the exact
+            // moment of the pin call. RequestPinCurrentAppAsync can return true cosmetically
+            // when the Shell's AppsFolder index hasn't materialised the .lnk yet; this log
+            // line lets us tell "anchor missing" from "anchor present but indexer raced".
+            var anchorDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Programs),
+                "TaskbarFolders");
+            var anchorExists = Directory.Exists(anchorDir);
+            var anchorFiles = anchorExists
+                ? string.Join(", ", Directory.EnumerateFiles(anchorDir, "*.lnk").Select(Path.GetFileName))
+                : "<dir missing>";
+            _logger?.LogInformation(
+                "Pin runner: Start Menu anchor dir={Dir} exists={Exists} contents=[{Files}]",
+                anchorDir, anchorExists, anchorFiles);
+
+            // v0.4.2 settle: GroupSyncService already SHChangeNotify-flushes, but the
+            // AppsFolder index can still take a moment to surface a brand-new entry. 300 ms
+            // is below the ~400 ms "feels instant" threshold so the user does not perceive
+            // it as latency between clicking Pin and seeing the system dialog.
+            await Task.Delay(300).ConfigureAwait(true);
 
             // RequestPinCurrentAppAsync shows a system-managed "Allow [App] to pin?" dialog
             // parented to the HWND we just attached above.
