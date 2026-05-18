@@ -27,6 +27,19 @@ internal static class NativeMethods
         ref Guid riid,
         out IntPtr ppv);
 
+    /// <summary>
+    /// Notifies the system of an event that an application has performed (file created,
+    /// renamed, attribute changed, etc.). Used to tell the Shell's AppsFolder index about
+    /// a newly written Start Menu shortcut so <c>TaskbarManager.RequestPinCurrentAppAsync</c>
+    /// can find it without racing the background indexer.
+    /// </summary>
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    public static extern void SHChangeNotify(
+        int wEventId,
+        uint uFlags,
+        IntPtr dwItem1,
+        IntPtr dwItem2);
+
     // --- user32 -----------------------------------------------------------
 
     /// <summary>Destroys an icon and frees any memory the icon occupied.</summary>
@@ -56,6 +69,11 @@ internal static class NativeMethods
 
     public const uint SLR_NO_UI = 0x1;
     public const int MAX_PATH = 260;
+
+    // SHChangeNotify event ids and flags. Only the subset we currently need.
+    public const int SHCNE_CREATE = 0x00000002;
+    public const uint SHCNF_PATHW = 0x00000005;
+    public const uint SHCNF_FLUSH = 0x00001000;
 
     /// <summary>IID for IImageList.</summary>
     public static readonly Guid IID_IImageList = new("46EB5926-582E-4017-9FDF-E8998DAA0950");

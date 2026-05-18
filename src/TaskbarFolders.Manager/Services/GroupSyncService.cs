@@ -31,6 +31,7 @@ public sealed class GroupSyncService : IGroupSyncService
     private readonly IIconCache _cache;
     private readonly IShortcutGenerator _shortcutGenerator;
     private readonly ILauncherPathResolver _launcherResolver;
+    private readonly IShellChangeNotifier _shellChangeNotifier;
     private readonly ILogger<GroupSyncService>? _logger;
 
     /// <summary>Initializes a new instance.</summary>
@@ -42,6 +43,7 @@ public sealed class GroupSyncService : IGroupSyncService
         IIconCache cache,
         IShortcutGenerator shortcutGenerator,
         ILauncherPathResolver launcherResolver,
+        IShellChangeNotifier shellChangeNotifier,
         ILogger<GroupSyncService>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(paths);
@@ -51,6 +53,7 @@ public sealed class GroupSyncService : IGroupSyncService
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(shortcutGenerator);
         ArgumentNullException.ThrowIfNull(launcherResolver);
+        ArgumentNullException.ThrowIfNull(shellChangeNotifier);
 
         _paths = paths;
         _extractor = extractor;
@@ -59,6 +62,7 @@ public sealed class GroupSyncService : IGroupSyncService
         _cache = cache;
         _shortcutGenerator = shortcutGenerator;
         _launcherResolver = launcherResolver;
+        _shellChangeNotifier = shellChangeNotifier;
         _logger = logger;
     }
 
@@ -170,6 +174,12 @@ public sealed class GroupSyncService : IGroupSyncService
                 TargetExePath: launcher,
                 IconPath: iconPath,
                 ShortcutPath: startMenuPath));
+
+            // v0.4.2: tell the Shell about the new file synchronously (SHCNF_FLUSH) so
+            // TaskbarManager.RequestPinCurrentAppAsync sees it on the next call instead of
+            // racing the AppsFolder background indexer. Notify-failures inside the wrapper
+            // are swallowed there; this try/catch covers the surrounding sync flow only.
+            _shellChangeNotifier.NotifyCreate(startMenuPath);
         }
         catch (Exception ex)
         {

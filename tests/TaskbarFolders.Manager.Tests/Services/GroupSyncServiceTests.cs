@@ -24,6 +24,7 @@ public sealed class GroupSyncServiceTests : IDisposable
     private readonly Mock<IIconCache> _cache;
     private readonly Mock<IShortcutGenerator> _shortcutGenerator;
     private readonly Mock<ILauncherPathResolver> _launcherResolver;
+    private readonly Mock<IShellChangeNotifier> _shellChangeNotifier;
 
     public GroupSyncServiceTests()
     {
@@ -49,6 +50,7 @@ public sealed class GroupSyncServiceTests : IDisposable
         _shortcutGenerator = new Mock<IShortcutGenerator>();
         _launcherResolver = new Mock<ILauncherPathResolver>();
         _launcherResolver.Setup(r => r.TryResolve()).Returns("C:/install/Launcher.exe");
+        _shellChangeNotifier = new Mock<IShellChangeNotifier>();
     }
 
     public void Dispose()
@@ -80,7 +82,8 @@ public sealed class GroupSyncServiceTests : IDisposable
         _icoWriter.Object,
         _cache.Object,
         _shortcutGenerator.Object,
-        _launcherResolver.Object);
+        _launcherResolver.Object,
+        _shellChangeNotifier.Object);
 
     [Fact]
     public async Task SyncAsync_NoOp_ForEmptyGroup()
@@ -165,6 +168,44 @@ public sealed class GroupSyncServiceTests : IDisposable
             r.GroupId == "g" &&
             r.DisplayName == "Tools" &&
             r.ShortcutPath == _paths.GetStartMenuShortcutFile("Tools"))), Times.Once);
+    }
+
+    [Fact]
+    public async Task SyncAsync_NotifiesShellOfStartMenuShortcutCreation()
+    {
+        // v0.4.2: SHChangeNotify must fire for the Start Menu anchor so the AppsFolder
+        // index picks it up before the user's first pin-attempt races the indexer.
+        _extractor.Setup(e => e.ExtractIcon(It.IsAny<string>(), It.IsAny<int>())).Returns(StubIcon());
+        var sut = CreateSut();
+        var config = new GroupConfig
+        {
+            Id = "g",
+            GroupName = "Tools",
+            Apps = { new AppEntry { Name = "a", Path = "a.exe" } },
+        };
+
+        await sut.SyncAsync(config);
+
+        _shellChangeNotifier.Verify(
+            n => n.NotifyCreate(_paths.GetStartMenuShortcutFile("Tools")),
+            Times.Once);
+    }
+
+    [Fact]
+    public void EnsureStartMenuShortcut_NotifiesShellWhenAnchorWritten()
+    {
+        // Heal-up path also has to flush the AppsFolder index; otherwise an upgraded
+        // v0.4.0 user's first pin click still races even after the heal-up.
+        Directory.CreateDirectory(_paths.IconsDirectory);
+        File.WriteAllBytes(_paths.GetGroupIconFile("g"), [0]);
+
+        var sut = CreateSut();
+        var wrote = sut.EnsureStartMenuShortcut(new GroupConfig { Id = "g", GroupName = "Tools" });
+
+        wrote.Should().BeTrue();
+        _shellChangeNotifier.Verify(
+            n => n.NotifyCreate(_paths.GetStartMenuShortcutFile("Tools")),
+            Times.Once);
     }
 
     [Theory]

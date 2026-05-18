@@ -69,6 +69,7 @@ public sealed class CompositionRootTests : IDisposable
     [InlineData(typeof(ISystemThemeProbe))]
     [InlineData(typeof(IThemeService))]
     [InlineData(typeof(IShortcutGenerator))]
+    [InlineData(typeof(IShellChangeNotifier))]
     [InlineData(typeof(ILauncherPathResolver))]
     [InlineData(typeof(IGroupSyncService))]
     [InlineData(typeof(IUserConfirmation))]
