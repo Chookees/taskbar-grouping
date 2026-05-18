@@ -4,7 +4,7 @@
 [![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ℹ️ **Status: v0.4.1.** Patch — fixes three v0.4.0 regressions: pin button now actually pins (writes the Start Menu anchor required by TaskbarManager), open animation is visible on cold launches (XAML defaults match animation From state + Begin on first composition frame), startup adds per-checkpoint timing log for diagnosing perceived slowness. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
+> ℹ️ **Status: v0.4.2.** Patch — tightens v0.4.1's pin and animation fixes against Win11 24H2 timing races: popup is now visible within 500 ms even if the WPF composition pass is skipped on the transparent window, the Start Menu anchor write triggers a synchronous `SHChangeNotify` so the Shell AppsFolder index picks it up before the pin call, and `TaskbarPinRunner` waits 300 ms and logs the anchor directory contents for diagnostics. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 

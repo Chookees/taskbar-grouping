@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-05-18
+
+Patch release. v0.4.1's pin + animation fixes both regressed on a real-world Win11 24H2 install: the popup stayed invisible, and the pin button showed our "Pinned" notify without any Windows system dialog and never produced a tile. v0.4.2 tightens both against timing races so they work regardless of how Win11 24H2 schedules paint and indexer work.
+
+### Fixed
+
+- **Popup is visible within 500 ms regardless of animation outcome.** v0.4.1 fired the storyboard from a one-shot `CompositionTarget.Rendering` subscription; Win11 24H2 can skip the composition pass entirely for a fully-transparent window, so `Rendering` never fires and the popup stays at the From state (`Opacity=0`, `Scale=0.5`) forever. v0.4.2 schedules `Storyboard.Begin` via `Dispatcher.BeginInvoke(DispatcherPriority.Render, …)` instead — the dispatcher cycle runs even when the compositor is skipped — and arms a 500 ms `DispatcherTimer` safety-net that snaps to the end state if the popup is still invisible. Also resolves `ChromeRoot` via `FindName` and `Storyboard.SetTarget` for the opacity child to bypass NameScope lookup, which can silently fail when the storyboard lives in `Window.Resources`.
+- **Pin to taskbar reliably surfaces the Windows system dialog.** `TaskbarManager.RequestPinCurrentAppAsync` trusts the calling AUMID and can return success cosmetically when the Shell AppsFolder index has not yet seen the matching `.lnk`, persisting nothing. `GroupSyncService` now calls `SHChangeNotify(SHCNE_CREATE, SHCNF_PATHW | SHCNF_FLUSH, …)` after each Start Menu anchor write (on Sync and on the heal-up path), and `TaskbarPinRunner` waits 300 ms before invoking the WinRT pin API. The delay is below the ~400 ms "feels instant" threshold so users don't perceive added latency.
+
+### Added
+
+- **Pin-time diagnostic log.** `TaskbarPinRunner` logs the Start Menu anchor directory path, its existence flag, and the list of `*.lnk` filenames found inside it immediately before calling `RequestPinCurrentAppAsync`. Future "pin still doesn't work" reports can be triaged from `%APPDATA%/TaskbarFolders/logs/launcher-*.log` without asking the user for Explorer screenshots.
+
+### Internal
+
+- New `IShellChangeNotifier` / `ShellChangeNotifier` in `TaskbarFolders.Core/Shortcuts/`. P/Invoke for `shell32!SHChangeNotify` lives in the existing `Core/Interop/NativeMethods.cs` table; the wrapper interface keeps the call site testable without executing native code in CI.
+- `GroupSyncService` constructor now takes `IShellChangeNotifier`. DI registration added in `ManagerServiceCollectionExtensions`. `CompositionRootTests` resolves the new service; `GroupSyncServiceTests` gains two behavioural tests covering Sync and heal-up notify-call sites.
+
 ## [0.4.1] - 2026-05-18
 
 Patch release. Three v0.4.0 regressions reported from real-world install on Win11 24H2:
