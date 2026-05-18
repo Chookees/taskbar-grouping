@@ -76,13 +76,23 @@ public sealed class TaskbarPinRunner
             // moment of the pin call. RequestPinCurrentAppAsync can return true cosmetically
             // when the Shell's AppsFolder index hasn't materialised the .lnk yet; this log
             // line lets us tell "anchor missing" from "anchor present but indexer raced".
+            // Enumeration is defensive: a Defender lock / ACL change must not escalate a
+            // diagnostic failure into a failed pin (the outer catch would map it to exit 3).
             var anchorDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Programs),
                 "TaskbarFolders");
             var anchorExists = Directory.Exists(anchorDir);
-            var anchorFiles = anchorExists
-                ? string.Join(", ", Directory.EnumerateFiles(anchorDir, "*.lnk").Select(Path.GetFileName))
-                : "<dir missing>";
+            string anchorFiles;
+            try
+            {
+                anchorFiles = anchorExists
+                    ? string.Join(", ", Directory.EnumerateFiles(anchorDir, "*.lnk").Select(Path.GetFileName))
+                    : "<dir missing>";
+            }
+            catch (Exception enumEx) when (enumEx is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            {
+                anchorFiles = $"<enum failed: {enumEx.GetType().Name}>";
+            }
             _logger?.LogInformation(
                 "Pin runner: Start Menu anchor dir={Dir} exists={Exists} contents=[{Files}]",
                 anchorDir, anchorExists, anchorFiles);

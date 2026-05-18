@@ -35,6 +35,7 @@ public partial class PopupWindow : Window
     private readonly PopupViewModel _viewModel;
     private readonly ITaskbarPositionHelper _positionHelper;
     private readonly AppSettings _settings;
+    private DispatcherTimer? _safetyTimer;
 
     /// <summary>Initializes a new instance of the <see cref="PopupWindow"/> class.</summary>
     public PopupWindow(
@@ -144,19 +145,23 @@ public partial class PopupWindow : Window
 
         Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() => storyboard.Begin(this)));
 
-        var safety = new DispatcherTimer(DispatcherPriority.Background)
+        // Stored in a field so OnClosed can stop the timer if the popup is dismissed before
+        // 500 ms (Deactivated / LaunchSucceeded close the window). Without that, the captured
+        // chrome reference keeps the window alive until the tick fires and writes opacity on
+        // a detached visual tree.
+        _safetyTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromMilliseconds(500),
         };
-        safety.Tick += (_, _) =>
+        _safetyTimer.Tick += (_, _) =>
         {
-            safety.Stop();
+            _safetyTimer?.Stop();
             if (chrome.Opacity < 0.5)
             {
                 SnapToEndState();
             }
         };
-        safety.Start();
+        _safetyTimer.Start();
     }
 
     private void OnDeactivated(object? sender, EventArgs e) => Close();
@@ -168,6 +173,11 @@ public partial class PopupWindow : Window
         // Cancel any in-flight icon-load tasks so post-close task completions cannot
         // mutate the now-detached view model.
         _viewModel.CancelIconLoad();
+        // Disarm the visibility safety-net if the popup closes before it fires (e.g.,
+        // Deactivated dismissal within 500 ms). Letting it tick after Close would write
+        // opacity on a detached visual tree.
+        _safetyTimer?.Stop();
+        _safetyTimer = null;
         _viewModel.LaunchSucceeded -= OnLaunchSucceeded;
         Closed -= OnClosed;
         SourceInitialized -= OnSourceInitialized;

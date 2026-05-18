@@ -19,16 +19,18 @@
         Deactivated="OnDeactivated"
         d:DataContext="{d:DesignInstance Type=vm:PopupViewModel}">
     <Window.Resources>
-        <!-- v0.4.1: scale 0.5→1.0 with QuinticEase over 200 ms makes the popup grow up out of
-             the clicked tile. ScaleTransform origin set in code-behind (Width/2, Height) =
+        <!-- v0.4.1+: scale 0.5→1.0 with QuinticEase over 200 ms makes the popup grow up out
+             of the clicked tile. ScaleTransform origin set in code-behind (Width/2, Height) =
              bottom-centre of the popup, directly above the clicked tile per
              TaskbarPositionHelper. The Opacity animation targets the inner ChromeRoot Border
              rather than the Window because Win11 24H2 has a render-skip path for
              `AllowsTransparency=True + Window.Opacity` that misses the first frame
              entirely — animating a child element avoids it. XAML defaults below set
              ScaleX/Y=0.5 + ChromeRoot.Opacity=0 so the first paint already shows the From
-             state; code-behind fires Storyboard.Begin on the first CompositionTarget.Rendering
-             frame so the animation timeline starts on a frame the user will actually see. -->
+             state; v0.4.2 code-behind kicks Storyboard.Begin via Dispatcher.BeginInvoke at
+             Render priority (CompositionTarget.Rendering was unreliable on transparent 24H2
+             windows) and arms a 500 ms safety-net that snaps to the end state if the popup
+             is still invisible. -->
         <Storyboard x:Key="OpenAnimation">
             <DoubleAnimation Storyboard.TargetName="ChromeRoot"
                              Storyboard.TargetProperty="Opacity"
