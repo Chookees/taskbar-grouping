@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
 using TaskbarFolders.Shared.Configuration;
@@ -111,22 +112,51 @@ public partial class PopupWindow : Window
     }
 
     /// <summary>
-    /// Defers <see cref="Storyboard.Begin(System.Windows.FrameworkElement)"/> until the first
-    /// composition frame. v0.4 fired Begin directly from <see cref="OnSourceInitialized"/>;
-    /// on cold launches the WPF first paint happened AFTER the 200 ms animation timeline had
-    /// already elapsed, so users only ever saw the end state. Subscribing to
-    /// <see cref="CompositionTarget.Rendering"/> and starting on the next render tick
-    /// guarantees the timeline begins on a frame the user will actually see.
+    /// Schedules <see cref="Storyboard.Begin(System.Windows.FrameworkElement)"/> on the next
+    /// dispatcher Render cycle and arms a 500 ms safety-net that force-snaps to the end state
+    /// if the popup is still invisible. v0.4.1 used <see cref="CompositionTarget.Rendering"/>,
+    /// but Win11 24H2 can skip the composition pass entirely for fully-transparent windows —
+    /// <c>Rendering</c> never fires and the popup stays invisible forever. A
+    /// <see cref="Dispatcher.BeginInvoke(DispatcherPriority, Delegate)"/> at Render priority
+    /// always runs regardless of paint state. <c>Storyboard.SetTarget</c> on the
+    /// <c>ChromeRoot</c> opacity child resolves the visual-tree element directly instead of
+    /// going through the resource-scope <c>TargetName</c> lookup, which can silently no-op
+    /// when the storyboard lives in <c>Window.Resources</c>. The 500 ms timer then guarantees
+    /// the popup is visible no matter which corner of the WPF animation pipeline fails.
     /// </summary>
     private void ScheduleAnimationOnFirstRender(Storyboard storyboard)
     {
-        EventHandler? onFrame = null;
-        onFrame = (_, _) =>
+        if (FindName("ChromeRoot") is not Border chrome)
         {
-            CompositionTarget.Rendering -= onFrame;
-            storyboard.Begin(this);
+            // No chrome to animate — collapsing to the end state still gives the user a
+            // popup; missing chrome is a far worse bug than a missed animation.
+            SnapToEndState();
+            return;
+        }
+
+        foreach (var anim in storyboard.Children)
+        {
+            if (Storyboard.GetTargetName(anim) == "ChromeRoot")
+            {
+                Storyboard.SetTarget(anim, chrome);
+            }
+        }
+
+        Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() => storyboard.Begin(this)));
+
+        var safety = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(500),
         };
-        CompositionTarget.Rendering += onFrame;
+        safety.Tick += (_, _) =>
+        {
+            safety.Stop();
+            if (chrome.Opacity < 0.5)
+            {
+                SnapToEndState();
+            }
+        };
+        safety.Start();
     }
 
     private void OnDeactivated(object? sender, EventArgs e) => Close();
