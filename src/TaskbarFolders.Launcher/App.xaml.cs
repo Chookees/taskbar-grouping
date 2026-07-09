@@ -259,17 +259,6 @@ public partial class App : Application
 
         var popup = _services.GetRequiredService<Views.PopupWindow>();
         MainWindow = popup;
-        popup.Show();
-        var tShown = Stopwatch.GetTimestamp();
-
-        viewModel.StartIconLoad();
-
-        // Deferred startup IO: prune stale icon-cache PNGs and old log files in the background
-        // so the first paint of the popup is not blocked by ~10-70 ms of enumerate-and-delete.
-        _services.GetRequiredService<IIconCache>().StartBackgroundPrune();
-        _services.GetServices<ILoggerProvider>()
-            .OfType<FileLoggerProvider>()
-            .FirstOrDefault()?.StartBackgroundPrune();
 
         // Single timing summary, emitted from the Loaded handler so we also capture the
         // "from process start to user-visible first paint" wall-clock (tLoaded), not just
@@ -278,7 +267,13 @@ public partial class App : Application
         // assembly load) that happens BEFORE RunPopupModeAsync is even called. Without
         // this, the log would mislead into chasing later phases when the dominant cost
         // is often runtime bootstrap.
+        //
+        // Subscribe BEFORE Show(): a Window raises Loaded synchronously inside Show(), so
+        // a handler attached afterwards never runs (v0.4.1/v0.4.2 emitted no timing line
+        // at all because of this). tShown is still captured after Show() returns; if
+        // Loaded ran inside Show() the checkpoint falls back to tLoaded to stay monotonic.
         var processStart = Process.GetCurrentProcess().StartTime;
+        long tShown = 0;
         popup.Loaded += (_, _) =>
         {
             var tLoaded = Stopwatch.GetTimestamp();
@@ -291,9 +286,21 @@ public partial class App : Application
                 ToMs(tStart, tDi),
                 ToMs(tStart, tTheme),
                 ToMs(tStart, tVm),
-                ToMs(tStart, tShown),
+                ToMs(tStart, tShown != 0 ? tShown : tLoaded),
                 ToMs(tStart, tLoaded));
         };
+
+        popup.Show();
+        tShown = Stopwatch.GetTimestamp();
+
+        viewModel.StartIconLoad();
+
+        // Deferred startup IO: prune stale icon-cache PNGs and old log files in the background
+        // so the first paint of the popup is not blocked by ~10-70 ms of enumerate-and-delete.
+        _services.GetRequiredService<IIconCache>().StartBackgroundPrune();
+        _services.GetServices<ILoggerProvider>()
+            .OfType<FileLoggerProvider>()
+            .FirstOrDefault()?.StartBackgroundPrune();
 
         base.OnStartup(e);
     }
