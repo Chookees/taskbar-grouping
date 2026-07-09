@@ -78,8 +78,10 @@ public partial class PopupWindow : Window
         // Set the ScaleTransform pivot to bottom-centre so the open animation grows the popup
         // up out of the clicked tile (which sits directly below the popup centre per
         // TaskbarPositionHelper). XAML keeps CenterX/Y=0 as placeholders; they MUST be set
-        // before the storyboard fires.
-        if (RenderTransform is ScaleTransform scale)
+        // before the storyboard fires. The transform lives on ChromeRoot, not the Window —
+        // Window.CoerceRenderTransform rejects non-identity transforms outright.
+        if (FindName("ChromeRoot") is Border pivotChrome
+            && pivotChrome.RenderTransform is ScaleTransform scale)
         {
             scale.CenterX = Width / 2.0;
             scale.CenterY = Height;
@@ -104,11 +106,11 @@ public partial class PopupWindow : Window
         if (FindName("ChromeRoot") is Border chrome)
         {
             chrome.Opacity = 1;
-        }
-        if (RenderTransform is ScaleTransform scale)
-        {
-            scale.ScaleX = 1;
-            scale.ScaleY = 1;
+            if (chrome.RenderTransform is ScaleTransform scale)
+            {
+                scale.ScaleX = 1;
+                scale.ScaleY = 1;
+            }
         }
     }
 
@@ -135,6 +137,9 @@ public partial class PopupWindow : Window
             return;
         }
 
+        // Clone before mutating: the resource instance can be frozen (BAML-loaded
+        // Freezables), and SetTarget on a frozen timeline throws.
+        storyboard = storyboard.Clone();
         foreach (var anim in storyboard.Children)
         {
             if (Storyboard.GetTargetName(anim) == "ChromeRoot")

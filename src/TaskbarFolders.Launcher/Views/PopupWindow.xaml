@@ -19,29 +19,34 @@
         Deactivated="OnDeactivated"
         d:DataContext="{d:DesignInstance Type=vm:PopupViewModel}">
     <Window.Resources>
-        <!-- v0.4.1+: scale 0.5→1.0 with QuinticEase over 200 ms makes the popup grow up out
-             of the clicked tile. ScaleTransform origin set in code-behind (Width/2, Height) =
+        <!-- Scale 0.5→1.0 with QuinticEase over 200 ms makes the popup grow up out of the
+             clicked tile. ScaleTransform origin set in code-behind (Width/2, Height) =
              bottom-centre of the popup, directly above the clicked tile per
-             TaskbarPositionHelper. The Opacity animation targets the inner ChromeRoot Border
-             rather than the Window because Win11 24H2 has a render-skip path for
-             `AllowsTransparency=True + Window.Opacity` that misses the first frame
-             entirely — animating a child element avoids it. XAML defaults below set
-             ScaleX/Y=0.5 + ChromeRoot.Opacity=0 so the first paint already shows the From
-             state; v0.4.2 code-behind kicks Storyboard.Begin via Dispatcher.BeginInvoke at
-             Render priority (CompositionTarget.Rendering was unreliable on transparent 24H2
-             windows) and arms a 500 ms safety-net that snaps to the end state if the popup
-             is still invisible. -->
+             TaskbarPositionHelper. Every animation targets the inner ChromeRoot Border, and
+             the ScaleTransform lives on ChromeRoot, NOT the Window: WPF Windows only accept
+             identity RenderTransforms — Window.CoerceRenderTransform throws
+             InvalidOperationException for anything else, so the v0.4.1 window-level
+             ScaleX/Y=0.5 default killed InitializeComponent before the popup ever existed.
+             (The Opacity animation also avoids Window.Opacity because Win11 24H2 has a
+             render-skip path for `AllowsTransparency=True + Window.Opacity` that misses the
+             first frame.) XAML defaults below set ChromeRoot ScaleX/Y=0.5 + Opacity=0 so
+             the first paint already shows the From state; code-behind kicks
+             Storyboard.Begin via Dispatcher.BeginInvoke at Render priority and arms a
+             500 ms safety-net that snaps to the end state if the popup is still
+             invisible. -->
         <Storyboard x:Key="OpenAnimation">
             <DoubleAnimation Storyboard.TargetName="ChromeRoot"
                              Storyboard.TargetProperty="Opacity"
                              From="0" To="1" Duration="0:0:0.2" />
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+            <DoubleAnimation Storyboard.TargetName="ChromeRoot"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
                              From="0.5" To="1" Duration="0:0:0.2">
                 <DoubleAnimation.EasingFunction>
                     <QuinticEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+            <DoubleAnimation Storyboard.TargetName="ChromeRoot"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
                              From="0.5" To="1" Duration="0:0:0.2">
                 <DoubleAnimation.EasingFunction>
                     <QuinticEase EasingMode="EaseOut" />
@@ -74,23 +79,23 @@
         </Style>
     </Window.Resources>
 
-    <Window.RenderTransform>
-        <!-- ScaleX/Y default to 0.5 so the first painted frame already shows the animation's
-             From state. CenterX/CenterY are set in code-behind (bottom-centre of the popup)
-             once Width/Height are computed in OnSourceInitialized. -->
-        <ScaleTransform ScaleX="0.5" ScaleY="0.5" CenterX="0" CenterY="0" />
-    </Window.RenderTransform>
-
     <!-- Layout-only Border: keeps Padding + TextElement.Foreground inheritance but paints nothing.
          AllowsTransparency on the Window plus Brushes.Transparent here means only the icons (and
          the per-tile hover highlight) are visible — the popup chrome disappears entirely.
          x:Name="ChromeRoot" + Opacity="0" default: storyboard fades the *element* in instead
-         of Window.Opacity to dodge the Win11 24H2 paint-skip bug noted above. -->
+         of Window.Opacity to dodge the Win11 24H2 paint-skip bug noted above.
+         The open-animation ScaleTransform lives here (ScaleX/Y=0.5 default = the animation's
+         From state on first paint) because a Window rejects non-identity RenderTransforms —
+         see the OpenAnimation comment. CenterX/CenterY are set in code-behind (bottom-centre)
+         once Width/Height are computed in OnSourceInitialized. -->
     <Border x:Name="ChromeRoot"
             Background="Transparent"
             Padding="12"
             Opacity="0"
             TextElement.Foreground="{DynamicResource ForegroundDefault}">
+        <Border.RenderTransform>
+            <ScaleTransform ScaleX="0.5" ScaleY="0.5" CenterX="0" CenterY="0" />
+        </Border.RenderTransform>
         <Grid>
             <!-- Inline error state for missing/empty group — gets its own backdrop so the text
                  stays readable against any wallpaper now that the popup chrome is gone. -->
