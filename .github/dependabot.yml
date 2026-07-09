@@ -8,6 +8,20 @@ updates:
     labels:
       - "dependencies"
     open-pull-requests-limit: 10
+    # Keep the Microsoft.Extensions.* family in lockstep: a solo bump (e.g. Hosting
+    # 8.x -> 10.x in one project) drags mismatched transitive versions against the
+    # 8.0.x pins elsewhere and fails restore with NU1605 package downgrades.
+    groups:
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+    ignore:
+      # net8.0 targets stay on the 8.x Microsoft.Extensions train.
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      # FluentAssertions >= 8 switched to a commercial (Xceed) license.
+      - dependency-name: "FluentAssertions"
+        versions: [">=8.0.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
