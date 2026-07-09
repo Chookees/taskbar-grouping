@@ -54,6 +54,10 @@ New persistence code must follow this.
 
 **CancellationTokenSource fields → IDisposable** — Adding a CTS field triggers CA1001. Make the owner `sealed … IDisposable` and have `Dispose` call the cancel-and-dispose helper (`PopupViewModel`, `GroupEditorViewModel` follow this).
 
+**Launcher failure paths must reach the file log** — `Trace`-only diagnostics are forbidden in the Launcher. Every early-exit (`Shutdown(n)`) and every catch that ends startup goes through `StartupFailureLogger` (DI-free, never throws, same line format/file as `FileLogger`). The v0.4.x popup regression exited with code 3 on every click for weeks while the log showed nothing — because the failure was `Trace`-only. Exit codes are documented in `App` remarks: 1 = no group id, 3 = startup threw, 4 = unhandled dispatcher exception.
+
+**Window accepts only identity RenderTransforms** — `Window.CoerceRenderTransform` throws `InvalidOperationException` for any non-identity transform, including one declared in XAML (kills `InitializeComponent`). Scale/animate a child element (`ChromeRoot` in `PopupWindow`) instead. Related: a `Window` raises `Loaded` synchronously *inside* `Show()` — subscribe before `Show()` or the handler never runs.
+
 **DPI unit contract (fixed in v0.4.3)** — everything crossing the Win32 boundary (taskbar/monitor rects, `GetCursorPos`, `ICursorAnchor`) is **device pixels**; `TaskbarPositionHelper.CalculatePlacement` converts to WPF DIPs exactly once using the target monitor's effective DPI (`GetDpiForMonitor`). Do not pre-convert values before seeding the anchor and do not feed DIP values into `CalculatePlacement`'s Win32 parameters — a double conversion reintroduces the pre-v0.4.3 placement drift at ≠100% scaling.
 
 ## Analyzer Suppressions (rationale)
