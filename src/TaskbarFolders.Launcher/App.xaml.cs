@@ -27,10 +27,13 @@ namespace TaskbarFolders.Launcher;
 ///   taskbar via <see cref="Windows.UI.Shell.TaskbarManager"/>. Shows the system permission
 ///   dialog and exits with a status code the Manager interprets.</item>
 /// </list>
-/// Exit codes: <c>1</c> = no group id resolvable, <c>3</c> = startup threw,
-/// <c>4</c> = unhandled dispatcher exception after startup. Every failure path writes to
-/// the launcher file log via <see cref="StartupFailureLogger"/> — Trace-only diagnostics
-/// are invisible in published builds and are forbidden here.
+/// Exit codes (popup/startup paths): <c>1</c> = no group id resolvable, <c>3</c> = startup
+/// threw, <c>4</c> = unhandled dispatcher exception after startup. Pin mode reports its own
+/// runner outcome codes via <see cref="TaskbarPinRunner"/> (the Manager maps those; only a
+/// pin-mode process that dies before the runner reuses 1/3/4 with the meanings above).
+/// Every failure path writes to the launcher file log via
+/// <see cref="StartupFailureLogger"/> — Trace-only diagnostics are invisible in published
+/// builds and are forbidden here.
 /// </remarks>
 public partial class App : Application
 {
@@ -174,7 +177,23 @@ public partial class App : Application
         // negligible against the 100s of ms we are profiling.
         var tStart = Stopwatch.GetTimestamp();
 
-        // Capture the cursor position FIRST, before anything else can take 100+ ms. This is
+        // Per-monitor DPI awareness must be set BEFORE the cursor capture below, not just
+        // before HWND creation: the launcher ships without an app manifest, so the process
+        // starts DPI-unaware and GetCursorPos would return virtualized 96-DPI coordinates
+        // instead of the device pixels the ICursorAnchor contract (and the px→DIP
+        // conversion in TaskbarPositionHelper) requires. The call costs microseconds, so
+        // capturing the cursor immediately afterwards keeps the click location fresh.
+        try
+        {
+            Interop.NativeMethods.SetProcessDpiAwarenessContext(
+                Interop.NativeMethods.DpiAwarenessContextPerMonitorAwareV2);
+        }
+        catch (System.EntryPointNotFoundException)
+        {
+            // Pre-1703 Windows — leave DPI awareness at the manifest default.
+        }
+
+        // Capture the cursor position before anything that can take 100+ ms. This is
         // the click location — by the time WPF has bootstrapped (~300–500 ms) the cursor has
         // typically drifted, which is why the v0.2 helper's late GetCursorPos call produced
         // visually-random popup placement.
@@ -196,18 +215,6 @@ public partial class App : Application
             anchor = new System.Windows.Point(
                 System.Windows.SystemParameters.PrimaryScreenWidth / 2 * systemScale,
                 System.Windows.SystemParameters.PrimaryScreenHeight / 2 * systemScale);
-        }
-
-        // Per-monitor DPI awareness must be set before any HWND is created so all popups
-        // render at the right scaling on mixed-DPI multi-monitor setups.
-        try
-        {
-            Interop.NativeMethods.SetProcessDpiAwarenessContext(
-                Interop.NativeMethods.DpiAwarenessContextPerMonitorAwareV2);
-        }
-        catch (System.EntryPointNotFoundException)
-        {
-            // Pre-1703 Windows — leave DPI awareness at the manifest default.
         }
 
         // Stamp the process AUMID BEFORE any window is created so Windows matches the
