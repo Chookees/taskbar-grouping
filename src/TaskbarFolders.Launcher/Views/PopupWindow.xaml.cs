@@ -32,10 +32,19 @@ public partial class PopupWindow : Window
     /// <summary>Outer padding on the popup Border in DIPs.</summary>
     private const int PaddingPx = 12;
 
+    /// <summary>
+    /// Interval of the never-activated fallback timer. Long enough that a user who is
+    /// mousing towards the popup is not interrupted, short enough that a popup Windows
+    /// refused to activate cannot linger as an orphaned Topmost window.
+    /// </summary>
+    private static readonly TimeSpan _activationFallbackInterval = TimeSpan.FromSeconds(3);
+
     private readonly PopupViewModel _viewModel;
     private readonly ITaskbarPositionHelper _positionHelper;
     private readonly AppSettings _settings;
     private DispatcherTimer? _safetyTimer;
+    private DispatcherTimer? _activationFallbackTimer;
+    private bool _wasActivated;
 
     /// <summary>Initializes a new instance of the <see cref="PopupWindow"/> class.</summary>
     public PopupWindow(
@@ -54,6 +63,7 @@ public partial class PopupWindow : Window
         DataContext = viewModel;
 
         _viewModel.LaunchSucceeded += OnLaunchSucceeded;
+        Activated += OnActivated;
         Closed += OnClosed;
         SourceInitialized += OnSourceInitialized;
     }
@@ -99,6 +109,35 @@ public partial class PopupWindow : Window
             // always sees the popup, regardless of resource lookup outcome.
             SnapToEndState();
         }
+
+        // Never-activated fallback: dismiss-on-focus-loss relies on Deactivated, which can
+        // only fire after the window has been activated once. When Windows denies the
+        // activation (foreground-lock, background spawn) the popup would otherwise linger
+        // as an orphaned Topmost window forever. Re-arms while the pointer is over the
+        // popup so a user interacting with a never-activated popup is not interrupted;
+        // OnActivated disarms it on the normal path.
+        _activationFallbackTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = _activationFallbackInterval,
+        };
+        _activationFallbackTimer.Tick += (_, _) =>
+        {
+            if (_wasActivated || IsMouseOver)
+            {
+                return;
+            }
+
+            _activationFallbackTimer?.Stop();
+            Close();
+        };
+        _activationFallbackTimer.Start();
+    }
+
+    private void OnActivated(object? sender, EventArgs e)
+    {
+        _wasActivated = true;
+        _activationFallbackTimer?.Stop();
+        _activationFallbackTimer = null;
     }
 
     private void SnapToEndState()
@@ -169,7 +208,16 @@ public partial class PopupWindow : Window
         _safetyTimer.Start();
     }
 
-    private void OnDeactivated(object? sender, EventArgs e) => Close();
+    private void OnDeactivated(object? sender, EventArgs e)
+    {
+        // Only dismiss after the window has genuinely held activation once. A spurious
+        // deactivation before first activation would otherwise close the popup before
+        // the user ever saw it.
+        if (_wasActivated)
+        {
+            Close();
+        }
+    }
 
     private void OnLaunchSucceeded(object? sender, EventArgs e) => Close();
 
@@ -183,7 +231,10 @@ public partial class PopupWindow : Window
         // opacity on a detached visual tree.
         _safetyTimer?.Stop();
         _safetyTimer = null;
+        _activationFallbackTimer?.Stop();
+        _activationFallbackTimer = null;
         _viewModel.LaunchSucceeded -= OnLaunchSucceeded;
+        Activated -= OnActivated;
         Closed -= OnClosed;
         SourceInitialized -= OnSourceInitialized;
     }

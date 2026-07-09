@@ -293,6 +293,11 @@ public partial class App : Application
         popup.Show();
         tShown = Stopwatch.GetTimestamp();
 
+        // Explicitly request activation (parity with pin mode). Show() alone does not
+        // reliably take foreground when Explorer still owns it from the tile click, and
+        // dismiss-on-focus-loss depends on the popup having been activated once.
+        popup.Activate();
+
         viewModel.StartIconLoad();
 
         // Deferred startup IO: prune stale icon-cache PNGs and old log files in the background
