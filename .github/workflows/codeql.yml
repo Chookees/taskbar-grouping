@@ -43,5 +43,39 @@ jobs:
       - name: Build
         run: dotnet build TaskbarFolders.sln --configuration Release
 
+      # upload:never — code-scanning upload requires GitHub Advanced Security, which is
+      # not available for private repos on this plan (upload fails with "Code scanning is
+      # not enabled for this repository"). Findings are surfaced by the summary step below
+      # (fails the job) and the SARIF artifact instead. If the repo goes public or GHAS is
+      # purchased, drop upload/output and the two steps below to restore native upload.
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          upload: never
+          output: codeql-results
+
+      - name: Report findings
+        shell: pwsh
+        run: |
+          $total = 0
+          Get-ChildItem codeql-results -Filter *.sarif | ForEach-Object {
+            $data = Get-Content $_.FullName -Raw | ConvertFrom-Json
+            foreach ($run in $data.runs) {
+              foreach ($r in $run.results) {
+                $total++
+                $loc = $r.locations[0].physicalLocation
+                Write-Host ("::warning::CodeQL: {0} ({1}:{2})" -f $r.message.text, $loc.artifactLocation.uri, $loc.region.startLine)
+              }
+            }
+          }
+          Add-Content $env:GITHUB_STEP_SUMMARY "CodeQL findings: $total"
+          if ($total -gt 0) { exit 1 }
+
+      - name: Upload SARIF artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif
+          path: codeql-results
+          retention-days: 7
