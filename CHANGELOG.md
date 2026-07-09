@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-07-09
+
+Patch release. Root-causes and fixes the dead popup that v0.4.1 introduced and v0.4.2's defence-in-depth could not reach: clicking a pinned taskbar group did nothing except a brief busy cursor. Also makes launcher startup failures diagnosable from the log, fixes popup placement at non-100% display scaling, and repairs the CI/CodeQL pipeline.
+
+### Fixed
+
+- **Popup opens again.** Since v0.4.1 the popup window never came into existence: the open animation declared its `ScaleTransform` with `ScaleX/Y=0.5` defaults directly on the `Window`, and WPF's `Window.CoerceRenderTransform` rejects any non-identity transform — `InitializeComponent` threw during BAML load, the startup catch swallowed the exception into `Trace` (invisible in published builds), and the process exited with code 3 before anything was shown. The transform (and the scale animation targets) now live on the `ChromeRoot` content Border, which WPF scales freely. The storyboard is cloned before retargeting so a frozen resource instance cannot break `SetTarget`.
+- **Launcher startup failures reach the log.** All launcher failure paths (missing group id, startup exception, unhandled AppDomain/dispatcher exceptions) previously reported via `Trace` only. A DI-free `StartupFailureLogger` now appends them to the same daily `launcher-*.log`, with a short retry against concurrent-writer sharing violations. Unhandled dispatcher exceptions shut down with documented exit code 4. This is why the v0.4.x regression stayed invisible for weeks — the failure mode is now structurally impossible.
+- **Startup timing line is actually emitted.** The v0.4.1 timing summary subscribed to `Loaded` after `Show()`, but a `Window` raises `Loaded` synchronously inside `Show()` — no released build ever wrote the line. Subscription moved before `Show()`.
+- **Popup placement is DPI-correct.** `TaskbarPositionHelper` fed raw device-pixel rects and the raw cursor position into WPF DIP coordinates — correct at 100% scaling only, ~33% drift at 150% (the documented v0.3 limit). All Win32 geometry is now converted to DIPs exactly once via `GetDpiForMonitor` on the target monitor, DPI awareness is switched on before the cursor capture so the anchor is genuinely physical, and the conversion is covered by placement tests at 150% including the off-screen right-edge-click repro.
+- **Popup activation and dismissal are deterministic.** Popup mode now calls `Activate()` after `Show()` (parity with pin mode), `Deactivated` only dismisses after the window has genuinely held activation, and a 3 s fallback closes a never-activated popup (re-arming while the pointer is over it) so it cannot linger as an orphaned always-on-top window.
+- **CodeQL runs again.** Two independent breaks: the workflow's explicit `permissions` block listed only `security-events: write`, zeroing `contents` — checkout of the private repository failed with "repository not found" on every scheduled run since 2026-05-25 — and the code-scanning upload requires GitHub Advanced Security, which is unavailable for private repos on the current plan. Fixed the permissions (+ `build-mode: manual` to match the explicit build step) and switched to `upload: never` with an in-workflow findings report: any CodeQL result now fails the job and is annotated inline, with the SARIF preserved as a 7-day artifact.
+- **CI artifact uploads no longer hit the storage quota.** Coverage artifacts expire after 7 days, build output after 3, dependabot PRs skip the build-output upload entirely (two full Release bin trees per run at the 90-day default retention had exhausted the account quota), and upload steps are `continue-on-error` so a quota blip can never fail an otherwise-green build again.
+
+### Internal
+
+- Dependabot now updates the `Microsoft.Extensions.*` family as a single group, ignores its major bumps (net8.0 targets stay on the 8.x train; a solo 10.x bump produced NU1605 downgrade conflicts), and ignores `FluentAssertions` ≥ 8 (commercial license change).
+- CLAUDE.md records the new invariants: launcher failure paths must reach the file log, `Window` accepts only identity `RenderTransform`s, `Window.Loaded` fires inside `Show()`, and the device-pixel/DIP unit contract at the Win32 boundary.
+
 ## [0.4.2] - 2026-05-18
 
 Patch release. v0.4.1's pin + animation fixes both regressed on a real-world Win11 24H2 install: the popup stayed invisible, and the pin button showed our "Pinned" notify without any Windows system dialog and never produced a tile. v0.4.2 tightens both against timing races so they work regardless of how Win11 24H2 schedules paint and indexer work.
