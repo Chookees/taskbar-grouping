@@ -196,8 +196,14 @@ public class GroupEditorViewModelTests
 
         await sut.AddAppsCommand.ExecuteAsync(new[] { "a.exe", "b.exe", "c.exe" });
 
-        // Wait past the debounce window so the scheduled refresh fires.
-        await Task.Delay(GroupEditorViewModel.PreviewDebounce + TimeSpan.FromMilliseconds(150));
+        // Poll with a generous deadline instead of a fixed post-debounce sleep: a loaded
+        // CI runner can delay the debounce callback past a small fixed slack (same slow-CI
+        // pattern as the StartBackgroundPrune 10 s deadline).
+        var deadline = DateTime.UtcNow + GroupEditorViewModel.PreviewDebounce + TimeSpan.FromSeconds(10);
+        while (DateTime.UtcNow < deadline && sut.CompositeIconPreview is null)
+        {
+            await Task.Delay(50);
+        }
 
         composer.Verify(
             c => c.GenerateComposite(It.IsAny<System.Collections.Generic.IReadOnlyList<BitmapSource>>(), GroupEditorViewModel.PreviewSize),
