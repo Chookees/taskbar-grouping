@@ -132,9 +132,10 @@ public sealed class FileLoggerProviderTests : IDisposable
         using var provider = new FileLoggerProvider(Options(_tempDir, "test", retainDays: 14));
         provider.StartBackgroundPrune();
 
-        // Background task — poll up to 10 s for the deletion to land. CI runners with cold
-        // ThreadPool can take >2 s to schedule the Task.Run lambda.
-        var deadline = DateTime.UtcNow.AddSeconds(10);
+        // Background task — poll up to 30 s for the deletion to land. CI runners with cold
+        // ThreadPool can take >2 s to schedule the Task.Run lambda, and under runner
+        // contention (parallel workflow bursts) even a 10 s deadline has flaked.
+        var deadline = DateTime.UtcNow.AddSeconds(30);
         while (File.Exists(stale) && DateTime.UtcNow < deadline)
         {
             System.Threading.Thread.Sleep(50);
