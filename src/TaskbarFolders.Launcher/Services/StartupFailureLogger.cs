@@ -48,7 +48,23 @@ internal static class StartupFailureLogger
             builder.AppendLine();
 
             var today = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            File.AppendAllText(Path.Combine(directory, $"launcher-{today}.log"), builder.ToString());
+            var file = Path.Combine(directory, $"launcher-{today}.log");
+
+            // The DI FileLogger (and other launcher instances) append to the same daily
+            // file with FileShare.Read — a concurrent write throws a sharing violation.
+            // This is the last-chance path, so retry briefly instead of losing the line.
+            for (var attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    File.AppendAllText(file, builder.ToString());
+                    return;
+                }
+                catch (IOException) when (attempt < 3)
+                {
+                    System.Threading.Thread.Sleep(10);
+                }
+            }
         }
         catch (Exception)
         {

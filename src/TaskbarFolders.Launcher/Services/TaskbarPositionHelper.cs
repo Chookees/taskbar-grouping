@@ -144,8 +144,11 @@ public sealed class TaskbarPositionHelper : ITaskbarPositionHelper
 
     /// <summary>
     /// Resolves the work area (device pixels) and effective DPI scale of the monitor under
-    /// the click anchor. The fallback returns <see cref="SystemParameters.WorkArea"/>, which
-    /// WPF reports in DIPs already, so it pairs with scale 1.0 by construction.
+    /// the click anchor. The fallback returns <see cref="SystemParameters.WorkArea"/> (which
+    /// WPF reports in DIPs) with scale 1.0 — the taskbar rect and anchor stay device pixels
+    /// in that path, so placement is degraded at ≠100% scaling. Acceptable: the fallback is
+    /// only reachable when <c>MonitorFromPoint(MONITOR_DEFAULTTONEAREST)</c> or
+    /// <c>GetMonitorInfo</c> fails, which practically does not happen.
     /// </summary>
     private static (Rect workArea, double dpiScale) QueryMonitor(Point anchor)
     {
