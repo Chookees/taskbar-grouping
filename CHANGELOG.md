@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-07-09
+
+Patch release, same day as v0.4.3 (field report minutes after install).
+
+### Fixed
+
+- **"+ Add" no longer looks dead.** Creating a group requires a name, but the command silently early-returned when the name box was empty — clicking "+ Add" without typing produced no reaction whatsoever, which reads as a broken button. The button is now disabled until a non-blank name is entered, the name box carries a "Group name…" watermark, and the button explains itself in a tooltip.
+
 ## [0.4.3] - 2026-07-09
 
 Patch release. Root-causes and fixes the dead popup that v0.4.1 introduced and v0.4.2's defence-in-depth could not reach: clicking a pinned taskbar group did nothing except a brief busy cursor. Also makes launcher startup failures diagnosable from the log, fixes popup placement at non-100% display scaling, and repairs the CI/CodeQL pipeline.

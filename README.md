@@ -4,7 +4,7 @@
 [![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ℹ️ **Status: v0.4.3.** Patch — fixes the dead popup: since v0.4.1 every pinned-tile click exited silently because the open animation declared a non-identity `ScaleTransform` on the `Window` itself, which WPF rejects while the window is still being constructed. The transform now lives on the popup content, startup failures are written to `launcher-*.log` instead of vanishing, popup placement is DPI-correct at 125/150 % scaling, and the popup activates on open so dismiss-on-focus-loss is reliable. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
+> ℹ️ **Status: v0.4.4.** Patch — "+ Add" is disabled with a watermark hint until a group name is entered (an empty-name click previously no-opped silently and read as a dead button). v0.4.3 — fixes the dead popup: since v0.4.1 every pinned-tile click exited silently because the open animation declared a non-identity `ScaleTransform` on the `Window` itself, which WPF rejects while the window is still being constructed. The transform now lives on the popup content, startup failures are written to `launcher-*.log` instead of vanishing, popup placement is DPI-correct at 125/150 % scaling, and the popup activates on open so dismiss-on-focus-loss is reliable. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
 
 **iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
 
