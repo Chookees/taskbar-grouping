@@ -57,6 +57,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Pending name for <see cref="AddGroupCommand"/>; bound to the sidebar TextBox.</summary>
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddGroupCommand))]
     private string _newGroupName = string.Empty;
 
     /// <summary>Currently highlighted sidebar entry, or <see langword="null"/> if none.</summary>
@@ -83,9 +84,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _logger?.LogInformation("Loaded {Count} group(s) from store.", Groups.Count);
     }
 
-    [RelayCommand]
+    // The pre-v0.4.4 command had no CanExecute: clicking "+ Add" with an empty name box
+    // hit a silent early-return and the button appeared dead. Disabling the button (and
+    // the Enter shortcut, which checks CanExecute) makes the empty-name state visible.
+    private bool CanAddGroup() => !string.IsNullOrWhiteSpace(NewGroupName);
+
+    [RelayCommand(CanExecute = nameof(CanAddGroup))]
     private async Task AddGroupAsync()
     {
+        // Defence in depth for any future caller that bypasses CanExecute.
         var trimmed = NewGroupName?.Trim();
         if (string.IsNullOrEmpty(trimmed))
         {

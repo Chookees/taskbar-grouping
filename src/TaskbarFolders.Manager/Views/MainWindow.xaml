@@ -27,15 +27,25 @@
                             ToolTip="Settings"
                             Click="OpenSettings_Click" />
                     <StackPanel Orientation="Horizontal">
-                        <TextBox Width="160"
-                                 VerticalContentAlignment="Center"
-                                 Padding="6,4"
-                                 Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="New group name"
-                                 KeyDown="NewGroupName_KeyDown" />
+                        <!-- Watermark overlay: "+ Add" is disabled until a name is entered,
+                             so the box must say what it is for at a glance. -->
+                        <Grid Width="160">
+                            <TextBox VerticalContentAlignment="Center"
+                                     Padding="6,4"
+                                     Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="New group name"
+                                     KeyDown="NewGroupName_KeyDown" />
+                            <TextBlock Text="Group name…"
+                                       Margin="9,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.5"
+                                       IsHitTestVisible="False"
+                                       Visibility="{Binding NewGroupName, Converter={x:Static vm:StringEmptyToVisibilityConverter.Instance}}" />
+                        </Grid>
                         <Button Content="+ Add"
                                 Margin="6,0,0,0"
                                 Padding="10,4"
+                                ToolTip="Create a group with the name entered on the left"
                                 Command="{Binding AddGroupCommand}" />
                     </StackPanel>
                 </DockPanel>
