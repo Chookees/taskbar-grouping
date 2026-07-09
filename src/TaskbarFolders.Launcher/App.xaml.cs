@@ -27,6 +27,10 @@ namespace TaskbarFolders.Launcher;
 ///   taskbar via <see cref="Windows.UI.Shell.TaskbarManager"/>. Shows the system permission
 ///   dialog and exits with a status code the Manager interprets.</item>
 /// </list>
+/// Exit codes: <c>1</c> = no group id resolvable, <c>3</c> = startup threw,
+/// <c>4</c> = unhandled dispatcher exception after startup. Every failure path writes to
+/// the launcher file log via <see cref="StartupFailureLogger"/> — Trace-only diagnostics
+/// are invisible in published builds and are forbidden here.
 /// </remarks>
 public partial class App : Application
 {
@@ -42,12 +46,28 @@ public partial class App : Application
     {
         ArgumentNullException.ThrowIfNull(e);
 
+        // Last-chance handlers so no failure can end the process without a log line.
+        // AppDomain.UnhandledException covers non-dispatcher threads (process dies after
+        // the handler); DispatcherUnhandledException covers UI-thread throws outside the
+        // OnStartup try below (e.g. deferred Storyboard.Begin callbacks).
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            StartupFailureLogger.Log(
+                "Unhandled exception; process is terminating.",
+                args.ExceptionObject as Exception);
+        DispatcherUnhandledException += (_, args) =>
+        {
+            StartupFailureLogger.Log(
+                "Unhandled dispatcher exception; shutting down with exit code 4.",
+                args.Exception);
+            args.Handled = true;
+            Shutdown(4);
+        };
+
         var (groupId, fromAumid) = ResolveGroupId(e.Args);
         if (groupId is null)
         {
-            Trace.TraceError(
-                "Launcher started without {0} argument and no AUMID fallback available.",
-                CommandLineParser.GroupIdArg);
+            StartupFailureLogger.Log(
+                $"Launcher started without {CommandLineParser.GroupIdArg} argument and no AUMID fallback available; shutting down with exit code 1.");
             Shutdown(1);
             return;
         }
@@ -68,7 +88,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            Trace.TraceError("Launcher OnStartup threw: {0}", ex);
+            StartupFailureLogger.Log("Launcher OnStartup threw; shutting down with exit code 3.", ex);
             Shutdown(3);
         }
     }
