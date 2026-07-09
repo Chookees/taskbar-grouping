@@ -189,4 +189,63 @@ public class TaskbarPositionHelperTests
         (placement.Left + popup.Width).Should().BeLessOrEqualTo(workArea.Right);
         (placement.Top + popup.Height).Should().BeLessOrEqualTo(workArea.Bottom);
     }
+
+    [Fact]
+    public void Placement_At150PercentScale_ConvertsDevicePixelsToDips()
+    {
+        // 2560×1440 laptop panel at 150 % scaling: Win32 reports device pixels, WPF wants
+        // DIPs (2560/1.5 ≈ 1706.67 DIPs wide). Pre-fix the device values were used verbatim,
+        // pushing the popup ~33 % right/down and off-screen for right-half clicks.
+        const double scale = 1.5;
+        var workAreaPx = new Rect(0, 0, 2560, 1380);
+        var bottomBarPx = new Rect(0, 1380, 2560, 60);
+        var popup = new Size(400, 300);
+        var anchorPx = new Point(1280, 1400);
+
+        var placement = TaskbarPositionHelper.CalculatePlacement(
+            popup, bottomBarPx, TaskbarEdge.Bottom, workAreaPx, PopupPositionPreference.Auto, anchorPx, scale);
+
+        // Horizontally centred on the anchor in DIP space: 1280/1.5 - 200
+        placement.Left.Should().BeApproximately(1280 / scale - popup.Width / 2, 0.01);
+        // Above the taskbar in DIP space: 1380/1.5 - 300 - margin
+        placement.Top.Should().BeApproximately(1380 / scale - popup.Height - TaskbarPositionHelper.Margin, 0.01);
+        // And on-screen in DIP space
+        (placement.Left + popup.Width).Should().BeLessOrEqualTo(2560 / scale);
+        (placement.Top + popup.Height).Should().BeLessOrEqualTo(1380 / scale);
+    }
+
+    [Fact]
+    public void Placement_At150PercentScale_RightEdgeClick_StaysOnScreen()
+    {
+        // The exact off-screen repro: click near the right edge of a scaled display. In
+        // device pixels the anchor X (2500) already exceeds the DIP screen width (1706.67),
+        // so the unconverted math placed the popup entirely off-screen.
+        const double scale = 1.5;
+        var workAreaPx = new Rect(0, 0, 2560, 1380);
+        var bottomBarPx = new Rect(0, 1380, 2560, 60);
+        var popup = new Size(400, 300);
+        var anchorPx = new Point(2500, 1400);
+
+        var placement = TaskbarPositionHelper.CalculatePlacement(
+            popup, bottomBarPx, TaskbarEdge.Bottom, workAreaPx, PopupPositionPreference.Auto, anchorPx, scale);
+
+        (placement.Left + popup.Width).Should().BeLessOrEqualTo(2560 / scale, "popup must stay inside the DIP work area");
+        placement.Left.Should().BeGreaterOrEqualTo(0);
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(-1.0)]
+    public void Placement_InvalidDpiScale_FallsBackTo100Percent(double invalidScale)
+    {
+        // A broken GetDpiForMonitor result must not divide by zero / flip coordinates.
+        var anchor = Centre(_monitorWorkAreaBottomBar);
+
+        var placement = TaskbarPositionHelper.CalculatePlacement(
+            new Size(400, 300), _bottomTaskbar, TaskbarEdge.Bottom, _monitorWorkAreaBottomBar,
+            PopupPositionPreference.Auto, anchor, invalidScale);
+
+        placement.Top.Should().Be(1040 - 300 - TaskbarPositionHelper.Margin);
+        placement.Left.Should().Be(anchor.X - 400 / 2);
+    }
 }

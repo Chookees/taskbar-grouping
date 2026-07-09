@@ -14,7 +14,11 @@ namespace TaskbarFolders.Launcher.Services;
 public interface ICursorAnchor
 {
     /// <summary>Stores the cursor location at process activation. Last-write-wins.</summary>
-    /// <param name="position">Cursor position in WPF DIPs.</param>
+    /// <param name="position">
+    /// Cursor position in device pixels (raw <c>GetCursorPos</c> output).
+    /// <see cref="TaskbarPositionHelper.CalculatePlacement"/> converts to DIPs using the
+    /// target monitor's effective DPI — do not pre-convert.
+    /// </param>
     void Seed(Point position);
 
     /// <summary>

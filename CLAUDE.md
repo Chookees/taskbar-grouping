@@ -54,7 +54,7 @@ New persistence code must follow this.
 
 **CancellationTokenSource fields → IDisposable** — Adding a CTS field triggers CA1001. Make the owner `sealed … IDisposable` and have `Dispose` call the cancel-and-dispose helper (`PopupViewModel`, `GroupEditorViewModel` follow this).
 
-**DPI baseline (known v0.3 limit)** — `TaskbarPositionHelper` treats Win32 device-pixel rects (taskbar, monitor) and `GetCursorPos` POINTs as WPF DIPs. Correct at 100% scale, ~33% horizontal drift at 150%. v0.3.1 follow-up will convert via `PresentationSource.CompositionTarget.TransformFromDevice`. Until then: do not add new code that compounds the debt.
+**DPI unit contract (fixed in v0.4.3)** — everything crossing the Win32 boundary (taskbar/monitor rects, `GetCursorPos`, `ICursorAnchor`) is **device pixels**; `TaskbarPositionHelper.CalculatePlacement` converts to WPF DIPs exactly once using the target monitor's effective DPI (`GetDpiForMonitor`). Do not pre-convert values before seeding the anchor and do not feed DIP values into `CalculatePlacement`'s Win32 parameters — a double conversion reintroduces the pre-v0.4.3 placement drift at ≠100% scaling.
 
 ## Analyzer Suppressions (rationale)
 

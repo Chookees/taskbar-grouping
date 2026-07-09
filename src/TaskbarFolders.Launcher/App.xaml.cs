@@ -183,6 +183,8 @@ public partial class App : Application
         // initialised to (0, 0) on failure, which would silently anchor the popup at the
         // top-left of the primary monitor. Detect the failure and fall back to the screen
         // centre so the user sees the popup near the middle instead of jammed in a corner.
+        // The anchor contract is device pixels (ICursorAnchor); SystemParameters reports
+        // DIPs, so the fallback multiplies by the system DPI scale to stay in-contract.
         System.Windows.Point anchor;
         if (Interop.NativeMethods.GetCursorPos(out var clickPoint))
         {
@@ -190,9 +192,10 @@ public partial class App : Application
         }
         else
         {
+            var systemScale = Interop.NativeMethods.GetDpiForSystem() / 96.0;
             anchor = new System.Windows.Point(
-                System.Windows.SystemParameters.PrimaryScreenWidth / 2,
-                System.Windows.SystemParameters.PrimaryScreenHeight / 2);
+                System.Windows.SystemParameters.PrimaryScreenWidth / 2 * systemScale,
+                System.Windows.SystemParameters.PrimaryScreenHeight / 2 * systemScale);
         }
 
         // Per-monitor DPI awareness must be set before any HWND is created so all popups

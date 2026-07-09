@@ -69,6 +69,17 @@ internal static class NativeMethods
 
     public const uint MONITOR_DEFAULTTONEAREST = 0x2;
 
+    // Effective DPI of a monitor (per-monitor scaling). Win 8.1+.
+    [DllImport("shcore.dll", ExactSpelling = true)]
+    public static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out uint dpiX, out uint dpiY);
+
+    public const int MDT_EFFECTIVE_DPI = 0;
+
+    // System DPI — used only for the GetCursorPos-failure fallback anchor where no
+    // monitor handle is available yet. Win10 1607+.
+    [DllImport("user32.dll", ExactSpelling = true)]
+    public static extern uint GetDpiForSystem();
+
     // shcore — per-monitor DPI awareness
     [DllImport("user32.dll", ExactSpelling = true)]
     public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
