@@ -9,8 +9,14 @@ on:
 jobs:
   analyze:
     runs-on: windows-latest
+    # An explicit permissions block zeroes every unlisted scope. contents:read is
+    # required for checkout on a private repo (its absence failed every scheduled run
+    # with "repository not found"); actions:read is required by codeql-action on
+    # private repos to query workflow metadata.
     permissions:
       security-events: write
+      contents: read
+      actions: read
 
     strategy:
       fail-fast: false
@@ -25,6 +31,9 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          # The job builds explicitly below; without this the action expects an
+          # autobuild step and can fail with "no source code seen during the build".
+          build-mode: manual
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
