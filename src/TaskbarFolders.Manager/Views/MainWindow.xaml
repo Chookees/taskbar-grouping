@@ -8,6 +8,7 @@
         Title="{Binding Title}"
         Width="980" Height="640"
         WindowStartupLocation="CenterScreen"
+        FocusManager.FocusedElement="{Binding ElementName=NewGroupNameBox}"
         d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
         Background="{DynamicResource WindowBackground}"
         Foreground="{DynamicResource ForegroundDefault}"
@@ -30,7 +31,8 @@
                         <!-- Watermark overlay: "+ Add" is disabled until a name is entered,
                              so the box must say what it is for at a glance. -->
                         <Grid Width="160">
-                            <TextBox VerticalContentAlignment="Center"
+                            <TextBox x:Name="NewGroupNameBox"
+                                     VerticalContentAlignment="Center"
                                      Padding="6,4"
                                      Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="New group name"
@@ -45,7 +47,8 @@
                         <Button Content="+ Add"
                                 Margin="6,0,0,0"
                                 Padding="10,4"
-                                ToolTip="Create a group with the name entered on the left"
+                                ToolTip="Creates a group with the name entered on the left. Type a name to enable this."
+                                ToolTipService.ShowOnDisabled="True"
                                 Command="{Binding AddGroupCommand}" />
                     </StackPanel>
                 </DockPanel>
