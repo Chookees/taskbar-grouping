@@ -14,7 +14,7 @@ They must all agree before the tag is pushed. Nothing checks this for you.
 | `README.md` | the status line under the badges |
 | `CHANGELOG.md` | a new section for the version, dated |
 
-> **Known drift:** `app.manifest` still reads `0.2.0.0`. It was never part of the bump checklist and has not been maintained since v0.2.0. It does not affect behaviour — nothing reads it for versioning — but it should be corrected and then kept in step.
+`app.manifest` was stuck at `0.2.0.0` from v0.2.0 until v0.4.5 because it was not on this list. Nothing reads it for versioning, so the drift was invisible — which is exactly why it needs to stay on the list.
 
 ## Before tagging
 

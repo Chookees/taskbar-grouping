@@ -43,7 +43,7 @@ If the problem is visual, add a screenshot.
 
 ## Environment
 - **Windows version and build:** [run `winver`, e.g. Windows 11 24H2, build 26100.1742]
-- **TaskbarFolders version:** [e.g. 0.4.4]
+- **TaskbarFolders version:** [e.g. 0.4.5]
 - **Installed how:** [installer / portable]
 - **Display scaling:** [e.g. 125%]
 - **Monitor setup:** [e.g. single monitor; or dual, taskbar on the secondary]

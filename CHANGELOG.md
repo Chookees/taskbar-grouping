@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-09-01
+
+Patch release. Two Manager defects found while auditing the shipped behaviour for a documentation pass, plus the documentation overhaul that audit produced.
+
 ### Fixed
 
 - **The settings dialog no longer overwrites your settings.** Opening Settings resolved one `SettingsViewModel`, loaded it, and then resolved `SettingsWindow` - which took a second, unloaded instance through its constructor, because both were registered transient. The dialog therefore always showed constructor defaults, and clicking Save wrote those defaults over `settings.json` and switched the autostart registry entry off. Two clicks, silent data loss. The view model is now a singleton, guarded by a composition-root test.
@@ -20,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten: the status banner is a status line again rather than a three-version changelog, Quick Start leads with the Pin to taskbar button, and the requirements section resolves the three-way minimum-OS contradiction between the installer, the launcher's target framework and the developer guide.
 - `SECURITY.md` supported versions corrected from 0.1.x to 0.4.x, with a real reporting path and the trust boundaries. `CONTRIBUTING.md` aligned with how the repository is actually run. `CODE_OF_CONDUCT.md` no longer claims to be a document it is not.
 - Added the Keep a Changelog link references this file had been missing since 0.1.0.
+
+### Internal
+
+- `app.manifest` version bumped from `0.2.0.0`, where it had been stuck since v0.2.0 because it was never on the release checklist. It is on it now, in both `docs/release-process.md` and the tooling notes. Nothing reads it for versioning - the manifest carries the DPI-awareness and OS-compatibility declarations.
 
 ## [0.4.4] - 2026-07-09
 
@@ -222,7 +230,8 @@ First functional release. Everything described in the README is implemented and 
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
 
-[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.1...v0.4.2
