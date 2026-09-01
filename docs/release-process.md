@@ -1,0 +1,97 @@
+# Release Process
+
+Releases are cut from `develop` by pushing a `v*` tag. Everything after that is automated except the verification that matters most — actually installing the result.
+
+## Version numbers live in five places
+
+They must all agree before the tag is pushed. Nothing checks this for you.
+
+| File | What to change |
+|---|---|
+| `Directory.Build.props` | `<Version>` — feeds every assembly |
+| `installer/setup.iss` | `#define MyAppVersion` — shown in the wizard and in Add or Remove Programs |
+| `src/TaskbarFolders.Manager/app.manifest` | `assemblyIdentity version` — four-part form, e.g. `0.4.5.0` |
+| `README.md` | the status line under the badges |
+| `CHANGELOG.md` | a new section for the version, dated |
+
+> **Known drift:** `app.manifest` still reads `0.2.0.0`. It was never part of the bump checklist and has not been maintained since v0.2.0. It does not affect behaviour — nothing reads it for versioning — but it should be corrected and then kept in step.
+
+## Before tagging
+
+```bash
+dotnet build TaskbarFolders.sln -c Release
+```
+
+```bash
+dotnet test TaskbarFolders.sln -c Release
+```
+
+```bash
+dotnet format TaskbarFolders.sln --verify-no-changes
+```
+
+All three must pass locally. Pushing red and fixing forward is not acceptable here — it makes bisecting a later regression far harder for a single maintainer.
+
+If the machine only has a newer WindowsDesktop runtime, prefix the test command with `DOTNET_ROLL_FORWARD=LatestMajor`.
+
+Then:
+
+- Run the Manager and exercise whatever the release changed. Unit tests do not click buttons.
+- Check `%APPDATA%\TaskbarFolders\logs\manager-*.log` afterwards. A warning or error line with no visible counterpart in the UI is a bug in its own right.
+- Make sure the documentation matches what is shipping. A release that changes behaviour and not the docs creates the next stale-documentation problem.
+
+## Tagging
+
+```bash
+git checkout develop && git pull
+git tag v0.4.5
+git push origin v0.4.5
+```
+
+A tag containing a hyphen (`v0.5.0-rc1`) is published as a pre-release; anything else is a full release.
+
+After the release is verified, fast-forward `main` to the released commit — every release tag to date is contained in both branches.
+
+## What the workflow does
+
+Pushing the tag triggers `release.yml` on `windows-latest`:
+
+1. Restore, build in Release, run the tests. A failing test stops the release.
+2. Publish each executable **separately** into sibling folders — `./publish/Manager` and `./publish/Launcher` — self-contained, `win-x64`, single-file, with native libraries included for self-extraction.
+3. Zip `./publish/*` into `TaskbarFolders-portable.zip`.
+4. Build the installer with the Inno Setup compiler pre-installed on the runner. The step fails loudly if `ISCC.exe` is not where it expects — a runner image change is the likely cause.
+5. Create the GitHub release with auto-generated notes and attach both assets.
+
+The job needs `contents: write`; that is already configured.
+
+### Artifacts
+
+| Asset | v0.4.4 size |
+|---|---|
+| `TaskbarFolders-portable.zip` | ≈ 166 MB |
+| `TaskbarFolders-Setup.exe` | ≈ 112 MB |
+
+Both executables are self-contained and ReadyToRun-compiled, so each carries its own copy of an ahead-of-time compiled .NET runtime. That is where the size goes. Expect roughly this scale for any release; a sudden drop usually means a publish step silently produced a framework-dependent build.
+
+## After tagging, before announcing
+
+The tag and the assets exist before anyone has confirmed they work. **Install the result and use it.**
+
+- [ ] Install `TaskbarFolders-Setup.exe` on a machine that does not have the development tree.
+- [ ] Create a group, add two or three apps, confirm the composite icon appears.
+- [ ] Pin the group and confirm the tile shows up.
+- [ ] Click the tile, confirm the popup opens next to it, and launch something from it.
+- [ ] Exercise whatever this release changed.
+- [ ] Open `%APPDATA%\TaskbarFolders\logs\` and read both logs.
+- [ ] Extract `TaskbarFolders-portable.zip` somewhere else and repeat the first four steps.
+- [ ] Uninstall, and confirm the uninstaller removes the program and the autostart entry.
+
+Two minutes of clicking catches what the test suite cannot. v0.2.0 shipped with **Show shortcut…** broken on every real installation: the development layout and the CI runner both happened to place the launcher where the Manager could find it, and the installed layout did not. Only an installed smoke test would have caught it.
+
+Announce the release once this passes. If you cannot run the smoke test, say so explicitly rather than implying the release was verified.
+
+## If a release is broken
+
+Fix forward with a patch release the same day when the defect blocks normal use. Cut `v0.x.y+1` from `develop` with the fix, the CHANGELOG entry and the version bumps in one release-eligible state.
+
+Do not delete or move a published tag. The assets are already downloadable and the release notes already reference it.
