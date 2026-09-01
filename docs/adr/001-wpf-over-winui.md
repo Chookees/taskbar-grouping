@@ -2,7 +2,14 @@
 
 ## Status
 
-Accepted
+Accepted.
+
+One premise below did not survive contact with implementation. The context and
+rationale originally assumed each group would ship as its own executable; the
+M5 spike rejected that approach, and grouping is now done with a shared
+launcher plus per-group shortcuts. Those two points are corrected in place and
+recorded in [ADR-002](002-per-group-lnk-aumid.md). The decision to build on WPF
+rather than WinUI 3 is unaffected and still holds.
 
 ## Context
 
@@ -11,7 +18,7 @@ TaskbarFolders requires deep integration with the Windows taskbar, including:
 - Transparent, borderless popup windows with blur effects
 - Icon manipulation via Win32 Shell APIs (P/Invoke)
 - Multi-monitor and DPI awareness
-- Generating standalone .exe files with custom icons
+- Giving every group its own taskbar identity and icon
 
 We evaluated WPF and WinUI 3 as the UI framework.
 
@@ -27,7 +34,7 @@ We chose **WPF** (Windows Presentation Foundation) over WinUI 3.
 
 2. **Transparent Windows**: `AllowsTransparency="True"` with `WindowStyle="None"` works reliably for custom popup shapes with rounded corners and blur effects.
 
-3. **No MSIX Requirement**: WPF apps can be distributed as plain .exe files, which is essential for our use case where each group must be a standalone pinnable executable.
+3. **No MSIX Requirement**: WPF apps can be distributed as plain .exe files. This matters because the taskbar integration is built on ordinary shortcuts and AppUserModelIDs rather than a packaged identity, which an MSIX-only story would have forced us into.
 
 4. **Mature Ecosystem**: Extensive community resources, StackOverflow answers, and battle-tested patterns for MVVM, DI, and custom controls.
 
