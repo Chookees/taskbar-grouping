@@ -114,6 +114,39 @@ public class MainWindowViewModelTests
         sut.SelectedGroup!.Name.Should().Be("Misc");
     }
 
+    [Fact]
+    public void AddGroupCommand_BecomesExecutable_AsSoonAsANameIsTyped()
+    {
+        // The button is bound straight to AddGroupCommand.CanExecute. If setting
+        // NewGroupName does not raise CanExecuteChanged, the button stays greyed out
+        // forever and no group can ever be created through the UI - the exact dead-button
+        // failure v0.4.4 set out to remove, only permanent instead of silent.
+        var sut = CreateSut(CreateStoreWith());
+
+        sut.AddGroupCommand.CanExecute(null).Should().BeFalse("nothing has been typed yet");
+
+        var raised = 0;
+        sut.AddGroupCommand.CanExecuteChanged += (_, _) => raised++;
+
+        sut.NewGroupName = "Dev Tools";
+
+        raised.Should().BeGreaterThan(0, "the command must be told its executability changed");
+        sut.AddGroupCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void AddGroupCommand_StaysDisabled_ForBlankName(string? name)
+    {
+        var sut = CreateSut(CreateStoreWith());
+
+        sut.NewGroupName = name!;
+
+        sut.AddGroupCommand.CanExecute(null).Should().BeFalse();
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
