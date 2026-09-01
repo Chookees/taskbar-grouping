@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-09-01
+
+Patch release. Same-day follow-up to v0.4.5, from a field report on a fresh install.
+
+### Fixed
+
+- **"+ Add" now explains why it is disabled.** Creating a group requires a name, and the button correctly stays disabled until one is typed - but nothing on screen said so, and a fresh installer walked away unable to create a group at all. v0.4.4 had attached a tooltip explaining exactly this, which was the right instinct, except that WPF does not show tooltips on disabled controls unless `ToolTipService.ShowOnDisabled` is set. The one affordance that explained the state was unreachable in precisely that state. It is set now, and the text says what to do rather than only what the button is for.
+- **The Manager opens with the cursor already in the group-name box.** Declarative `FocusManager.FocusedElement`, so the first keystroke lands where it is needed instead of requiring the field to be found first. Verified through the automation tree: on open the focused element is the name box with keyboard focus, and the disabled button exposes its help text.
+
+### Internal
+
+- Added the missing test coverage for the half of the v0.4.4 behaviour that matters to a user: that `AddGroupCommand` raises `CanExecuteChanged` and becomes executable as soon as a name is entered. The existing tests called `AddGroupAsync` directly and bypassed `CanExecute` entirely, so broken command wiring - a permanently dead button - would not have failed a single test.
+
 ## [0.4.5] - 2026-09-01
 
 Patch release. Two Manager defects found while auditing the shipped behaviour for a documentation pass, plus the documentation overhaul that audit produced.
@@ -230,7 +243,8 @@ First functional release. Everything described in the README is implemented and 
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
 
-[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.5...HEAD
+[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.6...HEAD
+[0.4.6]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.2...v0.4.3
