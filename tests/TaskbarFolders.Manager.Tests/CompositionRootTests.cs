@@ -113,4 +113,22 @@ public sealed class CompositionRootTests : IDisposable
 
         viaMain.Should().BeSameAs(directly);
     }
+
+    [Fact]
+    public void SettingsViewModel_ResolvesToTheSameInstanceEveryTime()
+    {
+        using var provider = BuildProvider();
+
+        // The settings handler resolves a SettingsViewModel, loads it, and then resolves
+        // SettingsWindow - which takes its own SettingsViewModel through the constructor.
+        // While the registration was transient those were two different instances: the
+        // loaded one was discarded, the dialog bound an unloaded one showing constructor
+        // defaults, and Save persisted those defaults over the user's settings.json.
+        // Constructing the window itself would need an STA thread, so the lifetime is
+        // what this guards.
+        var loadedByCaller = provider.GetRequiredService<SettingsViewModel>();
+        var injectedIntoWindow = provider.GetRequiredService<SettingsViewModel>();
+
+        injectedIntoWindow.Should().BeSameAs(loadedByCaller);
+    }
 }

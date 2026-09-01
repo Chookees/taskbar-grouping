@@ -54,7 +54,13 @@ public static class ManagerServiceCollectionExtensions
         // before showing the window.
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<GroupEditorViewModel>();
-        services.AddTransient<SettingsViewModel>();
+        // Singleton on purpose: the settings dialog is opened by resolving SettingsWindow,
+        // which takes its view model through the constructor. Under a transient registration
+        // the caller and the window received two different instances, so the instance the
+        // caller had loaded was discarded and the dialog bound an unloaded one - showing
+        // defaults and writing them over settings.json on Save. LoadAsync re-reads on every
+        // open, so sharing one instance across dialog sessions carries no stale state.
+        services.AddSingleton<SettingsViewModel>();
 
         // Views — transient so each Show creates a fresh window instance.
         services.AddTransient<MainWindow>();
