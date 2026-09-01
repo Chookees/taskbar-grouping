@@ -8,4 +8,14 @@
     <!-- Pill behind error / "no apps" text so it stays readable on any wallpaper.
          Tuned dark so the light theme's dark foreground reads against it. -->
     <SolidColorBrush x:Key="ErrorBackdropBrush" Color="#CCFFFFFF" />
+    <!-- See Dark.xaml: the failure plate is dark red in both themes. -->
+    <SolidColorBrush x:Key="ErrorForeground" Color="#FFFFFF" />
+
+    <!-- Halo behind the app-name labels. The popup is fully transparent, so the labels
+         render straight onto the wallpaper - and the theme tracks the Windows app theme,
+         which says nothing about what is behind the window. ShadowDepth=0 makes this a
+         symmetric outline rather than a directional shadow, so the text survives a
+         wallpaper of the opposite brightness in either theme. Effects do not take part in
+         measure/arrange, so tile sizing is untouched. -->
+    <DropShadowEffect x:Key="LabelShadow" Color="#FFFFFF" BlurRadius="7" ShadowDepth="0" Opacity="1" />
 </ResourceDictionary>
