@@ -207,7 +207,7 @@ Keine Fehler, sondern bewusste oder noch offene Grenzen:
 
 - Gruppen lassen sich **nicht umbenennen**, Programme nicht umsortieren, Symbole nicht selbst wählen, Startparameter nicht setzen.
 - Das Aufklapp-Fenster hat **keine Tastaturbedienung**.
-- Das Erscheinungsbild folgt dem gewählten Theme; einzelne Windows-Standarddialoge außerhalb des Programms tun das nicht.
+- Das Aufklapp-Fenster richtet die Textfarbe nach Ihrem Windows-Erscheinungsbild, nicht nach dem Hintergrundbild. Seit v0.4.7 bekommen die Namen eine Kontur in der Gegenfarbe und bleiben dadurch in jedem Fall lesbar — auf einem gleich hellen Hintergrund wirken sie allerdings umrandet statt gestochen scharf.
 - Es gibt **keine ARM64-Fassung**.
 - Nichts hindert daran, den Manager **zweimal gleichzeitig** zu starten. Die zweite Instanz kann Änderungen der ersten überschreiben.
 - Das **Löschen einer Gruppe entfernt ihre Kachel nicht**.

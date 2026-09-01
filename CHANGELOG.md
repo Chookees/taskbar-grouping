@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-09-01
+
+Legibility release. Both defects were dark-mode only and invisible to the test suite, because nothing in it renders a window.
+
+### Fixed
+
+- **Dark mode is readable.** Several pieces of text were effectively invisible: measured against their actual surfaces, the sidebar group name sat at 1.37:1, the "N app(s)" subtitle at 1.26:1, the app display name at 1.27:1 and the app path at 1.16:1. The cause was dependency-property precedence rather than the `Opacity` values it resembled — `MainWindow` sets `Foreground` on the `Window`, which propagates by inheritance, but WPF's built-in theme styles set it explicitly on `ListBox`, `TextBox`, `Button`, `ComboBox` and `CheckBox`, and a theme-style setter outranks inheritance. A new `Themes/Controls.xaml` carries implicit styles for those controls, which is what structurally fixes it; the de-emphasised texts now use the `ForegroundSubtle` brush that already existed in both dictionaries and was referenced nowhere. Every body text now clears 4.5:1 in both themes.
+- **The Settings window follows the theme.** It set no `Background`, no `Foreground` and no `DynamicResource` at all, so it rendered fully light regardless of the setting.
+- **The title bar follows the theme.** `DWMWA_USE_IMMERSIVE_DARK_MODE` was never set, so a Mica window wore a light caption above a dark client area. Both windows now track a new `ThemeChanged` event on `IThemeService`, so a live Windows theme switch reaches the caption too.
+- **Popup labels stay legible on any wallpaper.** The popup is fully transparent, so the app names render straight onto the desktop — while their colour came from the Windows app theme, which says nothing about what is behind the window. Light theme on a dark wallpaper drew near-black on near-black. The labels now carry a theme-aware halo in the opposite tone and are semi-bold; at 11 px the stroke weight mattered as much as the colour. The launch-failure strip, which forced the theme foreground onto a fixed dark red plate, got its own colour for the same reason.
+
+### Added
+
+- **German user manual** — `docs/benutzerhandbuch.md`, written for someone who has just installed the program, alongside the English guide. Both are linked from each other and from the README.
+
+### Internal
+
+- **Documentation now moves with the code.** CLAUDE.md, CONTRIBUTING.md and the pull request template all carry the same rule and the same table mapping a change to the documents it obliges. User-visible changes require both language versions of the user documentation.
+- New tests parse `Controls.xaml` on an STA thread and instantiate every control template — a malformed template is not a build error and would otherwise surface only as a window that refuses to open — plus key-parity tests across the Light/Dark dictionaries in both applications.
+
 ## [0.4.6] - 2026-09-01
 
 Patch release. Same-day follow-up to v0.4.5, from a field report on a fresh install.
@@ -243,7 +263,8 @@ First functional release. Everything described in the README is implemented and 
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
 
-[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.7...HEAD
+[0.4.7]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.3...v0.4.4

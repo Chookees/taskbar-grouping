@@ -111,7 +111,7 @@ Settings apply when you click **Save**. Closing the dialog discards changes; an 
 
 The autostart checkbox reflects the registry, not the settings file — if you remove the Run entry by hand, the dialog shows it as off.
 
-Theming currently covers window backgrounds and surfaces. Standard controls keep their default Windows appearance, and the Settings dialog itself is not themed.
+The theme covers the whole interface, including the Settings dialog, the standard controls and the window title bar. Switching it takes effect immediately; there is no restart.
 
 ### Popup grid width
 
