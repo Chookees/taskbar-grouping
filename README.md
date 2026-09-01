@@ -167,6 +167,7 @@ taskbar-grouping/
 ## Documentation
 
 - [User Guide](docs/user-guide.md) — everything the app can do, from a user's point of view
+- [Benutzerhandbuch](docs/benutzerhandbuch.md) — the same guide in German
 - [Troubleshooting](docs/troubleshooting.md) — symptoms, causes, known limitations
 - [Architecture](docs/architecture.md) — components, data flow, runtime layout
 - [Developer Guide](docs/developer-guide.md) — build, test, debug, conventions

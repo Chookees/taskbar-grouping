@@ -2,6 +2,8 @@
 
 Everything TaskbarFolders can do, in the order you are likely to need it. If something is not behaving, jump to [Troubleshooting](troubleshooting.md).
 
+> Deutschsprachige Fassung: [Benutzerhandbuch](benutzerhandbuch.md). Both documents describe the same behaviour and are maintained together — a change to one is incomplete without the other.
+
 ## Installing
 
 ### Installer
