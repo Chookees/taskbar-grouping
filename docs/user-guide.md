@@ -1,97 +1,145 @@
 # User Guide
 
-> ℹ️ **Status: v0.2.0.** All features described below are available in the current release. See the [README](../README.md) for download links.
+Everything TaskbarFolders can do, in the order you are likely to need it. If something is not behaving, jump to [Troubleshooting](troubleshooting.md).
 
-## Installation
+## Installing
 
-### Using the Installer
+### Installer
 
-1. Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/eXORR6077/taskbar-grouping/releases)
-2. Run the installer
-3. Follow the setup wizard
-4. Launch **TaskbarFolders Manager** from the Start Menu
+Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/eXORR6077/taskbar-grouping/releases) and run it.
 
-### Portable Version
+The installer needs administrator rights — it writes to Program Files. Two optional steps in the wizard:
 
-1. Download `TaskbarFolders-portable.zip`
-2. Extract to any folder
-3. Run `TaskbarFolders.Manager.exe`
+- **Start with Windows** — pre-selected. It adds a per-user entry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. Clear the checkbox if you would rather start the Manager yourself; you can also change it later in Settings.
+- **Create a desktop icon** — not selected by default.
 
-## Creating a Group
+The wizard is available in English and German. The application itself is English only.
 
-1. Open **TaskbarFolders Manager**
-2. Click the **"+ New Group"** button
-3. Enter a name for your group (e.g., "Dev Tools", "Games", "Office")
-4. The group editor opens
+### Portable
 
-## Adding Apps to a Group
+Download `TaskbarFolders-portable.zip` and extract it anywhere. Run `Manager\TaskbarFolders.Manager.exe`.
 
-1. In the group editor, drag and drop `.exe` or `.lnk` files from Windows Explorer into the app list
-2. Alternatively, click **"Add App"** and browse for an executable
-3. The app's icon and name are detected automatically
-4. You can rename apps or change their icons manually
+Keep the `Manager` and `Launcher` folders next to each other. The Manager locates the launcher relative to its own folder; separating them breaks group creation.
 
-## Composite Icon Preview
+Neither package needs a .NET runtime installed — both executables are self-contained.
 
-As you add apps, the 2x2 composite icon updates in real-time:
-- 1 app: Single icon centered
-- 2 apps: Two icons side by side
-- 3 apps: Three icons in an L-shape
-- 4+ apps: First four icons in a 2x2 grid
+## Creating a group
 
-## Pinning to Taskbar
+1. Type a name into the box at the top of the sidebar.
+2. Click **+ Add**, or press Enter.
 
-1. After saving a group, find the generated launcher in the group list
-2. Right-click the group and select **"Open file location"**
-3. Right-click the `.exe` file and select **"Pin to Taskbar"**
-4. The group icon now appears in your taskbar
+**+ Add** stays disabled until the box contains something other than blank space, and the box shows a *Group name…* watermark while empty. Groups are listed alphabetically, with the number of apps under each name.
 
-## Using a Group
+## Adding apps
 
-1. Click the group icon in the taskbar
-2. A popup appears with all your grouped apps
-3. Click any app to launch it
-4. The popup closes automatically
-5. Click outside the popup to dismiss it
+With a group selected, either:
+
+- **drag** `.exe` or `.lnk` files onto the app list from Explorer, or
+- click **Add app…** and pick one or more files.
+
+Only `.exe` and `.lnk` are accepted; anything else in a dropped selection is ignored without an error. The display name comes from the file name, and the icon is read from the file itself — for a shortcut, from whatever it points at.
+
+The composite preview refreshes shortly after you stop making changes.
+
+### How the composite icon is built
+
+Only the **first four** apps in the group contribute to the icon. The popup still shows all of them.
+
+| Apps | Layout |
+|---|---|
+| 1 | Single icon, centred |
+| 2 | Side by side |
+| 3 | iOS-style: two on top, one below |
+| 4 or more | The first four in a 2×2 grid |
+
+### Removing an app
+
+Click **Remove** on its row. The group is saved and its icon regenerated immediately.
+
+## Pinning a group to the taskbar
+
+A group needs at least one app before it can be pinned — an empty group produces no icon and no shortcut.
+
+### The direct way
+
+Click **Pin to taskbar**. Windows shows its own confirmation dialog; approve it and the tile appears.
+
+That dialog comes from Windows and cannot be skipped or automated. If you dismiss it, nothing is pinned and the Manager stays quiet.
+
+### If direct pinning is unavailable
+
+Some Windows editions and managed environments block programmatic pinning, and it needs Windows 10 version 2004 or newer. When it is unavailable, the Manager says so and opens the folder containing the group's shortcut.
+
+From there: right-click the `.lnk` → **Show more options** (Windows 11 22H2 and later) → **Pin to taskbar**.
+
+You can open that folder yourself at any time with **Show shortcut…**.
+
+## Using a group
+
+Click the pinned tile. A popup opens next to the taskbar, anchored near the tile you clicked, showing every app in the group.
+
+- **Click an icon** to launch it. The popup closes.
+- **If a launch fails**, the popup stays open and shows an error strip naming the app.
+- **Click anywhere else** to dismiss the popup.
+
+The popup has no keyboard shortcuts. Escape does not close it, and no icon is focused when it opens — click elsewhere to dismiss it.
+
+## Editing and deleting groups
+
+Select a group to add or remove apps; every change is saved as you make it, and the icon and shortcut are regenerated.
+
+To delete: right-click the group in the sidebar → **Delete group** → confirm. This removes the configuration, the generated icon and the shortcut.
+
+**Deleting a group does not remove its taskbar tile.** Right-click the tile and choose *Unpin from taskbar* yourself; the confirmation dialog reminds you.
+
+There is currently no way to rename a group, reorder apps, set a custom icon, or give an app launch arguments from the interface.
 
 ## Settings
 
-### Theme
-- **System**: Follows Windows dark/light mode
-- **Light**: Always light theme
-- **Dark**: Always dark theme
+Open with the **⚙** button in the top right.
 
-### Autostart
-Enable to start TaskbarFolders Manager with Windows.
+| Setting | Options | Default | Effect |
+|---|---|---|---|
+| Theme | System, Light, Dark | System | *System* follows the Windows app theme and switches live when you change it. |
+| Popup position | Auto, Above, Below | Auto | *Auto* places the popup on the sensible side of the taskbar for its current edge. |
+| Enable popup animations | on / off | on | Turns the popup's open animation on or off. |
+| Start TaskbarFolders Manager when Windows starts | on / off | off | Adds or removes the per-user Run registry entry. |
 
-### Animations
-Toggle popup open/close animations.
+Settings apply when you click **Save**. Closing the dialog discards changes; an *Unsaved changes* marker appears while any are pending.
 
-### Popup Position
-- **Auto**: Popup appears near the clicked taskbar icon
-- **Above**: Always above the taskbar
-- **Below**: Always below the taskbar
+The autostart checkbox reflects the registry, not the settings file — if you remove the Run entry by hand, the dialog shows it as off.
 
-## Editing a Group
+Theming currently covers window backgrounds and surfaces. Standard controls keep their default Windows appearance, and the Settings dialog itself is not themed.
 
-1. Open **TaskbarFolders Manager**
-2. Click on an existing group
-3. Add, remove, or reorder apps
-4. Changes are saved automatically
-5. The composite icon updates when you modify the group
+### Popup grid width
 
-## Deleting a Group
+Each group has a `columns` value between 1 and 6, defaulting to 3, controlling how wide its popup grid is. There is no interface for it yet — edit the group's JSON file directly (see below) and reopen the popup.
 
-1. Open **TaskbarFolders Manager**
-2. Right-click a group
-3. Select **"Delete Group"**
-4. Confirm the deletion
-5. Unpin the group from the taskbar manually if needed
+## Where your files are
 
-## Uninstallation
+Everything lives under `%APPDATA%\TaskbarFolders\`. Paste that into Explorer's address bar to get there.
 
-### Installer Version
-Use **"Add or Remove Programs"** in Windows Settings.
+| Path | Contents |
+|---|---|
+| `groups\<id>.json` | One file per group — its name, its apps, its column count |
+| `icons\<id>.ico` | The generated composite icon |
+| `icons\cache\` | Cached source icons; safe to delete, they are re-extracted |
+| `shortcuts\<id>.lnk` | The shortcut you pin |
+| `settings.json` | Your settings |
+| `logs\` | One log file per day, kept for two weeks |
 
-### Portable Version
-Simply delete the extracted folder.
+Editing a group's JSON while the Manager is open is not recommended — it will overwrite your edit on the next change. Close it first.
+
+The file name is what identifies a group. Renaming `groups\abc.json` renames the group's identity, which orphans its icon, shortcut and any existing pin.
+
+## Uninstalling
+
+**Installer:** *Settings → Apps → Installed apps → TaskbarFolders → Uninstall*, or *Add or Remove Programs*. This removes the program and the autostart entry.
+
+**Portable:** delete the extracted folder.
+
+Neither removes your groups. To clear everything:
+
+1. Unpin any group tiles from the taskbar.
+2. Delete `%APPDATA%\TaskbarFolders`.
+3. Delete `%APPDATA%\Microsoft\Windows\Start Menu\Programs\TaskbarFolders`, which holds one Start menu entry per group.

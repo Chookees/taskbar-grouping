@@ -1,117 +1,231 @@
 # API Reference
 
-> ℹ️ **Status: v0.2.0.** Every type below exists in code; the file links lead to the actual source.
+A map of the public surface, organised by project. It is a guide to what exists and what each abstraction is for — the XML documentation on the types themselves is the authority on individual parameters.
 
-## TaskbarFolders.Core
-
-### Namespace: `TaskbarFolders.Core.Icons`
-
-#### `IIconExtractor` ✅ (interface only — no implementation yet)
-
-Extracts icons from executable files, shortcuts, and icon files.
-
-```csharp
-public interface IIconExtractor
-{
-    BitmapSource? ExtractIcon(string filePath, int size = 256);
-}
-```
-
-**Parameters:**
-- `filePath`: Path to an `.exe`, `.lnk`, or `.ico` file
-- `size`: Desired icon size in pixels (default: 256)
-
-**Returns:** The extracted icon as a `BitmapSource`, or `null` if extraction fails.
-
----
-
-#### `ICompositeIconGenerator` ✅ (interface only — no implementation yet)
-
-Generates composite icons from multiple source icons in a grid layout.
-
-```csharp
-public interface ICompositeIconGenerator
-{
-    BitmapSource GenerateComposite(IReadOnlyList<BitmapSource> icons, int outputSize = 256);
-}
-```
-
-**Parameters:**
-- `icons`: Source icons to compose (up to 4)
-- `outputSize`: Output icon size in pixels (default: 256)
-
-**Returns:** The composite icon as a `BitmapSource`.
-
----
+Every type below links to its source file.
 
 ## TaskbarFolders.Shared
 
-### Namespace: `TaskbarFolders.Shared.Models`
+Models, persistence and logging. No Windows-only APIs.
 
-#### `AppEntry` ✅
+### Models
 
-Represents a single application entry within a taskbar group.
+#### [`AppEntry`](../src/TaskbarFolders.Shared/Models/AppEntry.cs)
 
-| Property | Type | Description |
+One application inside a group.
+
+| Property | Type | Notes |
 |---|---|---|
-| `Name` | `string` | Display name of the application |
-| `Path` | `string` | Full path to the executable or shortcut |
-| `IconPath` | `string?` | Optional custom icon path |
-| `Arguments` | `string?` | Command-line arguments (default: null; omitted from JSON when null) |
+| `Name` | `string` | Required. Display name; the Manager fills it from the file name without its extension |
+| `Path` | `string` | Required. Full path to the `.exe` or `.lnk` |
+| `IconPath` | `string?` | Declared for a future custom-icon feature; **not read by any current code** |
+| `Arguments` | `string?` | Launch arguments; omitted from JSON when null, and not editable in the UI |
 
----
+#### [`GroupConfig`](../src/TaskbarFolders.Shared/Models/GroupConfig.cs)
 
-#### `GroupConfig` ✅
+One group.
 
-Configuration for a single taskbar group.
-
-| Property | Type | Description |
+| Property | Type | Notes |
 |---|---|---|
-| `Id` | `string` | Unique identifier (auto-generated) |
-| `GroupName` | `string` | Display name of the group |
-| `Columns` | `int` | Popup grid columns. Clamped to [1..6] on assignment (default: 3) |
-| `Theme` | `ThemePreference` | Theme override; JSON values: `system`, `light`, `dark` (default: `system`) |
-| `Apps` | `List<AppEntry>` | Applications in this group |
+| `Id` | `string` | New groups get a GUID. **Reconstructed from the file name on load** — the `id` field in the JSON is ignored |
+| `GroupName` | `string` | Display name |
+| `Columns` | `int` | Popup grid columns, clamped to 1–6 on assignment, default 3. No UI |
+| `Theme` | `ThemePreference` | Serialised but **not read**; both applications use the global setting |
+| `Apps` | `List<AppEntry>` | Members of the group |
 
----
+#### [`AppSettings`](../src/TaskbarFolders.Shared/Models/AppSettings.cs)
 
-#### `AppSettings` ✅
-
-Global application settings.
-
-| Property | Type | Description |
+| Property | Type | Default |
 |---|---|---|
-| `AutoStart` | `bool` | Start on Windows startup (default: false) |
-| `Theme` | `ThemePreference` | Global theme; JSON values: `system`, `light`, `dark` (default: `system`) |
-| `EnableAnimations` | `bool` | Popup animations (default: true) |
-| `PopupPosition` | `PopupPositionPreference` | Popup position; JSON values: `auto`, `above`, `below` (default: `auto`) |
+| `AutoStart` | `bool` | `false` |
+| `Theme` | `ThemePreference` | `System` |
+| `EnableAnimations` | `bool` | `true` |
+| `PopupPosition` | `PopupPositionPreference` | `Auto` |
 
----
+On load the registry, not this file, is the source of truth for `AutoStart`.
 
-### Namespace: `TaskbarFolders.Shared.Configuration` ✅
+#### [`Preferences`](../src/TaskbarFolders.Shared/Models/Preferences.cs)
 
-#### `IGroupConfigStore` ✅
+`ThemePreference` — `System`, `Light`, `Dark`. `PopupPositionPreference` — `Auto`, `Above`, `Below`. Both serialise as camel-case strings.
 
-Interface for persisting group configurations.
+### Configuration
+
+#### [`IGroupConfigStore`](../src/TaskbarFolders.Shared/Configuration/IGroupConfigStore.cs)
 
 ```csharp
-public interface IGroupConfigStore
-{
-    Task<IReadOnlyList<GroupConfig>> LoadAllAsync();
-    Task<GroupConfig?> LoadAsync(string groupId);
-    Task SaveAsync(GroupConfig config);
-    Task DeleteAsync(string groupId);
-}
+Task<IReadOnlyList<GroupConfig>> LoadAllAsync(CancellationToken cancellationToken = default);
+Task<GroupConfig?> LoadAsync(string groupId, CancellationToken cancellationToken = default);
+Task SaveAsync(GroupConfig config, CancellationToken cancellationToken = default);
+Task DeleteAsync(string groupId, CancellationToken cancellationToken = default);
 ```
 
-#### `IAppSettingsStore` ✅
+Implemented by `JsonGroupConfigStore`, one file per group, written atomically.
 
-Interface for persisting application settings.
+#### [`IAppSettingsStore`](../src/TaskbarFolders.Shared/Configuration/IAppSettingsStore.cs)
 
 ```csharp
-public interface IAppSettingsStore
-{
-    Task<AppSettings> LoadAsync();
-    Task SaveAsync(AppSettings settings);
-}
+Task<AppSettings> LoadAsync(CancellationToken cancellationToken = default);
+Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default);
 ```
+
+#### [`IAppDataPathProvider`](../src/TaskbarFolders.Shared/Configuration/IAppDataPathProvider.cs)
+
+Every path the applications use, in one place.
+
+```csharp
+string AppDataRoot { get; }
+string GroupsDirectory { get; }
+string IconsDirectory { get; }
+string LogsDirectory { get; }
+string ShortcutsDirectory { get; }
+string StartMenuDirectory { get; }
+string SettingsFile { get; }
+
+string GetGroupFile(string groupId);
+string GetGroupIconFile(string groupId);
+string GetGroupShortcutFile(string groupId);
+string GetStartMenuShortcutFile(string sanitizedFileName);
+```
+
+The four `Get…` methods validate the group id against `^[A-Za-z0-9._-]{1,96}$` and throw otherwise. Route anything path-derived through them so the validation cannot be bypassed — it blocks traversal and keeps AppUserModelIDs inside their length limit.
+
+### Logging
+
+`FileLoggerProvider` writes one file per day per process kind (`manager-<date>.log`, `launcher-<date>.log`), at `Information` and above, and prunes files older than 14 days on a background task. Line format is `<ISO-8601 UTC> [<Level>] <Category>: <message>`, with the exception on the following line.
+
+## TaskbarFolders.Core
+
+Icon engine, interop and shortcut generation. Windows-only.
+
+### Icons
+
+#### [`IIconExtractor`](../src/TaskbarFolders.Core/Icons/IIconExtractor.cs)
+
+```csharp
+BitmapSource? ExtractIcon(string filePath, int size = 256);
+```
+
+Implemented by `ShellIconExtractor` via `SHGetFileInfo` and `IImageList`. Shortcuts are resolved to their target first. Returns `null` rather than throwing when extraction fails.
+
+#### [`ICompositeIconGenerator`](../src/TaskbarFolders.Core/Icons/ICompositeIconGenerator.cs)
+
+```csharp
+BitmapSource GenerateComposite(IReadOnlyList<BitmapSource> icons, int outputSize = 256);
+```
+
+Implemented by `CompositeIconGenerator`. Uses at most the first four icons: one centred, two side by side, three in an iOS-style arrangement, four as a 2×2 grid.
+
+#### [`IIcoFileWriter`](../src/TaskbarFolders.Core/Icons/IIcoFileWriter.cs)
+
+```csharp
+Task WriteAsync(BitmapSource source, string targetPath, CancellationToken cancellationToken = default);
+```
+
+Writes a multi-resolution PNG-in-ICO container at 16, 32, 48 and 256 px, atomically.
+
+#### [`IIconCache`](../src/TaskbarFolders.Core/Icons/IIconCache.cs)
+
+```csharp
+bool TryGet(string sourcePath, int size, [NotNullWhen(true)] out BitmapSource? icon);
+void Set(string sourcePath, int size, BitmapSource icon);
+void StartBackgroundPrune() { }
+```
+
+`TryGet`/`Set` are synchronous **on purpose** — they sit on the popup's hot path. `FileSystemIconCache` keys entries by source path, last-write time and size, and prunes after 30 days.
+
+### Shortcuts
+
+#### [`IShortcutGenerator`](../src/TaskbarFolders.Core/Shortcuts/IShortcutGenerator.cs)
+
+```csharp
+string BuildAumid(string groupId);
+void Generate(GroupShortcutRequest request);
+```
+
+Writes the `.lnk` through `IShellLinkW`/`IPersistFile` and stamps `PKEY_AppUserModel_ID` through `IPropertyStore`.
+
+#### [`GroupShortcutRequest`](../src/TaskbarFolders.Core/Shortcuts/GroupShortcutRequest.cs)
+
+```csharp
+public sealed record GroupShortcutRequest(
+    string GroupId,
+    string DisplayName,
+    string TargetExePath,
+    string IconPath,
+    string ShortcutPath);
+```
+
+#### [`GroupAumid`](../src/TaskbarFolders.Core/Shortcuts/GroupAumid.cs)
+
+```csharp
+public const string Prefix = "TaskbarFolders.Group.";
+public static string For(string groupId);
+public static bool TryExtractGroupId(string? aumid, out string groupId);
+```
+
+`TryExtractGroupId` is how the launcher recovers its group when Windows starts it without arguments.
+
+#### [`IShellChangeNotifier`](../src/TaskbarFolders.Core/Shortcuts/IShellChangeNotifier.cs)
+
+```csharp
+void NotifyCreate(string path);
+```
+
+Wraps `SHChangeNotify` so the shell notices a newly written Start menu shortcut. Without it a programmatic pin can silently fail to persist. The interface exists so call sites stay testable without executing native code.
+
+### Interop
+
+`WindowBackdrop.TryApply(IntPtr hwnd, WindowBackdropKind kind)` requests a DWM system backdrop. Only `Mica` is used, only on the Manager window; a failure is ignored and the window keeps solid brushes.
+
+## TaskbarFolders.Manager
+
+#### [`IGroupSyncService`](../src/TaskbarFolders.Manager/Services/IGroupSyncService.cs)
+
+```csharp
+Task SyncAsync(GroupConfig config, CancellationToken cancellationToken = default);
+void RemoveArtifacts(string groupId, string displayName);
+bool EnsureStartMenuShortcut(GroupConfig config);
+```
+
+Regenerates icon, shortcut and Start menu anchor for a group. `SyncAsync` returns early for a group with no apps.
+
+#### [`ILauncherPathResolver`](../src/TaskbarFolders.Manager/Services/ILauncherPathResolver.cs)
+
+```csharp
+string? TryResolve();
+```
+
+Probes side-by-side, sibling-folder and development layouts in that order, logging every probed path when none match.
+
+#### [`IPinToTaskbarService`](../src/TaskbarFolders.Manager/Services/IPinToTaskbarService.cs)
+
+```csharp
+Task<PinResult> PinAsync(string groupId, CancellationToken cancellationToken = default);
+```
+
+`PinResult` is `Success`, `UserDenied`, `Unsupported` or `Error`. Implemented by running the launcher in pin mode and mapping its exit code.
+
+#### Supporting services
+
+| Interface | Purpose |
+|---|---|
+| [`IAutoStartService`](../src/TaskbarFolders.Manager/Services/IAutoStartService.cs) | `IsEnabled`, `Enable()`, `Disable()` over the per-user Run key |
+| [`ISystemThemeProbe`](../src/TaskbarFolders.Manager/Services/ISystemThemeProbe.cs) | `IsLightMode` from the Windows personalisation setting |
+| [`IThemeService`](../src/TaskbarFolders.Manager/Services/IThemeService.cs) | `Preference`, `EffectiveTheme`, `SetPreference()`; subscribes to system theme changes only while the preference is `System` |
+| [`IProcessRunner`](../src/TaskbarFolders.Manager/Services/IProcessRunner.cs) | `RunAndWaitAsync(ProcessStartInfo, TimeSpan, …)` returning the exit code |
+| [`IUserConfirmation`](../src/TaskbarFolders.Manager/Services/IUserConfirmation.cs) | `Confirm()` and `Notify()`, so view models stay free of `MessageBox` |
+
+## TaskbarFolders.Launcher
+
+| Type | Purpose |
+|---|---|
+| [`LauncherOptions`](../src/TaskbarFolders.Launcher/Configuration/LauncherOptions.cs) | `sealed record LauncherOptions(string GroupId)` |
+| `CommandLineParser` | Parses `--group-id <value>` and the `--pin-mode` flag; unknown arguments are ignored |
+| [`ICursorAnchor`](../src/TaskbarFolders.Launcher/Services/ICursorAnchor.cs) | `Seed(Point)` / `Position` — the click position in **device pixels** |
+| [`ITaskbarPositionHelper`](../src/TaskbarFolders.Launcher/Services/ITaskbarPositionHelper.cs) | `ComputePlacement(Size popupSize, PopupPositionPreference)` returning a `PopupPlacement(double Left, double Top)` in DIPs |
+| [`TaskbarEdge`](../src/TaskbarFolders.Launcher/Services/TaskbarEdge.cs) | `Left`, `Top`, `Right`, `Bottom` |
+| [`IProcessLauncher`](../src/TaskbarFolders.Launcher/Services/IProcessLauncher.cs) | `bool Launch(string path, string? arguments)` |
+| `TaskbarPinRunner` | Drives the WinRT pin request in pin mode and maps the outcome to an exit code |
+| `StartupFailureLogger` | Dependency-free, never-throwing logger for failure paths that occur before or instead of the DI graph |
+
+`ICursorAnchor` carries device pixels and `ComputePlacement` returns DIPs. That single conversion is the contract — see [ADR-003](adr/003-dpi-unit-contract.md).
