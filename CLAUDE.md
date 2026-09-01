@@ -10,7 +10,7 @@ dotnet test  TaskbarFolders.sln -c Release
 dotnet format --verify-no-changes      # CI enforces — run before commit
 ```
 
-**Local test requirement:** `Microsoft.WindowsDesktop.App 8.0.x x64` runtime must be installed. Linux/macOS cannot run the tests; CI (`windows-latest`) can. SDK is pinned in `global.json` (8.0.100, `rollForward=latestMajor`).
+**Local test requirement:** Windows only — Linux/macOS cannot run the tests. `Microsoft.WindowsDesktop.App 8.0.x x64` is what the tests target; if the machine only has a newer major (this one has 10.x), run `DOTNET_ROLL_FORWARD=LatestMajor dotnet test …` and everything passes. The same variable is needed to launch the built exes directly, or the host exits with 0x80008096. SDK is pinned in `global.json` (8.0.100, `rollForward=latestMajor`).
 
 ## Architecture
 
@@ -105,7 +105,7 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 
 **2. Orchestrate subagents when the task warrants it.** Rule of thumb: trivial edits go direct; multi-file fixes get a `Plan` agent first; bug investigations across more than two files get an `Explore` agent in parallel; anything user-blocking gets a `general-purpose` agent for independent code review **before push**. Brief each agent self-contained (file paths, line numbers, constraints from this CLAUDE.md) — they cannot see the conversation.
 
-**3. Bug-fixing waves.** Group changes into reviewable commits: one commit per behavioural concern (e.g. resolver fix, UX fix, UX defence-in-depth), each with its own tests. Run `dotnet build -c Release` after every wave (tests need WindowsDesktop 8.0 x64 which is CI-only). Address code-review findings as a polish commit on top — never amend a pushed commit, never amend across reviewable boundaries.
+**3. Bug-fixing waves.** Group changes into reviewable commits: one commit per behavioural concern (e.g. resolver fix, UX fix, UX defence-in-depth), each with its own tests. Run `dotnet build -c Release` after every wave, and `DOTNET_ROLL_FORWARD=LatestMajor dotnet test -c Release` — tests do run locally, see above. Address code-review findings as a polish commit on top — never amend a pushed commit, never amend across reviewable boundaries.
 
 **4. Complete testing — including the runtime layout that ships.** Build + unit tests in CI is necessary but not sufficient. The v0.2.0 "Show shortcut" bug existed *only* in the installed and portable layouts; the dev `dotnet run` and the CI test runner both used a layout where the launcher happened to be findable. Every release-eligible change must be verified in all three runtimes it touches:
 
@@ -119,7 +119,7 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 
 **5. Commits.** Conventional Commits (`fix(manager): …`, `feat(core): …`). Body explains the *why* and the *blast radius*, not the *what* — assume the reader has the diff. No AI/agent mentions, no `Co-Authored-By` trailers. Run `dotnet format` **before staging each commit** — *not* between commits. v0.2.1 CI failed because format auto-fixed BOMs on files that were committed in Wave 1, but the fix landed in the working tree only and was never staged. Format → `git status` → stage everything modified → commit.
 
-**6. Pushing & releasing.** Bug fixes land on `develop` directly (no PR — solo-maintained). Patch releases tag `v0.x.y` from `develop`; `release.yml` publishes the assets. Bump `Directory.Build.props:Version`, `installer/setup.iss:MyAppVersion`, the README status banner, and add a `CHANGELOG.md` section in the same commit as the tag-eligible state. If a fix is user-blocking on a shipped version, cut a patch release the same day. **Wait for the installer-smoke pass before announcing the release as available** — the tag and the assets exist before they're verified.
+**6. Pushing & releasing.** Bug fixes land on `develop` directly (no PR — solo-maintained). Patch releases tag `v0.x.y` from `develop`; `release.yml` publishes the assets. Bump `Directory.Build.props:Version`, `installer/setup.iss:MyAppVersion`, `src/TaskbarFolders.Manager/app.manifest:assemblyIdentity/@version` (four-part; **currently stale at 0.2.0.0** — it was never on the checklist), the README status banner, and add a `CHANGELOG.md` section in the same commit as the tag-eligible state. Full checklist in `docs/release-process.md`. If a fix is user-blocking on a shipped version, cut a patch release the same day. **Wait for the installer-smoke pass before announcing the release as available** — the tag and the assets exist before they're verified.
 
 **7. CLAUDE.md upkeep.** When a fix introduces a new convention or invariant, surface it here — the next session reads this file before doing anything else.
 
@@ -127,4 +127,4 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 
 Pushing a `v*` tag triggers `release.yml`: builds, publishes self-contained, builds the Inno Setup installer (ISCC is pre-installed on `windows-latest`), uploads `TaskbarFolders-portable.zip` + `TaskbarFolders-Setup.exe`. The release job needs `permissions: contents: write` (already set).
 
-**Asset size baseline (v0.3.0):** portable ZIP ≈ 142 MB, Setup.exe ≈ 96 MB. `PublishReadyToRun=true` (Launcher + Manager) roughly doubled the size vs v0.2.1 because the entire .NET runtime is AOT-compiled into the publish. Plan estimates that assume "~10 MB R2R cost" are wildly low — count on +50-70 MB per binary.
+**Asset size baseline (v0.4.4, measured from the published release):** portable ZIP ≈ 166 MB, Setup.exe ≈ 112 MB. `PublishReadyToRun=true` (Launcher + Manager) roughly doubled the size vs v0.2.1 because the entire .NET runtime is AOT-compiled into the publish. Plan estimates that assume "~10 MB R2R cost" are wildly low — count on +50-70 MB per binary.

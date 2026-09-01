@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The settings dialog no longer overwrites your settings.** Opening Settings resolved one `SettingsViewModel`, loaded it, and then resolved `SettingsWindow` - which took a second, unloaded instance through its constructor, because both were registered transient. The dialog therefore always showed constructor defaults, and clicking Save wrote those defaults over `settings.json` and switched the autostart registry entry off. Two clicks, silent data loss. The view model is now a singleton, guarded by a composition-root test.
+- **`dotnet run` on the Manager can find the launcher again.** The development-layout probe derived its target framework folder from the Manager's own bin path (`net8.0-windows`), but the launcher builds into `net8.0-windows10.0.19041.0` for the WinRT taskbar projections, so the probe pointed at a path that cannot exist. `TryResolve` returned null and `GroupSyncService` aborted before writing any icon, shortcut or Start menu anchor - no group created from a dev run was pinnable. The framework folder is now enumerated instead of guessed. Installed and portable layouts were never affected, which is why CI stayed green.
+
+### Documentation
+
+- **The guides now describe the shipped software.** `docs/architecture.md`, `user-guide.md`, `developer-guide.md` and `api-reference.md` still carried a "Status: v0.2.0" banner and had drifted into being wrong rather than merely stale: button labels that do not exist, a pinning procedure removed three releases ago, two implemented interfaces marked "no implementation yet", and a publish command producing a layout the installer cannot consume. All four rewritten against the code; the per-file version banners are gone.
+- **New:** `docs/troubleshooting.md` (symptom to log line to fix, plus the known limitations), `docs/release-process.md` (the five version-bump locations and the installer smoke checklist), `docs/adr/README.md` (index, conventions, template), `SUPPORT.md`, `THIRD-PARTY-NOTICES.md`, and an issue-chooser config.
+- **New ADRs:** [ADR-002](docs/adr/002-per-group-lnk-aumid.md) records the shared-launcher-plus-AUMID design and why per-group executables were rejected; [ADR-003](docs/adr/003-dpi-unit-contract.md) records the device-pixel/DIP boundary contract. Both previously existed only as a changelog bullet and a note in the tooling file. ADR-001's two standalone-executable premises are corrected in place.
+- README rewritten: the status banner is a status line again rather than a three-version changelog, Quick Start leads with the Pin to taskbar button, and the requirements section resolves the three-way minimum-OS contradiction between the installer, the launcher's target framework and the developer guide.
+- `SECURITY.md` supported versions corrected from 0.1.x to 0.4.x, with a real reporting path and the trust boundaries. `CONTRIBUTING.md` aligned with how the repository is actually run. `CODE_OF_CONDUCT.md` no longer claims to be a document it is not.
+- Added the Keep a Changelog link references this file had been missing since 0.1.0.
+
 ## [0.4.4] - 2026-07-09
 
 Patch release, same day as v0.4.3 (field report minutes after install).
@@ -207,3 +221,14 @@ First functional release. Everything described in the README is implemented and 
 - Dependabot configuration for NuGet and GitHub Actions
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
+
+[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/eXORR6077/taskbar-grouping/releases/tag/v0.1.0
