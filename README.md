@@ -4,111 +4,180 @@
 [![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ℹ️ **Status: v0.4.4.** Patch — "+ Add" is disabled with a watermark hint until a group name is entered (an empty-name click previously no-opped silently and read as a dead button). v0.4.3 — fixes the dead popup: since v0.4.1 every pinned-tile click exited silently because the open animation declared a non-identity `ScaleTransform` on the `Window` itself, which WPF rejects while the window is still being constructed. The transform now lives on the popup content, startup failures are written to `launcher-*.log` instead of vanishing, popup placement is DPI-correct at 125/150 % scaling, and the popup activates on open so dismiss-on-focus-loss is reliable. See [CHANGELOG.md](CHANGELOG.md) for the per-version detail.
+**iOS-style app folders for the Windows 11 taskbar.** Group related apps behind a single pinned tile; click it and they fan out in a popup anchored to the tile.
 
-**iOS-style taskbar groups for Windows 11.** Group your apps into folders, pin them to the taskbar, and launch them from a beautiful popup.
+> **Status:** v0.4.4, in active use. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
-<!-- TODO: Add screenshot at assets/screenshots/preview.png once a polished build is ready. -->
+<!-- Screenshots: drop PNGs into assets/screenshots/ and uncomment.
+![Manager window](assets/screenshots/manager.png)
+![Group popup](assets/screenshots/popup.png)
+-->
 
-## Features
+## What it does
 
-- ✅ **Group apps into folders** – Drag & drop `.exe` and `.lnk` files into customizable groups
-- ✅ **Automatic composite icons** – Each group gets a 2×2 preview icon generated from the contained app icons
-- ✅ **Pin to taskbar** – Each group gets its own `.lnk` shortcut (with a distinct AppUserModelID) that you can pin to the Windows taskbar
-- ✅ **Animated popup** – Click a pinned group to reveal apps in a fully-transparent popup anchored on the clicked tile; only the icons are visible (v0.3+)
-- ✅ **Light/Dark/System themes** – Follows your Windows theme or set per group; live-switches when Windows theme changes
-- ✅ **Multi-monitor support** – Popup positions itself adjacent to the taskbar on the monitor under the cursor; handles secondary monitors with negative X
-- ✅ **High-DPI aware** – Per-monitor V2 DPI awareness so the UI stays crisp on mixed-DPI setups (100 %–200 %)
+- **Groups of apps behind one taskbar tile.** Drag `.exe` or `.lnk` files into a group; the group gets its own pinnable shortcut.
+- **Composite group icons.** Each group's icon is generated from the icons of the apps inside it — one centred, two side by side, three in an iOS-style arrangement, four or more as a 2×2 of the first four.
+- **One-click pinning.** The Manager asks Windows to pin the group for you. Windows shows its own confirmation dialog; if your edition or policy blocks programmatic pinning, the Manager opens the shortcut folder so you can pin it by hand.
+- **A popup with no chrome.** Clicking a pinned group opens a fully transparent popup next to the taskbar — only the icons are visible. It closes when it loses focus or after you launch something.
+- **Follows your Windows theme.** Light, dark, or system; the system option live-switches when Windows does.
+- **Multi-monitor and high-DPI aware.** The popup anchors to the monitor under the cursor and places correctly at 100–200 % display scaling.
+
+## What it is not
+
+- Not a taskbar replacement or shell extension — it adds pinned shortcuts, it does not hook Explorer.
+- Not a launcher with search, hotkeys or recents. The popup is a grid of the apps you put in the group, nothing more.
+- Not portable across Windows versions in every respect: the Mica backdrop needs Windows 11 22H2+, and one-click pinning needs Windows 10 2004+ (see [Requirements](#requirements)).
+
+## Requirements
+
+| | |
+|---|---|
+| **OS** | Windows 11 recommended. The installer permits Windows 10 1809 and later. |
+| **.NET runtime** | Not required — releases are self-contained. |
+| **Architecture** | x64. There is no ARM64 build. |
+
+Two features degrade gracefully on older builds rather than failing:
+
+- **One-click pinning** needs `Windows.UI.Shell.TaskbarManager` (Windows 10 2004 / build 19041 and later) and an edition that permits programmatic pinning. Where it is unavailable the Manager falls back to opening the shortcut folder for a manual pin.
+- **The Mica backdrop** on the Manager window needs Windows 11 22H2 or later. Older builds get solid backgrounds.
 
 ## Installation
 
-### Installer (recommended)
+### Installer
 
-1. Download the latest `TaskbarFolders-Setup.exe` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases)
-2. Run the installer and follow the instructions
-3. Launch **TaskbarFolders Manager** from the Start Menu
+1. Download `TaskbarFolders-Setup.exe` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases).
+2. Run it. The installer requires administrator rights because it writes to Program Files, and offers to start TaskbarFolders with Windows (this option is pre-selected).
+3. Launch **TaskbarFolders Manager** from the Start menu.
 
 ### Portable
 
-1. Download the latest `TaskbarFolders-portable.zip` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases)
-2. Extract to any folder
-3. Run `TaskbarFolders.Manager.exe`
+1. Download `TaskbarFolders-portable.zip` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases).
+2. Extract it anywhere. Keep the `Manager` and `Launcher` folders side by side — the Manager locates the launcher relative to itself.
+3. Run `Manager\TaskbarFolders.Manager.exe`.
 
-## Quick Start
+## Quick start
 
-1. Open **TaskbarFolders Manager**
-2. Click **+ Add** in the sidebar and give the group a name (e.g., "Dev Tools")
-3. Drag & drop `.exe` or `.lnk` files into the group editor — the composite icon updates live
-4. Click **Show shortcut...** to open the generated `.lnk` in Explorer
-5. Right-click the `.lnk` → **Show more options** → **Pin to taskbar** (Win11 22H2+) or **Pin to taskbar** directly (older Win10/11)
-6. Click the pinned tile to open the popup and launch any app
+1. Open **TaskbarFolders Manager**.
+2. Type a group name in the sidebar box and click **+ Add**. The button stays disabled until the name is non-empty.
+3. Drop `.exe` or `.lnk` files onto the group's app list, or use **Add app…**. The composite icon preview updates as you go.
+4. Click **Pin to taskbar**. Windows asks you to confirm — that prompt comes from Windows and cannot be skipped.
+5. Click the new taskbar tile. The popup opens; click any icon to launch it.
 
-## Building from Source
+If step 4 reports that pinning is unavailable, the Manager opens the shortcut folder for you. Right-click the `.lnk` there → **Show more options** (on Windows 11 22H2+) → **Pin to taskbar**. The same folder is reachable any time via **Show shortcut…**.
 
-### Prerequisites
+A group with no apps in it produces no icon and no shortcut, so add at least one app before pinning.
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Windows 10/11
+## How it works
 
-### Build
+Every group gets its own `.lnk` in `%APPDATA%\TaskbarFolders\shortcuts\`. The shortcut points at the **one shared** `TaskbarFolders.Launcher.exe`, passes `--group-id`, uses the group's generated `.ico`, and carries a distinct AppUserModelID (`TaskbarFolders.Group.<id>`) stamped through `IPropertyStore`. Windows treats each AppUserModelID as a separate application, which is what makes the groups sit next to each other on the taskbar as independent tiles.
+
+A matching shortcut is also written into the Start menu. That copy is not cosmetic: Windows only persists a programmatic pin if the AppUserModelID is already known to the Start menu index.
+
+```mermaid
+graph LR
+    A[Group config<br/>groups/&lt;id&gt;.json] --> B[Composite icon<br/>icons/&lt;id&gt;.ico]
+    A --> C[Shortcut<br/>shortcuts/&lt;id&gt;.lnk<br/>AUMID + --group-id]
+    B --> C
+    C --> D[Taskbar tile]
+    D -->|click| E[Launcher.exe<br/>--group-id]
+    E --> F[Popup grid]
+```
+
+Full detail in [docs/architecture.md](docs/architecture.md), and the reasoning behind the shared-launcher design in [ADR-002](docs/adr/002-per-group-lnk-aumid.md).
+
+## Settings
+
+Open with the **⚙** button. Changes apply when you click **Save**; closing the dialog discards them.
+
+| Setting | Options | Default |
+|---|---|---|
+| Theme | System, Light, Dark | System |
+| Popup position | Auto, Above, Below | Auto |
+| Enable popup animations | on / off | on |
+| Start TaskbarFolders Manager when Windows starts | on / off | off |
+
+Autostart is a per-user `HKCU\…\CurrentVersion\Run` entry — no scheduled task, no service. The registry is read as the source of truth, so removing that entry by hand is respected.
+
+## Where your data lives
+
+Everything is under `%APPDATA%\TaskbarFolders\`:
+
+| Path | Contents |
+|---|---|
+| `groups\<id>.json` | One file per group. The file name is the group id; the `id` field inside is ignored on load. |
+| `icons\<id>.ico` | Generated composite icon, 16/32/48/256 px. |
+| `icons\cache\<hash>.png` | Extracted source icons, keyed by path, write time and size. Pruned after 30 days. |
+| `shortcuts\<id>.lnk` | The pinnable shortcut. |
+| `settings.json` | Global settings. |
+| `logs\manager-*.log`, `logs\launcher-*.log` | One file per day, kept 14 days. |
+
+A per-group `columns` value (1–6, default 3) controls the popup grid width. There is no UI for it yet — edit the group's JSON to change it.
+
+Uninstalling does **not** remove this folder. Delete `%APPDATA%\TaskbarFolders` by hand if you want the configuration gone, and unpin any group tiles first — deleting a group in the Manager does not unpin it.
+
+## Troubleshooting
+
+Start with the logs in `%APPDATA%\TaskbarFolders\logs\`; the launcher records every failure path there, including the exit code. [docs/troubleshooting.md](docs/troubleshooting.md) maps the common symptoms — a tile that does nothing, a pin that produces no tile, a popup in the wrong place at scaled resolutions — to their causes and fixes, and lists the current known limitations.
+
+## Building from source
+
+Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (pinned to 8.0.100 in `global.json`, rolling forward to a newer major) on Windows.
 
 ```bash
 git clone https://github.com/eXORR6077/taskbar-grouping.git
-cd TaskbarFolders
-dotnet restore
-dotnet build --configuration Release
+cd taskbar-grouping
+dotnet build TaskbarFolders.sln -c Release
 ```
-
-### Run Tests
 
 ```bash
-dotnet test --configuration Release
+dotnet test TaskbarFolders.sln -c Release
 ```
-
-### Run the Manager
 
 ```bash
-dotnet run --project src/TaskbarFolders.Manager
+dotnet format TaskbarFolders.sln --verify-no-changes
 ```
 
-## Tech Stack
+The format check is a hard CI gate — run it before pushing. Tests need the `Microsoft.WindowsDesktop.App 8.0.x` runtime; if the machine only has a newer major, prefix with `DOTNET_ROLL_FORWARD=LatestMajor`. See [docs/developer-guide.md](docs/developer-guide.md) for the full setup, the analyzer rules the build enforces, and how to run the launcher directly.
+
+## Project structure
+
+```
+taskbar-grouping/
+├── src/
+│   ├── TaskbarFolders.Shared/      # Models, JSON persistence, file logging
+│   ├── TaskbarFolders.Core/        # Icon engine, Win32/COM interop, shortcut generation
+│   ├── TaskbarFolders.Manager/     # WPF app for creating and managing groups
+│   └── TaskbarFolders.Launcher/    # Per-group popup, invoked by the pinned shortcut
+├── tests/                          # xUnit test projects, one per source project
+├── docs/                           # Guides and architecture decision records
+├── installer/                      # Inno Setup script
+└── assets/                         # Application icons
+```
 
 | Component | Technology |
 |---|---|
-| Language | C# (.NET 8) |
-| UI Framework | WPF (Windows Presentation Foundation) |
-| Architecture | MVVM |
-| DI Container | Microsoft.Extensions.DependencyInjection |
-| Tests | xUnit + Moq + FluentAssertions |
-| Installer | Inno Setup |
+| Language / runtime | C# 12, .NET 8 |
+| UI | WPF, MVVM via CommunityToolkit.Mvvm |
+| DI | Microsoft.Extensions.DependencyInjection |
+| Shell integration | Win32 P/Invoke + COM (`IShellLinkW`, `IPropertyStore`, `IImageList`), WinRT `TaskbarManager` |
+| Tests | xUnit, Moq, FluentAssertions |
+| Packaging | Inno Setup, self-contained `win-x64` publish |
 | CI/CD | GitHub Actions |
-
-## Project Structure
-
-```
-TaskbarFolders/
-├── src/
-│   ├── TaskbarFolders.Core/        # Icon engine, extraction, composite generation
-│   ├── TaskbarFolders.Shared/      # Models, DTOs, configuration, utilities
-│   ├── TaskbarFolders.Manager/     # WPF main app (group management)
-│   └── TaskbarFolders.Launcher/    # Lightweight popup app (per group)
-├── tests/                          # xUnit test projects
-├── docs/                           # Documentation
-├── installer/                      # Inno Setup script
-└── assets/                         # Icons and screenshots
-```
 
 ## Documentation
 
-- [Architecture Overview](docs/architecture.md)
-- [User Guide](docs/user-guide.md)
-- [Developer Guide](docs/developer-guide.md)
-- [API Reference](docs/api-reference.md)
+- [User Guide](docs/user-guide.md) — everything the app can do, from a user's point of view
+- [Troubleshooting](docs/troubleshooting.md) — symptoms, causes, known limitations
+- [Architecture](docs/architecture.md) — components, data flow, runtime layout
+- [Developer Guide](docs/developer-guide.md) — build, test, debug, conventions
+- [API Reference](docs/api-reference.md) — the public surface of the libraries
+- [Release Process](docs/release-process.md) — version bumps, tagging, verification
+- [Architecture Decision Records](docs/adr/README.md) — why things are the way they are
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the branching model, commit conventions and the checks that must pass. Bug reports and feature requests go through the [issue templates](.github/ISSUE_TEMPLATE); [SUPPORT.md](SUPPORT.md) explains where to ask questions, and [SECURITY.md](SECURITY.md) covers vulnerability reporting.
 
 ## License
 
-This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE). Third-party components are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
