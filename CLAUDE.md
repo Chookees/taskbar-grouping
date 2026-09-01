@@ -127,4 +127,4 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 
 Pushing a `v*` tag triggers `release.yml`: builds, publishes self-contained, builds the Inno Setup installer (ISCC is pre-installed on `windows-latest`), uploads `TaskbarFolders-portable.zip` + `TaskbarFolders-Setup.exe`. The release job needs `permissions: contents: write` (already set).
 
-**Asset size baseline (v0.4.4, measured from the published release):** portable ZIP ≈ 166 MB, Setup.exe ≈ 112 MB. `PublishReadyToRun=true` (Launcher + Manager) roughly doubled the size vs v0.2.1 because the entire .NET runtime is AOT-compiled into the publish. Plan estimates that assume "~10 MB R2R cost" are wildly low — count on +50-70 MB per binary.
+**Asset size baseline (v0.4.5, measured from the published release):** portable ZIP ≈ 167 MB (166,520,185 B), Setup.exe ≈ 112 MB (112,134,931 B) — within 0.2 % of v0.4.4, as a docs-and-two-fixes release should be. `PublishReadyToRun=true` (Launcher + Manager) roughly doubled the size vs v0.2.1 because the entire .NET runtime is AOT-compiled into the publish. Plan estimates that assume "~10 MB R2R cost" are wildly low — count on +50-70 MB per binary.
