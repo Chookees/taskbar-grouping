@@ -6,6 +6,12 @@ labels: bug
 assignees: ''
 ---
 
+<!--
+Before filing: docs/troubleshooting.md covers the common symptoms and lists the
+known limitations. Several things that look like bugs are documented behaviour
+(no keyboard support in the popup, deleting a group not unpinning its tile).
+-->
+
 ## Description
 A clear and concise description of what the bug is.
 
@@ -15,19 +21,32 @@ A clear and concise description of what the bug is.
 3. See error
 
 ## Expected Behavior
-A clear and concise description of what you expected to happen.
+What you expected to happen.
 
 ## Actual Behavior
-A clear and concise description of what actually happened.
+What actually happened.
+
+## Logs
+Paste the relevant lines from `%APPDATA%\TaskbarFolders\logs\` — `manager-<date>.log`, and `launcher-<date>.log` if the problem involves a taskbar tile or pinning. This is usually what identifies the cause.
+
+<details>
+<summary>Log excerpt</summary>
+
+```
+paste here
+```
+
+</details>
 
 ## Screenshots
-If applicable, add screenshots to help explain your problem.
+If the problem is visual, add a screenshot.
 
 ## Environment
-- **OS:** Windows 11 [version]
-- **TaskbarFolders Version:** [e.g., 0.2.0]
-- **Display Scaling:** [e.g., 125%]
-- **Monitor Setup:** [e.g., single monitor, dual monitor]
+- **Windows version and build:** [run `winver`, e.g. Windows 11 24H2, build 26100.1742]
+- **TaskbarFolders version:** [e.g. 0.4.4]
+- **Installed how:** [installer / portable]
+- **Display scaling:** [e.g. 125%]
+- **Monitor setup:** [e.g. single monitor; or dual, taskbar on the secondary]
 
 ## Additional Context
-Add any other context about the problem here.
+Anything else that might matter — a recent Windows update, managed/corporate device, unusual taskbar configuration.

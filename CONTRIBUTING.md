@@ -1,105 +1,118 @@
 # Contributing to TaskbarFolders
 
-Thank you for your interest in contributing! This document provides guidelines and instructions for contributing.
+Thanks for your interest. This document covers how work gets into the repository. For building, debugging and the conventions the compiler enforces, see the [Developer Guide](docs/developer-guide.md).
 
-## Development Setup
+## Development setup
 
-### Prerequisites
-
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Windows 10/11
-- An IDE: Visual Studio 2022, JetBrains Rider, or VS Code with C# extension
-
-### Getting Started
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — `global.json` pins 8.0.100 and rolls forward, so a newer SDK is fine
+- Windows. The solution targets `net8.0-windows*` and neither builds nor tests elsewhere
+- Visual Studio 2022, JetBrains Rider, or VS Code with the C# Dev Kit
 
 ```bash
 git clone https://github.com/eXORR6077/taskbar-grouping.git
-cd TaskbarFolders
-dotnet restore
-dotnet build
-dotnet test
+cd taskbar-grouping
+dotnet build TaskbarFolders.sln -c Release
+dotnet test TaskbarFolders.sln -c Release
 ```
 
-## Branching Model
+The clone directory is `taskbar-grouping`; the product is called TaskbarFolders.
+
+If your machine has a newer WindowsDesktop runtime than 8.0.x, prefix test and run commands with `DOTNET_ROLL_FORWARD=LatestMajor`.
+
+## Branching
 
 | Branch | Purpose |
 |---|---|
-| `main` | Stable releases (protected, PR only) |
-| `develop` | Integration branch |
-| `feature/<name>` | New features |
+| `main` | Released state. Every release tag is contained here |
+| `develop` | Integration branch and the repository default |
+| `feature/<name>` | New functionality |
 | `fix/<name>` | Bug fixes |
-| `release/<version>` | Release preparation |
+| `docs/<name>` | Documentation-only changes |
 
-### Workflow
+Branch from `develop` and target `develop`. `main` moves forward only at release time.
 
-1. Fork the repository
-2. Create a feature branch from `develop`: `git checkout -b feature/my-feature develop`
-3. Make your changes
-4. Ensure all tests pass: `dotnet test`
-5. Ensure formatting is correct: `dotnet format --verify-no-changes`
-6. Push your branch and open a Pull Request against `develop`
+CI runs on pushes to `develop`, `feature/*` and `fix/*`, and on every pull request into `develop`. A branch named outside those patterns still gets a full CI run through its pull request.
 
-## Commit Conventions
+The project is solo-maintained: the maintainer lands small fixes directly on `develop`. Contributions from anyone else go through a pull request, and anything user-facing or non-trivial should go through one regardless of who wrote it.
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/).
+## Before you push
 
-**Format:** `<type>(<scope>): <description>`
+All three must pass locally. CI enforces the same, and the format check is a hard gate.
 
-### Types
+```bash
+dotnet format TaskbarFolders.sln
+```
 
-| Type | Description |
+```bash
+dotnet build TaskbarFolders.sln -c Release
+```
+
+```bash
+dotnet test TaskbarFolders.sln -c Release
+```
+
+Run the formatter **before staging each commit**, not once at the end of a series. A release CI run has failed because the formatter fixed files that had already been committed earlier in the branch and the fix stayed in the working tree, unstaged. The sequence that works is: format, check `git status`, stage everything modified, commit.
+
+If your change touches the UI, view models, dependency injection or services, also run the application and click the thing you changed. The test suite is headless and does not open a window.
+
+## Commits
+
+[Conventional Commits](https://www.conventionalcommits.org/), format `<type>(<scope>): <description>`.
+
+| Type | Use for |
 |---|---|
-| `feat` | A new feature |
-| `fix` | A bug fix |
-| `docs` | Documentation changes |
-| `style` | Code style changes (formatting, no logic change) |
-| `refactor` | Code refactoring (no feature or fix) |
-| `test` | Adding or updating tests |
-| `ci` | CI/CD pipeline changes |
-| `chore` | Maintenance tasks |
-| `perf` | Performance improvements |
+| `feat` | New functionality |
+| `fix` | Bug fix |
+| `docs` | Documentation |
+| `style` | Formatting only, no behaviour change |
+| `refactor` | Restructuring with no behaviour change |
+| `test` | Tests |
+| `ci` | Pipeline changes |
 | `build` | Build system changes |
+| `perf` | Performance |
+| `chore` | Maintenance |
 
-### Examples
+Scope is the project or area: `manager`, `launcher`, `core`, `shared`, `deps`, `release`.
 
 ```
-feat(icon-engine): add 2x2 composite icon generation
+feat(core): add 2x2 composite icon generation
 fix(launcher): resolve popup positioning on multi-monitor setups
-docs(readme): add installation instructions
-test(core): add unit tests for icon cache
+docs(readme): document the pin-to-taskbar flow
+test(core): add unit tests for the icon cache
 ```
 
-## Code Style
+Write the body for someone who already has the diff. Explain **why** the change is right and what its blast radius is — what else it touches, what it does not, and why it is safe. Do not restate what the diff shows.
 
-- Follow the rules defined in `.editorconfig`
-- Run `dotnet format` before committing
-- All public members must have XML documentation comments
-- Use file-scoped namespaces
-- Follow MVVM pattern in WPF projects
-- Use async/await for all I/O operations
-- Use dependency injection – no `new` for services
+Group related work into one commit per behavioural concern rather than one commit per file, so a later `git bisect` lands on something meaningful.
 
-## Testing
+## Pull requests
 
-- Write tests using xUnit + FluentAssertions
-- Use Moq for mocking dependencies
-- Minimum code coverage target: 70%
-- Run tests: `dotnet test --collect:"XPlat Code Coverage"`
+1. Fill in the template.
+2. Make sure CI is green — build, tests and the format check.
+3. Note what you verified manually. "Unit tests pass" and "I used the feature" are different claims; if you could not run something, say so rather than leaving it implied.
+4. Update the documentation your change affects in the same pull request, and add a `CHANGELOG.md` entry under `[Unreleased]`.
 
-## Pull Request Process
+Documentation drift is a real cost here: the guides were three minor versions out of date once and actively misdescribed the pinning flow. A behaviour change without a documentation change recreates that.
 
-1. Fill out the PR template completely
-2. Ensure CI passes (build, tests, formatting)
-3. Request a review
-4. Address review feedback
-5. Squash and merge into `develop`
+## Tests
 
-## Reporting Issues
+xUnit with Moq and FluentAssertions. FluentAssertions is pinned below 8 — that release changed to a commercial licence.
 
-Use the GitHub issue templates:
-- **Bug Report** – for reporting bugs
-- **Feature Request** – for suggesting new features
+- Tests run headless. Nothing creates a WPF `Application` or needs an STA thread; view models are exercised directly.
+- If you change the dependency injection graph, extend `CompositionRootTests`.
+- 70 % coverage is the target. CI reports coverage but does not gate on it.
+- Avoid fixed sleeps. Poll with a generous deadline and exit early — slow CI runners have already broken timing-sensitive tests once.
+
+## Documentation
+
+Documentation lives in [`docs/`](docs). Decisions that constrain future work get an [ADR](docs/adr/README.md) — the index explains when to write one and includes a template.
+
+## Reporting issues
+
+Use the [issue templates](https://github.com/eXORR6077/taskbar-grouping/issues/new/choose). For bugs, attach the relevant log from `%APPDATA%\TaskbarFolders\logs\`; it is far more useful than a screenshot. See [SUPPORT.md](SUPPORT.md).
+
+Security issues do not go in the tracker — see [SECURITY.md](SECURITY.md).
 
 ## Code of Conduct
 
-Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).

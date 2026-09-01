@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting guide
+    url: https://github.com/eXORR6077/taskbar-grouping/blob/develop/docs/troubleshooting.md
+    about: Common symptoms, what the logs mean, and the current known limitations. Check here first.
+  - name: Support and questions
+    url: https://github.com/eXORR6077/taskbar-grouping/blob/develop/SUPPORT.md
+    about: Where to ask, and what to include so a report is actionable.
+  - name: Report a security vulnerability
+    url: https://github.com/eXORR6077/taskbar-grouping/blob/develop/SECURITY.md
+    about: Do not open a public issue for security problems.
