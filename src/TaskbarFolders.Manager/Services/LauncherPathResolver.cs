@@ -18,9 +18,9 @@ namespace TaskbarFolders.Manager.Services;
 ///     deploys Manager to <c>{app}\Manager</c> and Launcher to <c>{app}\Launcher</c>.
 ///   </item>
 ///   <item>
-///     <b>Dev walk-up</b> — climbs to <c>TaskbarFolders.sln</c>, then descends into
-///     <c>src/TaskbarFolders.Launcher/bin/{Cfg}/{Tfm}/</c>. Activates only when running from
-///     <c>dotnet run</c> or the test bin tree.
+///     <b>Dev walk-up</b> — climbs to <c>TaskbarFolders.sln</c>, then probes every target
+///     framework folder under <c>src/TaskbarFolders.Launcher/bin/{Cfg}/</c>. Activates only
+///     when running from <c>dotnet run</c> or the test bin tree.
 ///   </item>
 /// </list>
 /// Returns the first match or <see langword="null"/>, logging the probed paths at error level
@@ -78,19 +78,20 @@ public sealed class LauncherPathResolver : ILauncherPathResolver
         {
             if (File.Exists(Path.Combine(dir.FullName, "TaskbarFolders.sln")))
             {
-                var devCandidate = Path.Combine(
+                var launcherBin = Path.Combine(
                     dir.FullName,
                     "src",
                     "TaskbarFolders.Launcher",
                     "bin",
-                    DetectConfiguration(baseDirectory),
-                    DetectTargetFramework(baseDirectory),
-                    LauncherFileName);
+                    DetectConfiguration(baseDirectory));
 
-                probed.Add(devCandidate);
-                if (File.Exists(devCandidate))
+                foreach (var devCandidate in DevCandidates(launcherBin))
                 {
-                    return devCandidate;
+                    probed.Add(devCandidate);
+                    if (File.Exists(devCandidate))
+                    {
+                        return devCandidate;
+                    }
                 }
                 break;
             }
@@ -111,9 +112,44 @@ public sealed class LauncherPathResolver : ILauncherPathResolver
         return parts.Length >= 2 ? parts[^2] : "Release";
     }
 
-    private static string DetectTargetFramework(string baseDirectory)
+    /// <summary>
+    /// Every <c>{launcherBin}/{Tfm}/TaskbarFolders.Launcher.exe</c> candidate, highest target
+    /// framework first, falling back to the bin directory itself so the diagnostic log still
+    /// names a path when nothing was built.
+    /// </summary>
+    /// <remarks>
+    /// The launcher's target framework cannot be derived from the Manager's own bin path. The
+    /// Manager builds into <c>net8.0-windows</c> while the launcher builds into
+    /// <c>net8.0-windows10.0.19041.0</c> - it needs the Win10 1903 SDK projections for
+    /// <c>Windows.UI.Shell.TaskbarManager</c>. Reusing the Manager's segment produced a path
+    /// that can never exist, so this probe never matched in a dev tree: <c>dotnet run</c> on the
+    /// Manager resolved no launcher and <c>GroupSyncService</c> bailed out before writing any
+    /// icon or shortcut. Enumerating the real folders also survives future framework bumps.
+    /// </remarks>
+    private static List<string> DevCandidates(string launcherBinDirectory)
     {
-        var parts = baseDirectory.TrimEnd(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar);
-        return parts.Length >= 1 ? parts[^1] : "net8.0-windows";
+        if (!Directory.Exists(launcherBinDirectory))
+        {
+            return [Path.Combine(launcherBinDirectory, LauncherFileName)];
+        }
+
+        var frameworkDirectories = Directory.GetDirectories(launcherBinDirectory);
+        // Ordinal descending so a specific framework moniker wins over the bare one
+        // (net8.0-windows10.0.19041.0 before net8.0-windows) and the probe order is stable.
+        Array.Sort(frameworkDirectories, StringComparer.OrdinalIgnoreCase);
+        Array.Reverse(frameworkDirectories);
+
+        var candidates = new List<string>(frameworkDirectories.Length);
+        foreach (var frameworkDirectory in frameworkDirectories)
+        {
+            candidates.Add(Path.Combine(frameworkDirectory, LauncherFileName));
+        }
+
+        if (candidates.Count == 0)
+        {
+            candidates.Add(Path.Combine(launcherBinDirectory, LauncherFileName));
+        }
+
+        return candidates;
     }
 }

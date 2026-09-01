@@ -86,6 +86,56 @@ public sealed class LauncherPathResolverTests : IDisposable
     }
 
     [Fact]
+    public void TryResolveFrom_FindsLauncher_WhenDevTreeFrameworkDiffersFromManager()
+    {
+        // Dev-tree layout as `dotnet run` produces it: the Manager builds into
+        // net8.0-windows, the launcher into net8.0-windows10.0.19041.0 because it needs the
+        // WinRT taskbar projections. The walk-up probe used to reuse the Manager's framework
+        // segment, so it looked for the launcher under net8.0-windows, never matched, and
+        // GroupSyncService aborted before writing any icon or shortcut - no group created from
+        // a dev run was ever pinnable.
+        File.WriteAllText(Path.Combine(_tempRoot, "TaskbarFolders.sln"), string.Empty);
+
+        var managerBin = Path.Combine(_tempRoot, "src", "TaskbarFolders.Manager", "bin", "Release", "net8.0-windows");
+        var launcherBin = Path.Combine(_tempRoot, "src", "TaskbarFolders.Launcher", "bin", "Release", "net8.0-windows10.0.19041.0");
+        Directory.CreateDirectory(managerBin);
+        Directory.CreateDirectory(launcherBin);
+
+        var launcherExe = Path.Combine(launcherBin, LauncherPathResolver.LauncherFileName);
+        File.WriteAllBytes(launcherExe, [0x4D, 0x5A]);
+
+        var sut = new LauncherPathResolver();
+        var result = sut.TryResolveFrom(managerBin);
+
+        result.Should().NotBeNull();
+        Path.GetFullPath(result!).Should().Be(Path.GetFullPath(launcherExe));
+    }
+
+    [Fact]
+    public void TryResolveFrom_KeepsTheConfiguration_OfTheCallingManager()
+    {
+        // Enumerating framework folders must not start crossing configurations: a Debug Manager
+        // has to launch the Debug launcher even when a Release build is also on disk.
+        File.WriteAllText(Path.Combine(_tempRoot, "TaskbarFolders.sln"), string.Empty);
+
+        var managerBin = Path.Combine(_tempRoot, "src", "TaskbarFolders.Manager", "bin", "Debug", "net8.0-windows");
+        Directory.CreateDirectory(managerBin);
+
+        var launcherRoot = Path.Combine(_tempRoot, "src", "TaskbarFolders.Launcher", "bin");
+        var debugExe = Path.Combine(launcherRoot, "Debug", "net8.0-windows10.0.19041.0", LauncherPathResolver.LauncherFileName);
+        var releaseExe = Path.Combine(launcherRoot, "Release", "net8.0-windows10.0.19041.0", LauncherPathResolver.LauncherFileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(debugExe)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(releaseExe)!);
+        File.WriteAllBytes(debugExe, [0x4D, 0x5A]);
+        File.WriteAllBytes(releaseExe, [0x4D, 0x5A]);
+
+        var sut = new LauncherPathResolver();
+        var result = sut.TryResolveFrom(managerBin);
+
+        Path.GetFullPath(result!).Should().Be(Path.GetFullPath(debugExe));
+    }
+
+    [Fact]
     public void TryResolveFrom_ReturnsNull_WhenNoLayoutMatches()
     {
         // No launcher anywhere — none of the three probes find a file. Contract: null, no throw.
