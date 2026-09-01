@@ -40,7 +40,7 @@
                             <TextBlock Text="Group name…"
                                        Margin="9,0,0,0"
                                        VerticalAlignment="Center"
-                                       Opacity="0.5"
+                                       Foreground="{DynamicResource ForegroundSubtle}"
                                        IsHitTestVisible="False"
                                        Visibility="{Binding NewGroupName, Converter={x:Static vm:StringEmptyToVisibilityConverter.Instance}}" />
                         </Grid>
@@ -63,7 +63,7 @@
                         <StackPanel Margin="4,6">
                             <TextBlock Text="{Binding Name}" FontSize="14" />
                             <TextBlock Text="{Binding AppCount, StringFormat='{}{0} app(s)'}"
-                                       FontSize="11" Opacity="0.6" />
+                                       FontSize="11" Foreground="{DynamicResource ForegroundSubtle}" />
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -82,7 +82,7 @@
             <!-- Empty-state placeholder shown when nothing is selected -->
             <TextBlock Text="Select a group to view details, or click + Add to create one."
                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Opacity="0.5"
+                       Foreground="{DynamicResource ForegroundSubtle}"
                        Visibility="{Binding BoundItem, Converter={x:Static vm:NullToVisibilityConverter.Instance}}" />
 
             <!-- Editor content shown once a group is selected -->
@@ -96,7 +96,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding BoundItem.Name}" FontSize="28" FontWeight="Light" />
-                        <TextBlock Text="{Binding BoundItem.Id}" FontSize="11" Opacity="0.5" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding BoundItem.Id}" FontSize="11" Foreground="{DynamicResource ForegroundSubtle}" Margin="0,4,0,0" />
                     </StackPanel>
                     <Border Grid.Column="1"
                             Width="96" Height="96"
@@ -120,7 +120,7 @@
                         <Button DockPanel.Dock="Right"
                                 Content="Add app..." Padding="12,4"
                                 Click="AddAppPicker_Click" />
-                        <TextBlock VerticalAlignment="Center" Opacity="0.7"
+                        <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource ForegroundSubtle}"
                                    Text="Drop .exe or .lnk files here, or use the button to browse." />
                     </DockPanel>
                 </Border>
@@ -141,7 +141,7 @@
                                     Margin="8,0,0,0"
                                     Command="{Binding ShowShortcutCommand}" />
                         </StackPanel>
-                        <TextBlock TextWrapping="Wrap" Opacity="0.7" VerticalAlignment="Center">
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource ForegroundSubtle}" VerticalAlignment="Center">
                             <Run Text="Pin to taskbar:" FontWeight="SemiBold" />
                             <LineBreak />
                             <Run Text="One click — Windows will ask you to allow it. If your build does not support direct pinning, use Show shortcut and right-click the .lnk." />
@@ -162,7 +162,7 @@
                                 <Image Grid.Column="0" Source="{Binding Icon}" Width="32" Height="32" Stretch="Uniform" />
                                 <StackPanel Grid.Column="1" Margin="8,0">
                                     <TextBlock Text="{Binding Name}" FontSize="13" />
-                                    <TextBlock Text="{Binding Path}" FontSize="11" Opacity="0.5" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Path}" FontSize="11" Foreground="{DynamicResource ForegroundSubtle}" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
                                 <Button Grid.Column="2"
                                         Content="Remove" Padding="8,2"

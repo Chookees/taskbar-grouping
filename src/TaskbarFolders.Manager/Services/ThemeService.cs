@@ -23,6 +23,10 @@ public sealed class ThemeService : IThemeService, IDisposable
     private readonly ILogger<ThemeService>? _logger;
     private ResourceDictionary? _currentDictionary;
     private bool _systemListenerWired;
+
+    // EffectiveTheme only ever resolves to Light or Dark, so System doubles as a "nothing
+    // applied yet" sentinel: the first apply always counts as a change.
+    private ThemePreference _lastRaisedTheme = ThemePreference.System;
     private bool _disposed;
 
     /// <summary>Initializes a new instance.</summary>
@@ -33,6 +37,9 @@ public sealed class ThemeService : IThemeService, IDisposable
         _probe = probe;
         _logger = logger;
     }
+
+    /// <inheritdoc/>
+    public event EventHandler? ThemeChanged;
 
     /// <inheritdoc/>
     public ThemePreference Preference { get; private set; } = ThemePreference.System;
@@ -62,6 +69,27 @@ public sealed class ThemeService : IThemeService, IDisposable
 
     private void ApplyCurrent()
     {
+        // Raised even when Application.Current is null (unit tests) so subscribers can be
+        // exercised headlessly; the dictionary swap below is what needs a live Application.
+        var effective = EffectiveTheme;
+        var changed = effective != _lastRaisedTheme;
+        _lastRaisedTheme = effective;
+
+        try
+        {
+            ApplyDictionary(effective);
+        }
+        finally
+        {
+            if (changed)
+            {
+                ThemeChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    private void ApplyDictionary(ThemePreference effective)
+    {
         // Application.Current is null during unit tests — be defensive.
         var app = Application.Current;
         if (app is null)
@@ -69,7 +97,7 @@ public sealed class ThemeService : IThemeService, IDisposable
             return;
         }
 
-        var uri = EffectiveTheme == ThemePreference.Dark
+        var uri = effective == ThemePreference.Dark
             ? new Uri(DarkDictionaryUri, UriKind.Relative)
             : new Uri(LightDictionaryUri, UriKind.Relative);
 

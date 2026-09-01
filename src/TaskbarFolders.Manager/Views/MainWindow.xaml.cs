@@ -5,7 +5,9 @@ using System.Windows.Interop;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using TaskbarFolders.Core.Interop;
+using TaskbarFolders.Manager.Services;
 using TaskbarFolders.Manager.ViewModels;
+using TaskbarFolders.Shared.Models;
 
 namespace TaskbarFolders.Manager.Views;
 
@@ -28,6 +30,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         SourceInitialized += OnSourceInitialized;
+        Closed += OnClosed;
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -37,8 +40,42 @@ public partial class MainWindow : Window
         // the themed solid brushes — no visual regression on older systems.
         var hwnd = new WindowInteropHelper(this).Handle;
         _ = WindowBackdrop.TryApply(hwnd, WindowBackdropKind.Mica);
+
+        ApplyTitleBarTheme();
+
+        // The caption is drawn by DWM, so no resource-dictionary swap can reach it. Follow
+        // the theme service instead, which also covers a live Windows theme switch while
+        // the preference is System.
+        if (ThemeService is { } themeService)
+        {
+            themeService.ThemeChanged += OnThemeChanged;
+        }
+
         SourceInitialized -= OnSourceInitialized;
     }
+
+    private void OnThemeChanged(object? sender, EventArgs e) => ApplyTitleBarTheme();
+
+    private void OnClosed(object? sender, EventArgs e)
+    {
+        if (ThemeService is { } themeService)
+        {
+            themeService.ThemeChanged -= OnThemeChanged;
+        }
+        Closed -= OnClosed;
+    }
+
+    private void ApplyTitleBarTheme()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        var dark = ThemeService?.EffectiveTheme == ThemePreference.Dark;
+        _ = WindowBackdrop.TrySetDarkTitleBar(hwnd, dark);
+    }
+
+    private static IThemeService? ThemeService =>
+        Application.Current is App { Services: { } services }
+            ? services.GetService<IThemeService>()
+            : null;
 
     private void NewGroupName_KeyDown(object sender, KeyEventArgs e)
     {

@@ -1,4 +1,5 @@
-﻿using TaskbarFolders.Shared.Models;
+﻿using System;
+using TaskbarFolders.Shared.Models;
 
 namespace TaskbarFolders.Manager.Services;
 
@@ -9,6 +10,13 @@ namespace TaskbarFolders.Manager.Services;
 /// </summary>
 public interface IThemeService
 {
+    /// <summary>
+    /// Raised after the effective theme has changed and the resource dictionary has been
+    /// swapped. Windows subscribe to keep their non-client area in step: the title bar is
+    /// painted by DWM, not by WPF, so no resource swap can reach it.
+    /// </summary>
+    event EventHandler? ThemeChanged;
+
     /// <summary>Current user preference.</summary>
     ThemePreference Preference { get; }
 

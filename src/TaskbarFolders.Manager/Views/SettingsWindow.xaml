@@ -11,7 +11,10 @@
         Width="480" Height="420"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
-        d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
+        d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
+        Background="{DynamicResource WindowBackground}"
+        Foreground="{DynamicResource ForegroundDefault}"
+        TextElement.Foreground="{DynamicResource ForegroundDefault}">
     <Window.Resources>
         <ObjectDataProvider x:Key="ThemeValues" MethodName="GetValues"
                             ObjectType="{x:Type sys:Enum}">
@@ -31,7 +34,7 @@
         <!-- Footer with Save / Close -->
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <TextBlock VerticalAlignment="Center" Margin="0,0,12,0"
-                       Opacity="0.6"
+                       Foreground="{DynamicResource ForegroundSubtle}"
                        Text="Unsaved changes"
                        Visibility="{Binding HasUnsavedChanges, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}" />
             <Button Content="Close" MinWidth="80" Margin="0,0,8,0" IsCancel="True" />
@@ -53,7 +56,7 @@
             <CheckBox IsChecked="{Binding EnableAnimations}" Content="Enable popup animations" Margin="0,0,0,12" />
             <CheckBox IsChecked="{Binding AutoStart}" Content="Start TaskbarFolders Manager when Windows starts" />
 
-            <TextBlock Margin="0,16,0,0" Opacity="0.6" FontSize="11" TextWrapping="Wrap">
+            <TextBlock Margin="0,16,0,0" Foreground="{DynamicResource ForegroundSubtle}" FontSize="11" TextWrapping="Wrap">
                 Auto-start writes a per-user entry to
                 HKCU\Software\Microsoft\Windows\CurrentVersion\Run — no administrator rights required.
             </TextBlock>

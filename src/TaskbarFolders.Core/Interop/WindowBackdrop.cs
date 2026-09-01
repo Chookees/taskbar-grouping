@@ -35,6 +35,7 @@ public enum WindowBackdropKind
 public static class WindowBackdrop
 {
     private const uint DWMWA_SYSTEMBACKDROP_TYPE = 38;
+    private const uint DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
     /// <summary>
     /// Attempts to apply the specified backdrop material to the supplied window handle.
@@ -55,6 +56,32 @@ public static class WindowBackdrop
 
         var value = (int)kind;
         var hr = DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref value, sizeof(int));
+        return hr == 0;
+    }
+
+    /// <summary>
+    /// Switches the window's non-client area (title bar and border) between the light and
+    /// dark system caption.
+    /// </summary>
+    /// <param name="hwnd">Target window handle (non-zero).</param>
+    /// <param name="enabled"><see langword="true"/> for the dark caption.</param>
+    /// <returns><see langword="true"/> if the call succeeded.</returns>
+    /// <remarks>
+    /// Without this the caption stays light while the client area is dark, which is what a
+    /// Mica window looked like before v0.4.7 — the backdrop only shows through the
+    /// non-client strip, so the mismatch is plainly visible. Windows 10 builds before 20H1
+    /// do not know the attribute and return a non-zero HRESULT; the caller ignores it and
+    /// the caption simply stays light.
+    /// </remarks>
+    public static bool TrySetDarkTitleBar(IntPtr hwnd, bool enabled)
+    {
+        if (hwnd == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        var value = enabled ? 1 : 0;
+        var hr = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, sizeof(int));
         return hr == 0;
     }
 
