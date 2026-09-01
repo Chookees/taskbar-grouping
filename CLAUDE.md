@@ -75,6 +75,20 @@ If you suppress an analyzer, add the rationale in `.editorconfig` next to the su
 
 ## Repo Policy
 
+- **Documentation moves with the code.** Every change, implementation or update also brings the documentation it affects up to date, **in the same commit** — not in a follow-up, not "later". A behaviour change whose documentation still describes the old behaviour is not finished. This is not bureaucracy: the guides once sat three minor versions behind and actively misdescribed the pinning flow, which is how a user ends up following instructions for a design the project had abandoned. Which files a change touches:
+
+  | Changed | Also update |
+  |---|---|
+  | User-visible behaviour, a button, a dialog, a setting | `docs/user-guide.md` **and** `docs/benutzerhandbuch.md` — the pair is only useful if both move together |
+  | Component boundaries, data flow, storage layout, startup order | `docs/architecture.md` |
+  | Public types or their signatures | `docs/api-reference.md` |
+  | Build, test, debug, conventions, analyzer rules | `docs/developer-guide.md` |
+  | A new failure mode, exit code, or known limitation | `docs/troubleshooting.md` |
+  | Anything about versioning, tagging or the pipeline | `docs/release-process.md` |
+  | A decision that constrains future work | a new ADR under `docs/adr/`, added to its index |
+  | A new convention or invariant | this file |
+  | Anything at all | a `CHANGELOG.md` entry under `[Unreleased]` |
+
 - **No AI/agent mentions** in code, comments, commits, docs, or any human-facing committed file. Tooling files like this one are exempt.
 - **Conventional Commits** — `<type>(<scope>): <desc>`. Types per `CONTRIBUTING.md`.
 - **Branching** — `develop` is integration, `main` is releases, feature branches off `develop`.
@@ -123,7 +137,7 @@ This project is solo-maintained; senior-dev workflow expectations apply.
 
 **6. Pushing & releasing.** Bug fixes land on `develop` directly (no PR — solo-maintained). Patch releases tag `v0.x.y` from `develop`; `release.yml` publishes the assets. Bump `Directory.Build.props:Version`, `installer/setup.iss:MyAppVersion`, `src/TaskbarFolders.Manager/app.manifest:assemblyIdentity/@version` (four-part, e.g. `0.4.5.0`), the README status banner, and add a `CHANGELOG.md` section in the same commit as the tag-eligible state. Full checklist in `docs/release-process.md`. If a fix is user-blocking on a shipped version, cut a patch release the same day. **Wait for the installer-smoke pass before announcing the release as available** — the tag and the assets exist before they're verified.
 
-**7. CLAUDE.md upkeep.** When a fix introduces a new convention or invariant, surface it here — the next session reads this file before doing anything else.
+**7. Documentation upkeep.** Before calling any change done, walk the table in Repo Policy and update every row the change touched, in the same commit. When a fix introduces a new convention or invariant, surface it here too — the next session reads this file before doing anything else.
 
 ## Release
 

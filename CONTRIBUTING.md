@@ -90,9 +90,26 @@ Group related work into one commit per behavioural concern rather than one commi
 1. Fill in the template.
 2. Make sure CI is green — build, tests and the format check.
 3. Note what you verified manually. "Unit tests pass" and "I used the feature" are different claims; if you could not run something, say so rather than leaving it implied.
-4. Update the documentation your change affects in the same pull request, and add a `CHANGELOG.md` entry under `[Unreleased]`.
+4. Update the documentation your change affects — see below. This is part of the change, not a follow-up.
 
-Documentation drift is a real cost here: the guides were three minor versions out of date once and actively misdescribed the pinning flow. A behaviour change without a documentation change recreates that.
+## Documentation moves with the code
+
+**Every change, implementation or update also brings the affected documentation up to date, in the same commit.** A behaviour change whose documentation still describes the old behaviour is not finished, and will not be merged as-is.
+
+This is not ceremony. The guides once sat three minor versions behind and actively misdescribed how pinning worked — telling users to pin an executable, an approach the project had already abandoned. Someone following them could not complete a single task.
+
+| If you changed | Also update |
+|---|---|
+| User-visible behaviour, a button, a dialog, a setting | [`docs/user-guide.md`](docs/user-guide.md) **and** [`docs/benutzerhandbuch.md`](docs/benutzerhandbuch.md) — the two language versions are only useful if both move together |
+| Component boundaries, data flow, storage layout, startup order | [`docs/architecture.md`](docs/architecture.md) |
+| Public types or their signatures | [`docs/api-reference.md`](docs/api-reference.md) |
+| Build, test, debug, conventions, analyzer rules | [`docs/developer-guide.md`](docs/developer-guide.md) |
+| A new failure mode, exit code, or known limitation | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
+| Versioning, tagging, the release pipeline | [`docs/release-process.md`](docs/release-process.md) |
+| A decision that constrains future work | a new [ADR](docs/adr/README.md), added to its index |
+| Anything at all | a `CHANGELOG.md` entry under `[Unreleased]` |
+
+If you are unsure whether a document is affected, open it and read the section your change touches. That takes a minute and is the whole cost of keeping this project's documentation trustworthy.
 
 ## Tests
 

@@ -30,7 +30,7 @@ State what you actually verified, and say plainly what you could not. "Tests pas
 
 - [ ] Follows the project's conventions (see [CONTRIBUTING.md](../CONTRIBUTING.md))
 - [ ] Self-reviewed the diff
-- [ ] Documentation updated for any behaviour change
+- [ ] Documentation updated for everything this change touches — see the table in [CONTRIBUTING.md](../CONTRIBUTING.md#documentation-moves-with-the-code). User-visible changes need **both** `docs/user-guide.md` and `docs/benutzerhandbuch.md`
 - [ ] `CHANGELOG.md` entry added under `[Unreleased]`
 - [ ] An [ADR](../docs/adr/README.md) added, if this decides something that constrains future work
 - [ ] No new warnings — the build treats them as errors
