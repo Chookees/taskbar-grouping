@@ -100,6 +100,8 @@ Es werden nur Programmdateien (`.exe`) und Verknüpfungen (`.lnk`) übernommen. 
 
 Der angezeigte Name stammt aus dem Dateinamen, das Symbol aus der Datei selbst — bei einer Verknüpfung aus dem Programm, auf das sie zeigt.
 
+Der Pfad unter dem Namen wird gekürzt dargestellt: alles innerhalb Ihres Benutzerordners erscheint als `%USERPROFILE%\…`, damit Ihr Kontoname nicht in Screenshots oder bei Bildschirmfreigaben zu sehen ist. Fahren Sie mit der Maus über den Pfad, um ihn vollständig zu sehen. Gespeichert und gestartet wird immer der echte Pfad.
+
 ### Programm entfernen
 
 Klicken Sie in der Zeile auf **Remove**. Die Gruppe wird sofort gespeichert und ihr Symbol neu erzeugt.

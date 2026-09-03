@@ -43,6 +43,8 @@ With a group selected, either:
 
 Only `.exe` and `.lnk` are accepted; anything else in a dropped selection is ignored without an error. The display name comes from the file name, and the icon is read from the file itself — for a shortcut, from whatever it points at.
 
+The path under each name is shortened for display: anything inside your user folder shows as `%USERPROFILE%\…` so your account name is not on screen in a screenshot or a screen share. Hover the path to see it in full. What is stored and launched is always the real path.
+
 The composite preview refreshes shortly after you stop making changes.
 
 ### How the composite icon is built

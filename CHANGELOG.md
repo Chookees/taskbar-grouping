@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **App paths are shortened for display.** The editor showed each entry's full path, which put the user's account name on screen for every app installed under their profile — noise in normal use, and a small privacy leak in any screenshot, screen share or bug report. Anything inside the user folder now displays as `%USERPROFILE%\…`, with the full path on hover. Only the display changes; what is stored and launched is unaffected, and paths outside the profile such as `C:\Program Files\…` or `C:\Users\Public\…` are left alone.
+
 ## [0.4.8] - 2026-09-03
 
 Pin to taskbar has never worked. This release fixes it, and makes the application stop claiming success it cannot demonstrate.

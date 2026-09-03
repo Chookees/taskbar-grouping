@@ -162,7 +162,7 @@
                                 <Image Grid.Column="0" Source="{Binding Icon}" Width="32" Height="32" Stretch="Uniform" />
                                 <StackPanel Grid.Column="1" Margin="8,0">
                                     <TextBlock Text="{Binding Name}" FontSize="13" />
-                                    <TextBlock Text="{Binding Path}" FontSize="11" Foreground="{DynamicResource ForegroundSubtle}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding DisplayPath}" FontSize="11" Foreground="{DynamicResource ForegroundSubtle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}" />
                                 </StackPanel>
                                 <Button Grid.Column="2"
                                         Content="Remove" Padding="8,2"

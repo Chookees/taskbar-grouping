@@ -9,6 +9,8 @@ namespace TaskbarFolders.Manager.ViewModels;
 /// Row in the editor's app list — wraps a single <see cref="AppEntry"/> and carries the
 /// extracted icon for display. Two-way bindings on <see cref="Name"/>, <see cref="Path"/>,
 /// and <see cref="Arguments"/> write through to the underlying entry so saves see edits.
+/// <see cref="DisplayPath"/> is the presentation form of <see cref="Path"/>; the entry always
+/// stores and launches the real one.
 /// </summary>
 public sealed partial class AppEntryViewModel : ObservableObject
 {
@@ -31,7 +33,14 @@ public sealed partial class AppEntryViewModel : ObservableObject
     private string _name;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayPath))]
     private string _path;
+
+    /// <summary>
+    /// <see cref="Path"/> with the user's profile directory collapsed to <c>%USERPROFILE%</c>,
+    /// for display only. The row's tooltip carries the real path.
+    /// </summary>
+    public string DisplayPath => PathDisplay.ForDisplay(Path);
 
     [ObservableProperty]
     private string? _arguments;
