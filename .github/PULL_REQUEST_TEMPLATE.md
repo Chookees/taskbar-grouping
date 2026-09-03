@@ -34,6 +34,10 @@ State what you actually verified, and say plainly what you could not. "Tests pas
 - [ ] `CHANGELOG.md` entry added under `[Unreleased]`
 - [ ] An [ADR](../docs/adr/README.md) added, if this decides something that constrains future work
 - [ ] No new warnings — the build treats them as errors
+- [ ] Coverage did not drop (CI fails below 65 %)
+- [ ] Screenshots retaken if the UI changed visibly (recipe in `CLAUDE.md`)
+- [ ] Any interop or WinRT path touched here was actually executed, not just compiled
+- [ ] Any new gate was fed a failing input to prove it fires
 
 ## Release-affecting changes only
 

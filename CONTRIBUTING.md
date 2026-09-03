@@ -92,6 +92,22 @@ Group related work into one commit per behavioural concern rather than one commi
 3. Note what you verified manually. "Unit tests pass" and "I used the feature" are different claims; if you could not run something, say so rather than leaving it implied.
 4. Update the documentation your change affects — see below. This is part of the change, not a follow-up.
 
+## Definition of Done
+
+A change is finished when all of this holds, not when the code works:
+
+| | |
+|---|---|
+| Build, tests, format | `dotnet build -c Release`, `dotnet test -c Release`, `dotnet format TaskbarFolders.sln --verify-no-changes`. Read the format output rather than trusting the exit code, and give new `.cs` files CRLF line endings and a UTF-8 BOM |
+| Coverage | CI fails below 65 % line coverage, and at exactly 0 % — an empty report reads like an untested code base |
+| Documentation | Moves with the code, in the same commit. See the table below |
+| Screenshots | Retaken when the UI changes visibly, per the recipe in `CLAUDE.md` so they stay comparable |
+| Visual changes | Looked at, not asserted — screenshot the window or render the control offscreen |
+| Interop / WinRT | Actually executed. The suite is headless and cannot reach WinRT; pin-to-taskbar was broken for eight releases behind a cast no test could see |
+| New gates | Fed an input that must fail, to prove the gate fires |
+| Limitations | Opened as issues with file references and acceptance criteria, not left in prose |
+| `CHANGELOG.md` | An entry under `[Unreleased]`. Release notes are built from these sections |
+
 ## Documentation moves with the code
 
 **Every change, implementation or update also brings the affected documentation up to date, in the same commit.** A behaviour change whose documentation still describes the old behaviour is not finished, and will not be merged as-is.

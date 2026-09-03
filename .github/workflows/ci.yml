@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [develop, 'feature/*', 'fix/*']
+    # main is included so the release-time fast-forward is actually verified, and so a
+    # required status check on the branch has a run to attach to. docs/* is included
+    # because documentation-only branches still have to clear the format gate.
+    branches: [main, develop, 'feature/*', 'fix/*', 'docs/*']
   pull_request:
     branches: [main, develop]
 

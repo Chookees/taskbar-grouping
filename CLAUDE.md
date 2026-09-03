@@ -75,6 +75,46 @@ Project-wide `EnforceCodeStyleInBuild=true` + `TreatWarningsAsErrors=true`. Supp
 
 If you suppress an analyzer, add the rationale in `.editorconfig` next to the suppression.
 
+## Definition of Done
+
+Nothing is finished until every line below holds. Each one is here because it was violated
+in this repository and cost a release, a broken feature, or a false claim — the reasons are
+kept so the rule stays arguable rather than ritual.
+
+- **Documentation moves with the code, in the same commit.** See the table below. User-visible
+  changes need **both** `docs/user-guide.md` and `docs/benutzerhandbuch.md`.
+- **Screenshots are part of the interface.** If the UI changes visibly, retake them. Recipe, so
+  they stay comparable: display scaling at 150 %, crop to `DWMWA_EXTENDED_FRAME_BOUNDS` with a
+  2 px inset (the shadow region otherwise lets the desktop bleed into the edges), same group
+  selected in both themes. Files live in `assets/screenshots/`.
+- **Evaluate the format gate, do not announce it.** `dotnet format --verify-no-changes` prints
+  errors and still exits 0 in a pipeline — read the output. New `.cs` files need **CRLF and a
+  UTF-8 BOM** or the gate fails on `ENDOFLINE`/`CHARSET`.
+- **Look at visual changes.** A contrast or layout claim rests on having seen the result:
+  screenshot the running window, or render the control offscreen with `RenderTargetBitmap` on an
+  STA thread. Dark mode sat at 1.2:1 through several releases because nobody looked.
+- **Run interop and WinRT paths, do not just compile them.** The suite is headless and cannot
+  reach WinRT. Pin-to-taskbar was broken from v0.4.0 to v0.4.8 behind a bad cast that no test
+  could see; `Launcher.exe --pin-mode --group-id <id>` plus the log would have caught it in
+  one run.
+- **Verify the verifier.** A gate that never fires is not a gate. When adding one, feed it an
+  input that must fail and confirm it does.
+- **Coverage is gated, not aspired to.** CI fails below 65 % line coverage and at exactly 0 %.
+  Release uses `DebugType=embedded`; with `none` coverlet has nothing to instrument and every
+  report is silently empty.
+- **Release notes come from `CHANGELOG.md`.** `generate_release_notes` produces a bare compare
+  link here, because releases are cut from direct pushes.
+- **Repo presentation is part of the product.** Description and topics on the repository,
+  author in `Directory.Build.props`, `LICENSE` and `installer/setup.iss`, contact in
+  `SECURITY.md` and `CODE_OF_CONDUCT.md` — all kept accurate.
+- **Known limitations become issues.** A limitation recorded only in prose is invisible; open
+  one with the file references and acceptance criteria.
+- **Branch protection**: `main` and `develop` reject force-pushes and deletion; `develop`
+  requires the `build` check on pull requests. Direct pushes to `develop` stay allowed —
+  solo-maintained, no reviewer to wait for.
+- **No AI/agent mentions** in any human-facing committed file. Tooling files like this one are
+  exempt. Grep the diff before committing.
+
 ## Repo Policy
 
 - **Documentation moves with the code.** Every change, implementation or update also brings the documentation it affects up to date, **in the same commit** — not in a follow-up, not "later". A behaviour change whose documentation still describes the old behaviour is not finished. This is not bureaucracy: the guides once sat three minor versions behind and actively misdescribed the pinning flow, which is how a user ends up following instructions for a design the project had abandoned. Which files a change touches:
