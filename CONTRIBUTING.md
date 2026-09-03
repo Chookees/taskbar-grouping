@@ -23,8 +23,8 @@ If your machine has a newer WindowsDesktop runtime than 8.0.x, prefix test and r
 
 | Branch | Purpose |
 |---|---|
-| `main` | Released state. Every release tag is contained here |
-| `develop` | Integration branch and the repository default |
+| `main` | Released state. Every release tag is contained here. Protected: no force-push, no deletion, linear history, `build` required |
+| `develop` | Integration branch and the repository default. Protected: no force-push, no deletion, `build` required |
 | `feature/<name>` | New functionality |
 | `fix/<name>` | Bug fixes |
 | `docs/<name>` | Documentation-only changes |
@@ -34,6 +34,8 @@ Branch from `develop` and target `develop`. `main` moves forward only at release
 CI runs on pushes to `develop`, `feature/*` and `fix/*`, and on every pull request into `develop`. A branch named outside those patterns still gets a full CI run through its pull request.
 
 The project is solo-maintained: the maintainer lands small fixes directly on `develop`. Contributions from anyone else go through a pull request, and anything user-facing or non-trivial should go through one regardless of who wrote it.
+
+Branch protection is deliberately configured with `enforce_admins` off. Required status checks would otherwise deadlock a direct push — CI runs *on* the push, so the commit has no check yet at the moment it is rejected. Everyone who is not an administrator therefore goes through a pull request and waits for `build`, while the maintainer keeps the direct path. Force-pushes and branch deletion are blocked for everyone, including administrators.
 
 ## Before you push
 

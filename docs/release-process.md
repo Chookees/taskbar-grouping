@@ -53,6 +53,8 @@ A tag containing a hyphen (`v0.5.0-rc1`) is published as a pre-release; anything
 
 After the release is verified, fast-forward `main` to the released commit — every release tag to date is contained in both branches.
 
+`main` requires the `build` check and linear history. A fast-forward from `develop` satisfies both: status checks attach to commits, so the run that already passed on `develop` counts for the same SHA on `main`.
+
 ## What the workflow does
 
 Pushing the tag triggers `release.yml` on `windows-latest`:
