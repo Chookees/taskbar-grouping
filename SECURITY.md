@@ -13,9 +13,7 @@ This project is pre-1.0 and solo-maintained. Only the latest release line receiv
 
 **Do not open a public issue.**
 
-Report privately to `<SECURITY-CONTACT>`.
-
-> **Maintainer:** replace the placeholder above with a real address before this repository is made public. GitHub's private vulnerability reporting is an alternative, but it is not available for this repository on its current plan and visibility — enable it first if you would rather use it, and then point this section at it instead.
+Report privately to **g.l.schwekendiek@gmx.de**.
 
 Please include:
 

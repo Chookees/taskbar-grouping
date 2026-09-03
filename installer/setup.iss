@@ -2,7 +2,7 @@
 
 #define MyAppName "TaskbarFolders"
 #define MyAppVersion "0.4.9"
-#define MyAppPublisher "TaskbarFolders Contributors"
+#define MyAppPublisher "Gian Luca Schwekendiek"
 #define MyAppURL "https://github.com/eXORR6077/taskbar-grouping"
 #define MyAppExeName "TaskbarFolders.Manager.exe"
 

@@ -25,9 +25,7 @@ This applies in every project space — issues, pull requests, discussions and c
 
 ## Reporting
 
-Report unacceptable behaviour to `<CONDUCT-CONTACT>`.
-
-> **Maintainer:** replace this placeholder with a real address before this repository is made public.
+Report unacceptable behaviour to **g.l.schwekendiek@gmx.de**.
 
 Reports are handled privately. Include what happened, where, and links if there are any. The reporter's identity is not shared with the person reported.
 

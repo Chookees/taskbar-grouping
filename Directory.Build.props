@@ -7,14 +7,18 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <Version>0.4.9</Version>
-    <Authors>TaskbarFolders Contributors</Authors>
+    <Authors>Gian Luca Schwekendiek</Authors>
     <Product>TaskbarFolders</Product>
-    <Copyright>Copyright (c) 2026 TaskbarFolders Contributors</Copyright>
+    <Copyright>Copyright (c) 2026 Gian Luca Schwekendiek</Copyright>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <DebugType>none</DebugType>
+    <!-- embedded, not none: coverlet needs debug information to map IL back to source, and
+         with none the CI coverage report was silently empty for every run since the pipeline
+         was built. Embedding it keeps that working without producing separate .pdb files that
+         would then have to be excluded from the published artifacts. -->
+    <DebugType>embedded</DebugType>
     <Optimize>true</Optimize>
   </PropertyGroup>
 
