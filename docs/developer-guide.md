@@ -88,7 +88,9 @@ Tests run headless: none of them create a WPF `Application` or need an STA threa
 
 Some tests are timing-sensitive (cache pruning, log rotation, debounced preview refresh) and have already been hardened once against slow CI runners. If you add one, poll with a generous deadline and exit early on success rather than sleeping a fixed interval.
 
-Coverage is reported in CI but not gated. 70 % is the target, not a build failure.
+Coverage is collected in CI, merged with ReportGenerator and **gated**: the job fails below 65 % line coverage, and also fails at exactly 0 %, since an empty report is indistinguishable from an untested code base. The current figure is 69.2 %.
+
+Release builds use `DebugType=embedded` for this reason. With `none` — as it was until v0.4.10 — coverlet has nothing to instrument against and every report is silently empty. Embedding keeps collection working without emitting separate `.pdb` files that would then have to be kept out of the published artifacts.
 
 ## Code style and analyzers
 

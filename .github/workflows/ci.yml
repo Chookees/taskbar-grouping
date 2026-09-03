@@ -56,6 +56,36 @@ jobs:
           Write-Host "----- Coverage summary -----"
           Get-Content ./TestResults/CoverageReport/Summary.txt
 
+      # A floor, deliberately below the current figure, so coverage can only be
+      # ratcheted up. Until v0.4.10 this measured nothing at all: Release builds set
+      # DebugType=none, coverlet had no debug information to instrument against, and every
+      # report above was empty while still being uploaded and summarised.
+      - name: Enforce coverage floor
+        shell: pwsh
+        env:
+          MINIMUM_LINE_COVERAGE: '65'
+        run: |
+          $summary = './TestResults/CoverageReport/Summary.txt'
+          if (-not (Test-Path $summary)) {
+            throw "No coverage summary at $summary - the collection step did not produce a report."
+          }
+
+          $line = Select-String -Path $summary -Pattern 'Line coverage:\s*([0-9.]+)%' | Select-Object -First 1
+          if (-not $line) {
+            throw "Could not read a line-coverage figure from $summary."
+          }
+
+          $actual = [double]$line.Matches[0].Groups[1].Value
+          $floor = [double]$env:MINIMUM_LINE_COVERAGE
+          "Line coverage $actual % (floor $floor %)" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+          if ($actual -eq 0) {
+            throw "Line coverage is 0 % - coverage collection is broken, not the tests."
+          }
+          if ($actual -lt $floor) {
+            throw "Line coverage $actual % is below the required $floor %."
+          }
+
       - name: Upload coverage report
         if: always()
         continue-on-error: true

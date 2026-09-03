@@ -117,7 +117,7 @@ xUnit with Moq and FluentAssertions. FluentAssertions is pinned below 8 — that
 
 - Tests run headless. Nothing creates a WPF `Application` or needs an STA thread; view models are exercised directly.
 - If you change the dependency injection graph, extend `CompositionRootTests`.
-- 70 % coverage is the target. CI reports coverage but does not gate on it.
+- Line coverage currently sits at **69.2 %**, and CI **fails below 65 %**. The floor is deliberately under the current figure so coverage can only ratchet upwards; raise it when the real number does. It also fails on 0 %, because a broken collector reads exactly like an untested code base — which is what happened until v0.4.10, when `DebugType=none` in Release left coverlet with no debug information and every report came out empty.
 - Avoid fixed sleeps. Poll with a generous deadline and exit early — slow CI runners have already broken timing-sensitive tests once.
 
 ## Documentation
