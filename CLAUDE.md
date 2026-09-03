@@ -105,8 +105,11 @@ kept so the rule stays arguable rather than ritual.
 - **Release notes come from `CHANGELOG.md`.** `generate_release_notes` produces a bare compare
   link here, because releases are cut from direct pushes.
 - **Repo presentation is part of the product.** Description and topics on the repository,
-  author in `Directory.Build.props`, `LICENSE` and `installer/setup.iss`, contact in
-  `SECURITY.md` and `CODE_OF_CONDUCT.md` — all kept accurate.
+  author in `Directory.Build.props`, `LICENSE` and `installer/setup.iss` — all kept accurate.
+- **No inbox address in a committed file.** Security reports go through GitHub's private
+  vulnerability reporting, conduct reports through the profile and GitHub's abuse form. The
+  repository's `user.email` is the GitHub noreply address, set repo-locally, so commits do
+  not leak one either. A published address collects spam, not reports.
 - **Known limitations become issues.** A limitation recorded only in prose is invisible; open
   one with the file references and acceptance criteria.
 - **Branch protection**: `main` and `develop` reject force-pushes and deletion; `develop`

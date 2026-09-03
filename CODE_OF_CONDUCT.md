@@ -25,9 +25,11 @@ This applies in every project space — issues, pull requests, discussions and c
 
 ## Reporting
 
-Report unacceptable behaviour to **g.l.schwekendiek@gmx.de**.
+Reach the maintainer through the contact details on their [GitHub profile](https://github.com/eXORR6077). For behaviour that violates GitHub's own terms — harassment, spam, impersonation — [GitHub's abuse reporting form](https://github.com/contact/report-abuse) goes to GitHub Support, who can act at the platform level regardless of what this project does.
 
-Reports are handled privately. Include what happened, where, and links if there are any. The reporter's identity is not shared with the person reported.
+Include what happened, where, and links if there are any. Reports are handled privately, and the reporter's identity is not shared with the person reported.
+
+Deliberately no inbox address here: a single-maintainer project publishing one in a public file collects spam rather than conduct reports, and a channel nobody reads is worse than none.
 
 ## Enforcement
 

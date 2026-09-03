@@ -13,7 +13,7 @@ This project is pre-1.0 and solo-maintained. Only the latest release line receiv
 
 **Do not open a public issue.**
 
-Report privately to **g.l.schwekendiek@gmx.de**.
+Use GitHub's private vulnerability reporting: open the [Security tab](https://github.com/eXORR6077/taskbar-grouping/security/advisories/new) and file a draft advisory. The report stays private between you and the maintainer, it carries the discussion and any fix alongside it, and it can be published as an advisory once a fix ships — none of which an email thread gives you.
 
 Please include:
 
