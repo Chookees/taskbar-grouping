@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-09-03
+
+Pin to taskbar has never worked. This release fixes it, and makes the application stop claiming success it cannot demonstrate.
+
+### Fixed
+
+- **The pin button pins.** Every attempt since v0.4.0 threw `InvalidCastException` before reaching the pin call: `TaskbarPinRunner` called `InitializeWithWindow.Initialize` on the `TaskbarManager`, which does not implement `IInitializeWithWindow` — that interop rule applies to WinRT types owning a modal surface, such as `FileOpenPicker`. Everything after that line was unreachable, including the v0.4.2 diagnostic meant to explain pin failures and the `SHChangeNotify` settle work, neither of which had ever run. The catch mapped the exception to exit code 3, so the user got a "Pin failed" toast and an Explorer window on every click. `RequestPinCurrentAppAsync` parents its own dialog and takes no window handle; what it needs is for the process to hold the foreground, which the runner now re-asserts and logs when Windows refuses.
+- **The AUMID stamp no longer fails silently.** `SetCurrentProcessExplicitAppUserModelID`'s HRESULT was discarded, so a failed stamp would have pinned the wrong identity with nothing to say so.
+
+### Added
+
+- **A reported pin is verified rather than believed.** `RequestPinCurrentAppAsync` has been observed returning success while persisting nothing, and telling someone "Pinned" when no tile appeared is indistinguishable from a broken application. The launcher now looks for a pinned shortcut carrying the group's AppUserModelID and reports **Pin not confirmed** when there is none, opening the shortcut folder so it can be pinned by hand. Matching is by AUMID rather than file name because Windows names the pinned copy itself — a programmatic pin arrives under the Start-menu anchor's name, a manual one under the group id. A folder that cannot be inspected is reported as inconclusive, never as a failure.
+- `IShortcutReader` in `TaskbarFolders.Core` — the read counterpart to `IShortcutGenerator`, returning `null` rather than throwing.
+
+### Internal
+
+- **Test platform bumped across all three test projects**: `Microsoft.NET.Test.Sdk` 17.11.1 → 18.7.0 and `coverlet.collector` 6.0.2 → 10.0.1, superseding two Dependabot pull requests that each touched only one project and committed CRLF blobs against the repository's normalisation. A `test-platform` Dependabot group now keeps them moving together, as `microsoft-extensions` already does. `actions/setup-dotnet` v5 → v6 and `dotnet-reportgenerator-globaltool` 5.4.4 → 5.5.11 merged as-is.
+- The two view-model pin branches that had no coverage at all — including `PinResult.Error`, the one every user hit — plus an AUMID write/read round trip and the new exit code in the mapping theory.
+- `docs/release-process.md` now requires running pin mode directly before a release. The suite is headless and cannot reach WinRT, so no amount of unit testing would have caught a bad interop cast; running it against Windows once would have.
+
 ## [0.4.7] - 2026-09-01
 
 Legibility release. Both defects were dark-mode only and invisible to the test suite, because nothing in it renders a window.
@@ -263,7 +283,8 @@ First functional release. Everything described in the README is implemented and 
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
 
-[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.7...HEAD
+[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.8...HEAD
+[0.4.8]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.4...v0.4.5
