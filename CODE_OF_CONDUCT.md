@@ -25,7 +25,7 @@ This applies in every project space — issues, pull requests, discussions and c
 
 ## Reporting
 
-Reach the maintainer through the contact details on their [GitHub profile](https://github.com/eXORR6077). For behaviour that violates GitHub's own terms — harassment, spam, impersonation — [GitHub's abuse reporting form](https://github.com/contact/report-abuse) goes to GitHub Support, who can act at the platform level regardless of what this project does.
+Reach the maintainer through the contact details on their [GitHub profile](https://github.com/gianluca-schwekendiek). For behaviour that violates GitHub's own terms — harassment, spam, impersonation — [GitHub's abuse reporting form](https://github.com/contact/report-abuse) goes to GitHub Support, who can act at the platform level regardless of what this project does.
 
 Include what happened, where, and links if there are any. Reports are handled privately, and the reporter's identity is not shared with the person reported.
 

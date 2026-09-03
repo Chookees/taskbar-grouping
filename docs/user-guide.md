@@ -8,7 +8,7 @@ Everything TaskbarFolders can do, in the order you are likely to need it. If som
 
 ### Installer
 
-Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/eXORR6077/taskbar-grouping/releases) and run it.
+Download `TaskbarFolders-Setup.exe` from the [Releases page](https://github.com/gianluca-schwekendiek/taskbar-grouping/releases) and run it.
 
 The installer needs administrator rights — it writes to Program Files. Two optional steps in the wizard:
 

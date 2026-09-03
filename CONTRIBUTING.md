@@ -9,7 +9,7 @@ Thanks for your interest. This document covers how work gets into the repository
 - Visual Studio 2022, JetBrains Rider, or VS Code with the C# Dev Kit
 
 ```bash
-git clone https://github.com/eXORR6077/taskbar-grouping.git
+git clone https://github.com/gianluca-schwekendiek/taskbar-grouping.git
 cd taskbar-grouping
 dotnet build TaskbarFolders.sln -c Release
 dotnet test TaskbarFolders.sln -c Release
@@ -144,7 +144,7 @@ Documentation lives in [`docs/`](docs). Decisions that constrain future work get
 
 ## Reporting issues
 
-Use the [issue templates](https://github.com/eXORR6077/taskbar-grouping/issues/new/choose). For bugs, attach the relevant log from `%APPDATA%\TaskbarFolders\logs\`; it is far more useful than a screenshot. See [SUPPORT.md](SUPPORT.md).
+Use the [issue templates](https://github.com/gianluca-schwekendiek/taskbar-grouping/issues/new/choose). For bugs, attach the relevant log from `%APPDATA%\TaskbarFolders\logs\`; it is far more useful than a screenshot. See [SUPPORT.md](SUPPORT.md).
 
 Security issues do not go in the tracker — see [SECURITY.md](SECURITY.md).
 

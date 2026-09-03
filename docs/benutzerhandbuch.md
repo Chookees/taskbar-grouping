@@ -53,7 +53,7 @@ Zwei Funktionen richten sich nach Ihrer Windows-Version, fallen aber nicht aus, 
 
 ### Mit Installationsprogramm
 
-1. Laden Sie `TaskbarFolders-Setup.exe` von der [Releases-Seite](https://github.com/eXORR6077/taskbar-grouping/releases) herunter.
+1. Laden Sie `TaskbarFolders-Setup.exe` von der [Releases-Seite](https://github.com/gianluca-schwekendiek/taskbar-grouping/releases) herunter.
 2. Starten Sie die Datei. Windows fragt nach Administratorrechten — das Programm wird nach „Programme" installiert.
 3. Im Assistenten können Sie zwei Dinge wählen:
    - **Mit Windows starten** — ist vorausgewählt. Der Manager startet dann bei jeder Anmeldung mit. Sie können das später in den Einstellungen ändern.

@@ -1,7 +1,7 @@
 # TaskbarFolders
 
-[![CI](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/ci.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/ci.yml)
-[![Release](https://github.com/eXORR6077/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/eXORR6077/taskbar-grouping/releases)
+[![CI](https://github.com/gianluca-schwekendiek/taskbar-grouping/actions/workflows/ci.yml/badge.svg)](https://github.com/gianluca-schwekendiek/taskbar-grouping/actions/workflows/ci.yml)
+[![Release](https://github.com/gianluca-schwekendiek/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/gianluca-schwekendiek/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **iOS-style app folders for the Windows 11 taskbar.** Group related apps behind a single pinned tile; click it and they fan out in a popup anchored to the tile.
@@ -51,13 +51,13 @@ Two features degrade gracefully on older builds rather than failing:
 
 ### Installer
 
-1. Download `TaskbarFolders-Setup.exe` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases).
+1. Download `TaskbarFolders-Setup.exe` from [Releases](https://github.com/gianluca-schwekendiek/taskbar-grouping/releases).
 2. Run it. The installer requires administrator rights because it writes to Program Files, and offers to start TaskbarFolders with Windows (this option is pre-selected).
 3. Launch **TaskbarFolders Manager** from the Start menu.
 
 ### Portable
 
-1. Download `TaskbarFolders-portable.zip` from [Releases](https://github.com/eXORR6077/taskbar-grouping/releases).
+1. Download `TaskbarFolders-portable.zip` from [Releases](https://github.com/gianluca-schwekendiek/taskbar-grouping/releases).
 2. Extract it anywhere. Keep the `Manager` and `Launcher` folders side by side — the Manager locates the launcher relative to itself.
 3. Run `Manager\TaskbarFolders.Manager.exe`.
 
@@ -138,7 +138,7 @@ Start with the logs in `%APPDATA%\TaskbarFolders\logs\`; the launcher records ev
 Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (pinned to 8.0.100 in `global.json`, rolling forward to a newer major) on Windows.
 
 ```bash
-git clone https://github.com/eXORR6077/taskbar-grouping.git
+git clone https://github.com/gianluca-schwekendiek/taskbar-grouping.git
 cd taskbar-grouping
 dotnet build TaskbarFolders.sln -c Release
 ```

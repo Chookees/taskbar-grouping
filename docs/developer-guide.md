@@ -13,7 +13,7 @@ Running the test suite needs the `Microsoft.WindowsDesktop.App 8.0.x` runtime. I
 ## Getting started
 
 ```bash
-git clone https://github.com/eXORR6077/taskbar-grouping.git
+git clone https://github.com/gianluca-schwekendiek/taskbar-grouping.git
 cd taskbar-grouping
 dotnet build TaskbarFolders.sln -c Release
 ```

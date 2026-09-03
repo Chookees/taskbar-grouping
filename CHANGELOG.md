@@ -311,19 +311,19 @@ First functional release. Everything described in the README is implemented and 
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
 
-[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.10...HEAD
-[0.4.10]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.9...v0.4.10
-[0.4.9]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.8...v0.4.9
-[0.4.8]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.7...v0.4.8
-[0.4.7]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.6...v0.4.7
-[0.4.6]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.5...v0.4.6
-[0.4.5]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.4...v0.4.5
-[0.4.4]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.3...v0.4.4
-[0.4.3]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.2...v0.4.3
-[0.4.2]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.0...v0.4.1
-[0.4.0]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.2.1...v0.3.0
-[0.2.1]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/eXORR6077/taskbar-grouping/releases/tag/v0.1.0
+[Unreleased]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.10...HEAD
+[0.4.10]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.9...v0.4.10
+[0.4.9]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.8...v0.4.9
+[0.4.8]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.7...v0.4.8
+[0.4.7]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.6...v0.4.7
+[0.4.6]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.5...v0.4.6
+[0.4.5]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/gianluca-schwekendiek/taskbar-grouping/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/gianluca-schwekendiek/taskbar-grouping/releases/tag/v0.1.0

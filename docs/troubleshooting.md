@@ -112,4 +112,4 @@ Current, deliberate or not-yet-implemented — not bugs to report:
 
 ## Still stuck
 
-Open an issue with the [bug report template](https://github.com/eXORR6077/taskbar-grouping/issues/new/choose). Include your Windows version and build, the TaskbarFolders version, your display scaling, your monitor arrangement, and the relevant log excerpt. [SUPPORT.md](../SUPPORT.md) covers where else to ask.
+Open an issue with the [bug report template](https://github.com/gianluca-schwekendiek/taskbar-grouping/issues/new/choose). Include your Windows version and build, the TaskbarFolders version, your display scaling, your monitor arrangement, and the relevant log excerpt. [SUPPORT.md](../SUPPORT.md) covers where else to ask.
