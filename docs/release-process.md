@@ -37,6 +37,7 @@ If the machine only has a newer WindowsDesktop runtime, prefix the test command 
 Then:
 
 - Run the Manager and exercise whatever the release changed. Unit tests do not click buttons.
+- **Exercise pin mode directly at least once**: `TaskbarFolders.Launcher.exe --pin-mode --group-id <id>`, then read `launcher-*.log`. Exit code 3 means the WinRT call threw and no pin is possible; the anchor diagnostic line must be present. Pin to taskbar was broken from v0.4.0 to v0.4.8 because nothing ever ran this path — the suite is headless and cannot reach WinRT.
 - Check `%APPDATA%\TaskbarFolders\logs\manager-*.log` afterwards. A warning or error line with no visible counterpart in the UI is a bug in its own right.
 - Make sure the documentation matches what is shipping. A release that changes behaviour and not the docs creates the next stale-documentation problem.
 

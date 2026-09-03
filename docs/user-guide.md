@@ -68,6 +68,8 @@ Click **Pin to taskbar**. Windows shows its own confirmation dialog; approve it 
 
 That dialog comes from Windows and cannot be skipped or automated. If you dismiss it, nothing is pinned and the Manager stays quiet.
 
+The Manager then checks that a tile really appeared rather than taking Windows' word for it. In the rare case where the pin is reported but nothing shows up, you get **Pin not confirmed** and the shortcut folder opens so you can pin by hand — you will never be told a group is pinned when it is not.
+
 ### If direct pinning is unavailable
 
 Some Windows editions and managed environments block programmatic pinning, and it needs Windows 10 version 2004 or newer. When it is unavailable, the Manager says so and opens the folder containing the group's shortcut.

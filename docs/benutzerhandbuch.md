@@ -125,6 +125,8 @@ Klicken Sie auf **Pin to taskbar**. Windows zeigt daraufhin eine eigene Rückfra
 
 Diese Rückfrage kommt von Windows und lässt sich weder überspringen noch automatisieren. Wenn Sie sie abbrechen, wird nichts angeheftet.
 
+Anschließend prüft der Manager nach, ob tatsächlich eine Kachel entstanden ist, statt sich auf die Rückmeldung von Windows zu verlassen. Sollte der Pin gemeldet werden, ohne dass etwas erscheint, erhalten Sie die Meldung **Pin not confirmed** und der Verknüpfungsordner öffnet sich zum Anheften von Hand. Ihnen wird also nie „angeheftet" gemeldet, wenn nichts angeheftet wurde.
+
 ### Wenn der direkte Weg nicht verfügbar ist
 
 Manche Windows-Editionen und viele Firmenrechner verbieten das Anheften durch Programme. In dem Fall sagt der Manager Bescheid und öffnet den Ordner mit der Verknüpfung.

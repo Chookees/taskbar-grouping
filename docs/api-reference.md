@@ -165,6 +165,14 @@ public static bool TryExtractGroupId(string? aumid, out string groupId);
 
 `TryExtractGroupId` is how the launcher recovers its group when Windows starts it without arguments.
 
+#### [`IShortcutReader`](../src/TaskbarFolders.Core/Shortcuts/IShortcutReader.cs)
+
+```csharp
+string? TryReadAumid(string shortcutPath);
+```
+
+The read counterpart to `IShortcutGenerator`. Returns `null` — never throws — when the shortcut carries no AppUserModelID, does not exist, or cannot be read. Used to verify that a pin actually landed: Windows copies the shortcut it resolved into its own pinned-items folder under a name of its choosing, so the AUMID is the only stable identity across the programmatic and manual pin routes.
+
 #### [`IShellChangeNotifier`](../src/TaskbarFolders.Core/Shortcuts/IShellChangeNotifier.cs)
 
 ```csharp
@@ -203,7 +211,9 @@ Probes side-by-side, sibling-folder and development layouts in that order, loggi
 Task<PinResult> PinAsync(string groupId, CancellationToken cancellationToken = default);
 ```
 
-`PinResult` is `Success`, `UserDenied`, `Unsupported` or `Error`. Implemented by running the launcher in pin mode and mapping its exit code.
+`PinResult` is `Success`, `UserDenied`, `Unsupported`, `Error` or `NotVerified`. Implemented by running the launcher in pin mode and mapping its exit code.
+
+`NotVerified` means Windows reported a successful pin but no pinned shortcut carrying the group's AppUserModelID was found afterwards — reported separately because claiming success with no tile behind it is indistinguishable from a broken application.
 
 #### Supporting services
 

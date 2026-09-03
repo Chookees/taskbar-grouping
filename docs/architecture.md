@@ -99,6 +99,7 @@ Two paths, both offered in the UI.
 | 1 | The user declined |
 | 2 | Pinning unavailable — `TaskbarManager` absent, or blocked by edition or policy |
 | 3 | Unexpected failure |
+| 5 | Reported as pinned, but no pinned shortcut carrying the group's AUMID was found |
 
 On codes 2 and 3 the Manager opens the shortcut folder so the user can pin manually.
 

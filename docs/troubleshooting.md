@@ -31,6 +31,7 @@ The launcher records why it gave up before it exits.
 | Pin | 1 | You declined the Windows dialog |
 | Pin | 2 | Pinning unavailable on this edition, policy or Windows version |
 | Pin | 3 | Pinning failed unexpectedly |
+| Pin | 5 | Windows reported success, but no tile carrying the group's identity was found |
 
 ## Clicking a pinned tile does nothing
 
@@ -52,6 +53,10 @@ Exit code 2. Programmatic pinning needs Windows 10 version 2004 or newer, and so
 Use the manual path: the Manager opens the shortcut folder for you, or click **Show shortcut…**. Right-click the `.lnk` → **Show more options** (Windows 11 22H2 and later) → **Pin to taskbar**.
 
 ## Pinning appears to succeed but no tile appears
+
+Since v0.4.8 the Manager checks this for you: after Windows reports a pin, it looks for a pinned shortcut carrying the group's AppUserModelID. If none is there you get **Pin not confirmed** rather than a "Pinned" message with nothing behind it, and the shortcut folder opens so you can pin by hand.
+
+If you see that message:
 
 Windows only persists a programmatic pin when the AppUserModelID is already known to the Start menu index. TaskbarFolders writes a Start menu entry for every group and notifies the shell, but a slow or busy indexer can still lose the race.
 
