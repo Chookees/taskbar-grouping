@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Core.Shortcuts;
 using TaskbarFolders.Launcher;
 using TaskbarFolders.Launcher.Configuration;
 using TaskbarFolders.Launcher.Services;
@@ -74,6 +75,8 @@ public sealed class CompositionRootTests : IDisposable
     [InlineData(typeof(ICursorAnchor))]
     [InlineData(typeof(ITaskbarPositionHelper))]
     [InlineData(typeof(TaskbarPinRunner))]
+    [InlineData(typeof(PinVerifier))]
+    [InlineData(typeof(IShortcutReader))]
     [InlineData(typeof(PopupViewModel))]
     [InlineData(typeof(LauncherOptions))]
     [InlineData(typeof(IAppDataPathProvider))]

@@ -357,6 +357,74 @@ public class GroupEditorViewModelTests
     }
 
     [Fact]
+    public async Task PinToTaskbar_Error_NotifiesPinFailed()
+    {
+        // The branch the user hit on every attempt from v0.4.0 to v0.4.8 while the pin call
+        // threw, and the only PinResult that had no test at all.
+        var tempBase = Path.Combine(Path.GetTempPath(), "TaskbarFolders.PinErr." + Guid.NewGuid().ToString("N"));
+        var shortcutsDir = Path.Combine(tempBase, "shortcuts");
+        var shortcutPath = Path.Combine(shortcutsDir, "g.lnk");
+        Directory.CreateDirectory(shortcutsDir);
+        File.WriteAllBytes(shortcutPath, [0x4C]);
+
+        try
+        {
+            var (sut, _, _, _, _, _, paths, userConfirmation, pinService) = CreateSutWithCollaborators();
+            paths.Setup(p => p.GetGroupShortcutFile("g")).Returns(shortcutPath);
+            paths.Setup(p => p.ShortcutsDirectory).Returns(shortcutsDir);
+            pinService.Setup(p => p.PinAsync("g", It.IsAny<CancellationToken>())).ReturnsAsync(PinResult.Error);
+
+            sut.Bind(new GroupListItemViewModel(new GroupConfig { Id = "g", GroupName = "g" }));
+
+            var act = async () => await sut.PinToTaskbarCommand.ExecuteAsync(null);
+            await act.Should().NotThrowAsync();
+
+            userConfirmation.Verify(u => u.Notify("Pin failed", It.IsAny<string>()), Times.Once);
+        }
+        finally
+        {
+            if (Directory.Exists(tempBase))
+            {
+                Directory.Delete(tempBase, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task PinToTaskbar_NotVerified_NotifiesPinNotConfirmed()
+    {
+        // Windows claimed success but no tile carrying the group's AUMID was found. The user
+        // must not be told \"Pinned\" when nothing appeared.
+        var tempBase = Path.Combine(Path.GetTempPath(), "TaskbarFolders.PinNotVer." + Guid.NewGuid().ToString("N"));
+        var shortcutsDir = Path.Combine(tempBase, "shortcuts");
+        var shortcutPath = Path.Combine(shortcutsDir, "g.lnk");
+        Directory.CreateDirectory(shortcutsDir);
+        File.WriteAllBytes(shortcutPath, [0x4C]);
+
+        try
+        {
+            var (sut, _, _, _, _, _, paths, userConfirmation, pinService) = CreateSutWithCollaborators();
+            paths.Setup(p => p.GetGroupShortcutFile("g")).Returns(shortcutPath);
+            paths.Setup(p => p.ShortcutsDirectory).Returns(shortcutsDir);
+            pinService.Setup(p => p.PinAsync("g", It.IsAny<CancellationToken>())).ReturnsAsync(PinResult.NotVerified);
+
+            sut.Bind(new GroupListItemViewModel(new GroupConfig { Id = "g", GroupName = "g" }));
+
+            var act = async () => await sut.PinToTaskbarCommand.ExecuteAsync(null);
+            await act.Should().NotThrowAsync();
+
+            userConfirmation.Verify(u => u.Notify("Pin not confirmed", It.IsAny<string>()), Times.Once);
+        }
+        finally
+        {
+            if (Directory.Exists(tempBase))
+            {
+                Directory.Delete(tempBase, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task PinToTaskbar_Unsupported_NotifiesAndDoesNotThrow()
     {
         // TaskbarManager unsupported (restricted SKU / policy) → user gets a clear

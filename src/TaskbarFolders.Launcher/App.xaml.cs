@@ -133,9 +133,16 @@ public partial class App : Application
         // already gave us the AUMID via process activation — re-stamping the inherited
         // string could drift the identity if Windows normalised the case or trimmed
         // whitespace differently from our For() formatter.
+        var aumid = GroupAumid.For(groupId);
         if (!aumidAlreadyInherited)
         {
-            _ = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(GroupAumid.For(groupId));
+            var stampHr = Interop.NativeMethods.SetCurrentProcessExplicitAppUserModelID(aumid);
+            if (stampHr != 0)
+            {
+                StartupFailureLogger.Log(
+                    $"SetCurrentProcessExplicitAppUserModelID('{aumid}') failed with HRESULT 0x{stampHr:X8}; " +
+                    "the pin would target the wrong identity.");
+            }
         }
 
         var paths = new AppDataPathProvider();
@@ -157,7 +164,7 @@ public partial class App : Application
         host.Activate();
 
         var runner = _services.GetRequiredService<TaskbarPinRunner>();
-        var exitCode = await runner.RunAsync(host).ConfigureAwait(true);
+        var exitCode = await runner.RunAsync(host, aumid).ConfigureAwait(true);
 
         logger.LogInformation("Pin runner exit code {ExitCode} for group {GroupId}.", exitCode, groupId);
 

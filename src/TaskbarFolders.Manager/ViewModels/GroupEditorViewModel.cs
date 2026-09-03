@@ -230,6 +230,18 @@ public sealed partial class GroupEditorViewModel : ObservableObject, IDisposable
                 OpenShortcutInExplorer(_boundItem.Id);
                 break;
 
+            case PinResult.NotVerified:
+                _logger?.LogWarning(
+                    "Windows reported a successful pin for {GroupId} but no matching tile was found.",
+                    _boundItem.Id);
+                _userConfirmation.Notify(
+                    "Pin not confirmed",
+                    $"Windows reported that \"{_boundItem.Config.GroupName}\" was pinned, but no tile " +
+                    "appeared on the taskbar. Opening the shortcut folder so you can pin it manually — " +
+                    "right-click the .lnk and choose \"Pin to taskbar\".");
+                OpenShortcutInExplorer(_boundItem.Id);
+                break;
+
             case PinResult.Error:
             default:
                 _userConfirmation.Notify(

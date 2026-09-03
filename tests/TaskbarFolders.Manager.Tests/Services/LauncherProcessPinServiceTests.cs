@@ -39,6 +39,7 @@ public class LauncherProcessPinServiceTests
     [InlineData(1, PinResult.UserDenied)]
     [InlineData(2, PinResult.Unsupported)]
     [InlineData(3, PinResult.Error)]
+    [InlineData(5, PinResult.NotVerified)]
     [InlineData(42, PinResult.Error)]
     public async Task PinAsync_MapsLauncherExitCodeToPinResult(int exitCode, PinResult expected)
     {

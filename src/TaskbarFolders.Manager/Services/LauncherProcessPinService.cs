@@ -72,6 +72,7 @@ public sealed class LauncherProcessPinService : IPinToTaskbarService
                 0 => PinResult.Success,
                 1 => PinResult.UserDenied,
                 2 => PinResult.Unsupported,
+                5 => PinResult.NotVerified,
                 _ => PinResult.Error,
             };
         }

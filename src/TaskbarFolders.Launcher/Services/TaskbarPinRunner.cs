@@ -4,11 +4,9 @@ using System.Linq;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Interop;
 using Microsoft.Extensions.Logging;
 using Windows.Foundation.Metadata;
 using Windows.UI.Shell;
-using WinRT.Interop;
 
 namespace TaskbarFolders.Launcher.Services;
 
@@ -25,27 +23,42 @@ namespace TaskbarFolders.Launcher.Services;
 ///   disabled (LTSC, Education, restricted Group Policy). Manager falls back to the
 ///   Explorer / .lnk flow.</item>
 ///   <item><c>3</c> — unexpected exception during the call. Logged.</item>
+///   <item><c>5</c> — the API reported success but no pinned shortcut carrying the group's
+///   AUMID could be found afterwards. Reported separately from success because claiming
+///   "Pinned" with no tile behind it is indistinguishable from the app being broken.</item>
 /// </list>
 /// </remarks>
 [SupportedOSPlatform("windows10.0.19041.0")]
 public sealed class TaskbarPinRunner
 {
+    private readonly PinVerifier _verifier;
     private readonly ILogger<TaskbarPinRunner>? _logger;
 
     /// <summary>Initializes a new instance.</summary>
-    public TaskbarPinRunner(ILogger<TaskbarPinRunner>? logger = null)
+    /// <param name="verifier">Checks afterwards whether a tile actually appeared.</param>
+    /// <param name="logger">Optional logger.</param>
+    public TaskbarPinRunner(PinVerifier verifier, ILogger<TaskbarPinRunner>? logger = null)
     {
+        ArgumentNullException.ThrowIfNull(verifier);
+
+        _verifier = verifier;
         _logger = logger;
     }
 
     /// <summary>
     /// Asks Windows to pin the current process (identified by its AUMID) to the taskbar.
-    /// Must be called from the UI thread; <paramref name="foregroundWindow"/> must be
-    /// visible + activated so the system dialog has a parent HWND.
+    /// Must be called from the UI thread; <paramref name="foregroundWindow"/> must be visible
+    /// so the process can hold the foreground while the system consent dialog is shown.
     /// </summary>
-    public async Task<int> RunAsync(Window foregroundWindow)
+    /// <param name="foregroundWindow">Visible host window for this process.</param>
+    /// <param name="aumid">
+    /// The AppUserModelID stamped on this process, used to verify afterwards that a tile
+    /// carrying it really appeared.
+    /// </param>
+    public async Task<int> RunAsync(Window foregroundWindow, string aumid)
     {
         ArgumentNullException.ThrowIfNull(foregroundWindow);
+        ArgumentException.ThrowIfNullOrWhiteSpace(aumid);
 
         try
         {
@@ -65,12 +78,15 @@ public sealed class TaskbarPinRunner
                 return 2;
             }
 
-            // CRITICAL: Win32 desktop callers MUST attach the WinRT instance to a HWND via
-            // InitializeWithWindow.Initialize before invoking any modal-UI method. Without it
-            // the system "Allow [App] to pin?" dialog has no parent on multi-monitor /
-            // multi-app foregrounds and either appears behind other windows or fails silently.
-            var hwnd = new WindowInteropHelper(foregroundWindow).EnsureHandle();
-            InitializeWithWindow.Initialize(manager, hwnd);
+            // Do NOT call InitializeWithWindow.Initialize on this object. That interop rule
+            // applies to WinRT types that own a modal surface (FileOpenPicker, FolderPicker
+            // and friends); TaskbarManager is a singleton service from GetDefault() and does
+            // not implement IInitializeWithWindow. Calling it QueryInterfaces for an
+            // interface the object does not have, and CsWinRT surfaces the failure as
+            // InvalidCastException - which the catch below turned into exit code 3 on every
+            // single attempt from v0.4.0 until v0.4.8, making everything after this point
+            // unreachable. RequestPinCurrentAppAsync parents its own dialog and takes no HWND;
+            // what it needs is for us to be the foreground process, which is handled below.
 
             // v0.4.2 diagnostic: log the Start Menu anchor directory contents at the exact
             // moment of the pin call. RequestPinCurrentAppAsync can return true cosmetically
@@ -101,15 +117,34 @@ public sealed class TaskbarPinRunner
             // AppsFolder index can still take a moment to surface a brand-new entry. 300 ms
             // is below the ~400 ms "feels instant" threshold so the user does not perceive
             // it as latency between clicking Pin and seeing the system dialog.
+            // The consent dialog is shown by the shell on behalf of the foreground app, so a
+            // denied foreground promotion is worth seeing in the log: Activate() returns false
+            // when Windows' foreground lock refuses. App.xaml.cs activates the host window
+            // before calling in; this re-assert covers the window having lost it since.
+            var activated = foregroundWindow.Activate();
+            if (!activated)
+            {
+                _logger?.LogWarning(
+                    "Pin host window could not be brought to the foreground; the consent dialog may not appear.");
+            }
+
             await Task.Delay(300).ConfigureAwait(true);
 
             // RequestPinCurrentAppAsync shows a system-managed "Allow [App] to pin?" dialog
-            // parented to the HWND we just attached above.
+            // on behalf of the foreground app; it takes no window handle of its own.
             var pinned = await manager.RequestPinCurrentAppAsync();
 
             if (pinned)
             {
-                _logger?.LogInformation("TaskbarManager pinned the current app.");
+                _logger?.LogInformation("TaskbarManager reported the current app as pinned.");
+
+                // Trust, then check. A false positive here is what makes the application look
+                // broken: a "Pinned" notification with no tile behind it.
+                if (_verifier.IsPinned(aumid) == false)
+                {
+                    return 5;
+                }
+
                 return 0;
             }
 

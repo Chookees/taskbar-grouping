@@ -1,6 +1,7 @@
 ﻿using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using TaskbarFolders.Core.Icons;
+using TaskbarFolders.Core.Shortcuts;
 using TaskbarFolders.Launcher.Configuration;
 using TaskbarFolders.Launcher.Services;
 using TaskbarFolders.Launcher.ViewModels;
@@ -49,6 +50,8 @@ public static class LauncherServiceCollectionExtensions
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();
         services.AddSingleton<ICursorAnchor, LauncherCursorAnchor>();
         services.AddSingleton<ITaskbarPositionHelper, TaskbarPositionHelper>();
+        services.AddSingleton<IShortcutReader, ShortcutReader>();
+        services.AddSingleton<PinVerifier>();
         services.AddSingleton<TaskbarPinRunner>();
 
         services.AddSingleton<PopupViewModel>();

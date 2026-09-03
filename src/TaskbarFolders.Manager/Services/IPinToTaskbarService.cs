@@ -35,4 +35,12 @@ public enum PinResult
 
     /// <summary>Spawning the launcher failed, the process timed out, or it crashed.</summary>
     Error,
+
+    /// <summary>
+    /// Windows reported the pin as successful, but no pinned shortcut carrying the group's
+    /// AppUserModelID could be found afterwards. Distinct from <see cref="Success"/> because
+    /// telling the user "Pinned" when no tile appeared is indistinguishable from a broken app,
+    /// and distinct from <see cref="Error"/> because nothing actually failed on our side.
+    /// </summary>
+    NotVerified,
 }

@@ -30,6 +30,16 @@ internal struct PROPVARIANT
     public IntPtr reservedTail; // Pad to native PROPVARIANT size (16 bytes on x64).
 }
 
+/// <summary>
+/// Frees the contents of a <see cref="PROPVARIANT"/> returned by
+/// <c>IPropertyStore.GetValue</c>. The store allocates the string; the caller owns it.
+/// </summary>
+internal static class PropVariantNativeMethods
+{
+    [DllImport("ole32.dll")]
+    internal static extern int PropVariantClear(ref PROPVARIANT pvar);
+}
+
 /// <summary>Subset of Win32 VARENUM constants we actually use. Named to avoid colliding with the BCL <c>VarEnum</c> type.</summary>
 internal static class PropVariantType
 {
