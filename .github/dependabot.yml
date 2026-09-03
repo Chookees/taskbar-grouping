@@ -19,6 +19,16 @@ updates:
       microsoft-extensions:
         patterns:
           - "Microsoft.Extensions.*"
+      # Same reasoning as above, for the test stack. Dependabot scopes nuget updates per
+      # project directory, so an ungrouped bump lands in one test project and leaves the
+      # other two behind - which is exactly what the coverlet 10 and Test.Sdk 18 PRs did.
+      # coverlet >= 8 also documents a minimum Microsoft.NET.Test.Sdk, so the two have to
+      # move together or the pair is out of support.
+      test-platform:
+        patterns:
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet.*"
+          - "xunit*"
     ignore:
       # net8.0 targets stay on the 8.x Microsoft.Extensions train.
       - dependency-name: "Microsoft.Extensions.*"
