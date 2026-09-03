@@ -89,6 +89,8 @@ In der Liste links stehen alle Gruppen alphabetisch, darunter jeweils die Anzahl
 
 ### Programme hinzufügen
 
+![Der Manager mit ausgewählter Gruppe](../assets/screenshots/manager-dark.png)
+
 Wählen Sie eine Gruppe aus. Dann entweder
 
 - Dateien mit der Maus aus dem Explorer auf die Programmliste **ziehen**, oder
@@ -139,6 +141,8 @@ Diesen Ordner erreichen Sie jederzeit über **Show shortcut…**.
 
 Klicken Sie auf die angeheftete Kachel. Neben der Taskleiste öffnet sich ein Fenster mit allen Programmen der Gruppe.
 
+![Das Aufklapp-Fenster: nur Symbole und Namen](../assets/screenshots/popup.png)
+
 - **Auf ein Symbol klicken** startet das Programm, das Fenster schließt sich.
 - **Lässt sich ein Programm nicht starten**, bleibt das Fenster offen und zeigt einen roten Hinweis mit dem Namen.
 - **Klick daneben** schließt das Fenster.
@@ -156,6 +160,8 @@ Wählen Sie eine Gruppe aus, um Programme hinzuzufügen oder zu entfernen. Jede 
 ## Einstellungen
 
 Zu erreichen über den **⚙**-Knopf oben rechts.
+
+![Einstellungen](../assets/screenshots/settings.png)
 
 | Einstellung | Auswahl | Standard | Wirkung |
 |---|---|---|---|

@@ -34,6 +34,8 @@ Neither package needs a .NET runtime installed — both executables are self-con
 
 ## Adding apps
 
+![The Manager with a group selected](../assets/screenshots/manager-dark.png)
+
 With a group selected, either:
 
 - **drag** `.exe` or `.lnk` files onto the app list from Explorer, or
@@ -82,6 +84,8 @@ You can open that folder yourself at any time with **Show shortcut…**.
 
 Click the pinned tile. A popup opens next to the taskbar, anchored near the tile you clicked, showing every app in the group.
 
+![The popup, showing only icons and labels](../assets/screenshots/popup.png)
+
 - **Click an icon** to launch it. The popup closes.
 - **If a launch fails**, the popup stays open and shows an error strip naming the app.
 - **Click anywhere else** to dismiss the popup.
@@ -101,6 +105,8 @@ There is currently no way to rename a group, reorder apps, set a custom icon, or
 ## Settings
 
 Open with the **⚙** button in the top right.
+
+![Settings dialog](../assets/screenshots/settings.png)
 
 | Setting | Options | Default | Effect |
 |---|---|---|---|

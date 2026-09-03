@@ -8,10 +8,9 @@
 
 > **Status:** v0.4.8, in active use. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
-<!-- Screenshots: drop PNGs into assets/screenshots/ and uncomment.
-![Manager window](assets/screenshots/manager.png)
-![Group popup](assets/screenshots/popup.png)
--->
+<p align="center">
+  <img src="assets/screenshots/tbgroup.gif" alt="Clicking a pinned group tile opens the popup and launches an app" width="420">
+</p>
 
 ## What it does
 
@@ -21,6 +20,13 @@
 - **A popup with no chrome.** Clicking a pinned group opens a fully transparent popup next to the taskbar — only the icons are visible. It closes when it loses focus or after you launch something.
 - **Follows your Windows theme.** Light, dark, or system; the system option live-switches when Windows does.
 - **Multi-monitor and high-DPI aware.** The popup anchors to the monitor under the cursor and places correctly at 100–200 % display scaling.
+
+<table>
+  <tr>
+    <td align="center"><img src="assets/screenshots/manager-dark.png" alt="Manager window in dark mode" width="460"><br><sub>Dark</sub></td>
+    <td align="center"><img src="assets/screenshots/manager-light.png" alt="Manager window in light mode" width="460"><br><sub>Light</sub></td>
+  </tr>
+</table>
 
 ## What it is not
 
@@ -83,6 +89,10 @@ graph LR
     E --> F[Popup grid]
 ```
 
+<p align="center">
+  <img src="assets/screenshots/popup.png" alt="The popup: icons and labels only, no window chrome" width="286">
+</p>
+
 Full detail in [docs/architecture.md](docs/architecture.md), and the reasoning behind the shared-launcher design in [ADR-002](docs/adr/002-per-group-lnk-aumid.md).
 
 ## Settings
@@ -95,6 +105,10 @@ Open with the **⚙** button. Changes apply when you click **Save**; closing the
 | Popup position | Auto, Above, Below | Auto |
 | Enable popup animations | on / off | on |
 | Start TaskbarFolders Manager when Windows starts | on / off | off |
+
+<p align="center">
+  <img src="assets/screenshots/settings.png" alt="Settings dialog" width="466">
+</p>
 
 Autostart is a per-user `HKCU\…\CurrentVersion\Run` entry — no scheduled task, no service. The registry is read as the source of truth, so removing that entry by hand is respected.
 
@@ -151,7 +165,7 @@ taskbar-grouping/
 ├── tests/                          # xUnit test projects, one per source project
 ├── docs/                           # Guides and architecture decision records
 ├── installer/                      # Inno Setup script
-└── assets/                         # Application icons
+└── assets/                         # Application icons and screenshots
 ```
 
 | Component | Technology |
