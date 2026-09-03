@@ -61,7 +61,8 @@ Pushing the tag triggers `release.yml` on `windows-latest`:
 2. Publish each executable **separately** into sibling folders — `./publish/Manager` and `./publish/Launcher` — self-contained, `win-x64`, single-file, with native libraries included for self-extraction.
 3. Zip `./publish/*` into `TaskbarFolders-portable.zip`.
 4. Build the installer with the Inno Setup compiler pre-installed on the runner. The step fails loudly if `ISCC.exe` is not where it expects — a runner image change is the likely cause.
-5. Create the GitHub release with auto-generated notes and attach both assets.
+5. Lift the matching `## [X.Y.Z]` section out of `CHANGELOG.md` and use it as the release body, with a link back to the full changelog. If no such section exists the step warns and falls back to GitHub's generated notes — which on this repository produce nothing but a compare link, because releases are cut from direct pushes rather than pull requests.
+6. Create the GitHub release and attach both assets.
 
 The job needs `contents: write`; that is already configured.
 
@@ -78,6 +79,7 @@ Both executables are self-contained and ReadyToRun-compiled, so each carries its
 
 The tag and the assets exist before anyone has confirmed they work. **Install the result and use it.**
 
+- [ ] Read the release page. The body must carry the CHANGELOG section, not a bare compare link — a warning in the job log means the heading did not match.
 - [ ] Install `TaskbarFolders-Setup.exe` on a machine that does not have the development tree.
 - [ ] Create a group, add two or three apps, confirm the composite icon appears.
 - [ ] Pin the group and confirm the tile shows up.

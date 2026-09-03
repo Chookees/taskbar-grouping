@@ -60,12 +60,54 @@ jobs:
           $version = $env:GITHUB_REF -replace '^refs/tags/v', ''
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
+      # generate_release_notes finds nothing on this repository: releases are cut from
+      # direct pushes rather than pull requests, so every release page carried a bare
+      # compare link while CHANGELOG.md held the actual prose. Lift the matching section
+      # out and use it as the body instead.
+      - name: Build release notes from CHANGELOG
+        id: notes
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.VERSION }}'
+          $lines = Get-Content ./CHANGELOG.md
+          # Keep a Changelog headings look like "## [0.4.9] - 2026-09-03"; a literal prefix
+          # match is exact here and avoids escaping the brackets into a regex.
+          $heading = '## [' + $version + ']'
+          $start = $null
+          for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i].StartsWith($heading)) { $start = $i + 1; break }
+          }
+
+          if ($null -eq $start) {
+            Write-Host "::warning::No CHANGELOG section for $version; falling back to generated notes."
+            "FOUND=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            exit 0
+          }
+
+          $body = @()
+          for ($i = $start; $i -lt $lines.Count; $i++) {
+            if ($lines[$i].StartsWith('## [')) { break }
+            $body += $lines[$i]
+          }
+
+          $repo = "${{ github.server_url }}/${{ github.repository }}"
+          $notes = @()
+          $notes += ($body -join "`n").Trim()
+          $notes += ''
+          $notes += "**Full changelog:** [CHANGELOG.md]($repo/blob/main/CHANGELOG.md)"
+          $notes -join "`n" | Set-Content ./RELEASE_NOTES.md -Encoding utf8
+
+          Write-Host "----- release notes -----"
+          Get-Content ./RELEASE_NOTES.md
+          "FOUND=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           draft: false
           prerelease: ${{ contains(github.ref, '-') }}
-          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.FOUND == 'true' && './RELEASE_NOTES.md' || '' }}
+          generate_release_notes: ${{ steps.notes.outputs.FOUND != 'true' }}
           files: |
             ./TaskbarFolders-portable.zip
             ./installer/Output/TaskbarFolders-Setup.exe
