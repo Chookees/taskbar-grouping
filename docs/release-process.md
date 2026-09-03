@@ -68,10 +68,10 @@ The job needs `contents: write`; that is already configured.
 
 ### Artifacts
 
-| Asset | v0.4.9 size |
+| Asset | v0.4.10 size |
 |---|---|
-| `TaskbarFolders-portable.zip` | ≈ 167 MB (166,542,556 bytes) |
-| `TaskbarFolders-Setup.exe` | ≈ 112 MB (112,065,718 bytes) |
+| `TaskbarFolders-portable.zip` | ≈ 167 MB (166,691,561 bytes) |
+| `TaskbarFolders-Setup.exe` | ≈ 112 MB (112,208,154 bytes) |
 
 Both executables are self-contained and ReadyToRun-compiled, so each carries its own copy of an ahead-of-time compiled .NET runtime. That is where the size goes. Expect roughly this scale for any release; a sudden drop usually means a publish step silently produced a framework-dependent build.
 
