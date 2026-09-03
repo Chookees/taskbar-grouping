@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.9] - 2026-09-03
+
+Presentation release: the app no longer puts your Windows account name on screen, and the README finally shows the application.
+
 ### Changed
 
+- **The README and both user guides now show the application.** A UI project whose documentation contained no interface was asking readers to imagine it: a short animation of a tile opening its popup, the Manager in both themes, the chrome-less popup, and the settings dialog.
 - **App paths are shortened for display.** The editor showed each entry's full path, which put the user's account name on screen for every app installed under their profile — noise in normal use, and a small privacy leak in any screenshot, screen share or bug report. Anything inside the user folder now displays as `%USERPROFILE%\…`, with the full path on hover. Only the display changes; what is stored and launched is unaffected, and paths outside the profile such as `C:\Program Files\…` or `C:\Users\Public\…` are left alone.
 
 ## [0.4.8] - 2026-09-03
@@ -287,7 +292,8 @@ First functional release. Everything described in the README is implemented and 
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
 
-[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.8...HEAD
+[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.9...HEAD
+[0.4.9]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.8...v0.4.9
 [0.4.8]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.5...v0.4.6

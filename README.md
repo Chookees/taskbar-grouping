@@ -6,7 +6,7 @@
 
 **iOS-style app folders for the Windows 11 taskbar.** Group related apps behind a single pinned tile; click it and they fan out in a popup anchored to the tile.
 
-> **Status:** v0.4.8, in active use. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+> **Status:** v0.4.9, in active use. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 <p align="center">
   <img src="assets/screenshots/tbgroup.gif" alt="Clicking a pinned group tile opens the popup and launches an app" width="420">
