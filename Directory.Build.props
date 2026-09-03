@@ -6,7 +6,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <Version>0.4.9</Version>
+    <Version>0.4.10</Version>
     <Authors>Gian Luca Schwekendiek</Authors>
     <Product>TaskbarFolders</Product>
     <Copyright>Copyright (c) 2026 Gian Luca Schwekendiek</Copyright>

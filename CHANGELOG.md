@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.10] - 2026-09-03
+
+Housekeeping release. Nothing about the application's behaviour changes; what changes is that the project can be handed to someone else without a tour.
+
+### Fixed
+
+- **The coverage report measures something.** Release set `DebugType=none`, so coverlet had no debug information to instrument against and every CI coverage report was empty — uploaded as an artifact and summarised over nothing, for the pipeline's entire life. Release now uses `DebugType=embedded`, which keeps collection working without emitting separate `.pdb` files that would have to be excluded from the published artifacts. Measured after the change: **69.2 % line, 51.9 % branch** across four assemblies. CI now fails below 65 %, and also at exactly 0 % — an empty report is indistinguishable from an untested code base, which is the failure this fixes.
+- **Release pages carry the changelog.** `generate_release_notes` builds its text from merged pull requests and this project cuts releases from direct pushes, so every release page showed a bare compare link while `CHANGELOG.md` held the actual prose. The workflow now lifts the matching section out and uses it as the release body. The thirteen existing releases were backfilled from the same source.
+
+### Changed
+
+- **The project is attributed to its author.** `Authors`, `Copyright`, the `LICENSE` and the installer's publisher field all read "TaskbarFolders Contributors"; the last of those is what Windows shows in the setup wizard and in Apps & features. The security and conduct contacts, previously placeholders, now name a real address.
+
+### Internal
+
+- A **Definition of Done** in `CLAUDE.md`, mirrored in `CONTRIBUTING.md` and the pull request template, covering the practices this release had to establish: evaluate the format gate rather than announce it, look at visual changes instead of asserting them, execute interop paths the headless suite cannot reach, retake screenshots when the UI moves, and prove a new gate fires by feeding it a failing input.
+- `ci.yml` gains `main` and `docs/*` as push triggers, so the release-time fast-forward is verified and a required status check has a run to attach to.
+- Seven of the documented limitations are now issues with file references and acceptance criteria, rather than prose in `docs/troubleshooting.md`.
+
 ## [0.4.9] - 2026-09-03
 
 Presentation release: the app no longer puts your Windows account name on screen, and the README finally shows the application.
@@ -292,7 +311,8 @@ First functional release. Everything described in the README is implemented and 
 - Full documentation: README, Contributing Guide, Architecture, User Guide, Developer Guide
 - MIT License
 
-[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.9...HEAD
+[Unreleased]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.10...HEAD
+[0.4.10]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.9...v0.4.10
 [0.4.9]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.8...v0.4.9
 [0.4.8]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/eXORR6077/taskbar-grouping/compare/v0.4.6...v0.4.7
