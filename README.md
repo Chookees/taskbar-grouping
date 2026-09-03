@@ -23,8 +23,8 @@
 
 <table>
   <tr>
-    <td align="center"><img src="assets/screenshots/manager-dark.png" alt="Manager window in dark mode" width="460"><br><sub>Dark</sub></td>
-    <td align="center"><img src="assets/screenshots/manager-light.png" alt="Manager window in light mode" width="460"><br><sub>Light</sub></td>
+    <td align="center"><img src="assets/screenshots/manager-dark.png" alt="Manager window in dark mode" width="470"><br><sub>Dark</sub></td>
+    <td align="center"><img src="assets/screenshots/manager-light.png" alt="Manager window in light mode" width="470"><br><sub>Light</sub></td>
   </tr>
 </table>
 
