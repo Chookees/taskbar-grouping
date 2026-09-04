@@ -4,7 +4,7 @@
 [![Release](https://github.com/gianluca-schwekendiek/taskbar-grouping/actions/workflows/release.yml/badge.svg)](https://github.com/gianluca-schwekendiek/taskbar-grouping/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**iOS-style app folders for the Windows 11 taskbar.** Group related apps behind a single pinned tile; click it and they fan out in a popup anchored to the tile.
+**macOS-style app folders for the Windows 11 taskbar.** Group related apps behind a single pinned tile; click it and they fan out in a popup anchored to the tile.
 
 > **Status:** v0.4.10, in active use. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
